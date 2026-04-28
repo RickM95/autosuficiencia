@@ -1,0 +1,345 @@
+// /core/physical.json
+{
+  "domain_id": "physical",
+  "name": {
+    "en": "Physical Wellbeing",
+    "es": "Bienestar Físico"
+  },
+  "description": {
+    "en": "Building energy, health, and discipline through sleep, nutrition, movement, and the Word of Wisdom.",
+    "es": "Construyendo energía, salud y disciplina a través del sueño, nutrición, movimiento y la Palabra de Sabiduría."
+  },
+  "principles": [
+    {
+      "id": "phy_pr_1",
+      "title": { "en": "Body as a Temple", "es": "El Cuerpo como Templo" },
+      "description": {
+        "en": "Care for your physical body as a sacred gift. Avoid harmful substances and nourish it with wholesome foods.",
+        "es": "Cuide su cuerpo físico como un don sagrado. Evite sustancias dañinas y aliméntelo con alimentos saludables."
+      }
+    },
+    {
+      "id": "phy_pr_2",
+      "title": { "en": "Word of Wisdom", "es": "Palabra de Sabiduría" },
+      "description": {
+        "en": "Abstain from alcohol, tobacco, coffee, tea, and harmful drugs. Eat fruits, vegetables, grains, and meat sparingly.",
+        "es": "Absténgase del alcohol, tabaco, café, té y drogas dañinas. Coma frutas, verduras, granos y carne con moderación."
+      }
+    },
+    {
+      "id": "phy_pr_3",
+      "title": { "en": "Consistent Routines", "es": "Rutinas Consistentes" },
+      "description": {
+        "en": "Regular sleep, meal, and exercise patterns strengthen the body and mind.",
+        "es": "Patrones regulares de sueño, comida y ejercicio fortalecen el cuerpo y la mente."
+      }
+    },
+    {
+      "id": "phy_pr_4",
+      "title": { "en": "Moderation & Balance", "es": "Moderación y Equilibrio" },
+      "description": {
+        "en": "Avoid extremes. Small daily habits build lifelong health.",
+        "es": "Evite los extremos. Pequeños hábitos diarios construyen salud para toda la vida."
+      }
+    }
+  ],
+  "decision_trees": [
+    {
+      "id": "dt_phy_001",
+      "label": { "en": "Sleep Crisis", "es": "Crisis de Sueño" },
+      "condition": { "field": "profile.assessment.wellbeing.sleepHours", "operator": "lt", "value": 5 },
+      "branches": [
+        {
+          "result": "true",
+          "priority": "critical",
+          "action_ids": ["act_phy_001", "act_phy_002", "act_phy_003"]
+        }
+      ]
+    },
+    {
+      "id": "dt_phy_002",
+      "label": { "en": "Sedentary Lifestyle", "es": "Estilo de Vida Sedentario" },
+      "condition": { "field": "profile.assessment.wellbeing.activityDays", "operator": "lt", "value": 2 },
+      "branches": [
+        { "result": "true", "action_ids": ["act_phy_004", "act_phy_005"] }
+      ]
+    },
+    {
+      "id": "dt_phy_003",
+      "label": { "en": "Low Energy Pattern", "es": "Patrón de Baja Energía" },
+      "condition": { "field": "profile.assessment.wellbeing.energyLevel", "operator": "lt", "value": 4 },
+      "branches": [
+        { "result": "true", "action_ids": ["act_phy_006", "act_phy_007"] }
+      ]
+    },
+    {
+      "id": "dt_phy_004",
+      "label": { "en": "Substance Concern", "es": "Preocupación por Sustancias" },
+      "condition": { "field": "profile.assessment.wellbeing.substanceConcern", "operator": "eq", "value": true },
+      "branches": [
+        { "result": "true", "action_ids": ["act_phy_008", "act_phy_009"], "priority": "high" }
+      ]
+    },
+    {
+      "id": "dt_phy_005",
+      "label": { "en": "Poor Nutrition Baseline", "es": "Base Nutricional Deficiente" },
+      "condition": {
+        "type": "or",
+        "conditions": [
+          { "field": "profile.assessment.wellbeing.servingsFruitsVeg", "operator": "lt", "value": 3 },
+          { "field": "profile.assessment.wellbeing.fastFoodWeek", "operator": "gt", "value": 3 }
+        ]
+      },
+      "branches": [
+        { "result": "true", "action_ids": ["act_phy_010", "act_phy_011"] }
+      ]
+    },
+    {
+      "id": "dt_phy_006",
+      "label": { "en": "No Regular Exercise", "es": "Sin Ejercicio Regular" },
+      "condition": { "field": "profile.assessment.wellbeing.activityDays", "operator": "eq", "value": 0 },
+      "branches": [
+        { "result": "true", "action_ids": ["act_phy_012"] }
+      ]
+    },
+    {
+      "id": "dt_phy_007",
+      "label": { "en": "Inconsistent Meal Times", "es": "Horarios de Comida Inconsistentes" },
+      "condition": { "field": "profile.assessment.wellbeing.irregularMeals", "operator": "eq", "value": true },
+      "branches": [
+        { "result": "true", "action_ids": ["act_phy_013", "act_phy_014"] }
+      ]
+    },
+    {
+      "id": "dt_phy_008",
+      "label": { "en": "Word of Wisdom Violation", "es": "Violación de la Palabra de Sabiduría" },
+      "condition": { "field": "profile.assessment.spiritual.wordOfWisdomCompliant", "operator": "eq", "value": false },
+      "branches": [
+        { "result": "true", "action_ids": ["act_phy_015", "act_phy_016"] }
+      ]
+    },
+    {
+      "id": "dt_phy_009",
+      "label": { "en": "Chronic Stress Physical Signs", "es": "Señales Físicas de Estrés Crónico" },
+      "condition": {
+        "type": "and",
+        "conditions": [
+          { "field": "profile.assessment.wellbeing.headachesWeekly", "operator": "gt", "value": 2 },
+          { "field": "profile.assessment.mental.downFrequency", "operator": "in", "value": ["more than half", "nearly every day"] }
+        ]
+      },
+      "branches": [
+        { "result": "true", "action_ids": ["act_phy_017"] }
+      ]
+    },
+    {
+      "id": "dt_phy_010",
+      "label": { "en": "Hydration Deficit", "es": "Déficit de Hidratación" },
+      "condition": { "field": "profile.assessment.wellbeing.waterCupsDaily", "operator": "lt", "value": 4 },
+      "branches": [
+        { "result": "true", "action_ids": ["act_phy_018"] }
+      ]
+    }
+  ],
+  "actions": [
+    {
+      "id": "act_phy_001",
+      "trigger": { "conditions": ["dt_phy_001:true"] },
+      "name": { "en": "No Screens 1 Hour Before Bed", "es": "Sin Pantallas 1 Hora Antes de Dormir" },
+      "steps": [
+        { "order": 1, "instruction": { "en": "Set an alarm 1 hour before bedtime. Put away all electronic devices.", "es": "Ponga una alarma 1 hora antes de acostarse. Guarde todos los dispositivos electrónicos." } }
+      ],
+      "outcome_metric": "SLEEP_HYGIENE",
+      "repeat": "daily"
+    },
+    {
+      "id": "act_phy_002",
+      "trigger": { "conditions": ["dt_phy_001:true"] },
+      "name": { "en": "Consistent Wake Time", "es": "Hora de Despertar Consistente" },
+      "steps": [
+        { "order": 1, "instruction": { "en": "Set a wake-up time that you keep every day, even weekends. Place alarm across room.", "es": "Establezca una hora de despertar que mantenga todos los días, incluso fines de semana. Coloque el despertador lejos de la cama." } }
+      ],
+      "outcome_metric": "WAKE_TIME_CONSISTENCY",
+      "repeat": "daily"
+    },
+    {
+      "id": "act_phy_003",
+      "trigger": { "conditions": ["dt_phy_001:true"] },
+      "name": { "en": "Create a Pre-sleep Ritual", "es": "Crear un Ritual Antes de Dormir" },
+      "steps": [
+        { "order": 1, "instruction": { "en": "Do light stretching, read a physical book, or listen to calming music for 15 minutes.", "es": "Haga estiramientos ligeros, lea un libro físico o escuche música tranquila durante 15 minutos." } }
+      ],
+      "outcome_metric": "PRE_SLEEP_RITUAL"
+    },
+    {
+      "id": "act_phy_004",
+      "trigger": { "conditions": ["dt_phy_002:true"] },
+      "name": { "en": "10-Minute Daily Walk", "es": "Caminata Diaria de 10 Minutos" },
+      "steps": [
+        { "order": 1, "instruction": { "en": "Take a 10-minute walk outside right after lunch.", "es": "Dé una caminata de 10 minutos al aire libre justo después del almuerzo." } }
+      ],
+      "outcome_metric": "PHYSICAL_ACTIVITY_MINUTES",
+      "repeat": "daily"
+    },
+    {
+      "id": "act_phy_005",
+      "trigger": { "conditions": ["dt_phy_002:true"] },
+      "name": { "en": "Seek Exercise Buddy", "es": "Buscar Compañero de Ejercicio" },
+      "steps": [
+        { "order": 1, "instruction": { "en": "Ask a friend or family member to join you for a weekly walk or workout.", "es": "Pida a un amigo o familiar que lo acompañe a una caminata o ejercicio semanal." } }
+      ],
+      "outcome_metric": "SOCIAL_ACCOUNTABILITY"
+    },
+    {
+      "id": "act_phy_006",
+      "trigger": { "conditions": ["dt_phy_003:true"] },
+      "name": { "en": "Energy-Boosting Nutrition", "es": "Nutrición para Aumentar Energía" },
+      "steps": [
+        { "order": 1, "instruction": { "en": "Add protein and healthy fat to breakfast (eggs, avocado, nuts).", "es": "Agregue proteína y grasa saludable al desayuno (huevos, aguacate, nueces)." } }
+      ],
+      "outcome_metric": "ENERGY_IMPROVEMENT"
+    },
+    {
+      "id": "act_phy_007",
+      "trigger": { "conditions": ["dt_phy_003:true"] },
+      "name": { "en": "Midday Micro-Break", "es": "Micro-Descanso al Mediodía" },
+      "steps": [
+        { "order": 1, "instruction": { "en": "Set a timer for 5 minutes of deep breathing or stretching at 2pm.", "es": "Programe un temporizador para 5 minutos de respiración profunda o estiramiento a las 2 p.m." } }
+      ],
+      "outcome_metric": "ENERGY_RECOVERY"
+    },
+    {
+      "id": "act_phy_008",
+      "trigger": { "conditions": ["dt_phy_004:true"] },
+      "name": { "en": "Contact Substance Support Line", "es": "Contactar Línea de Apoyo para Sustancias" },
+      "steps": [
+        { "order": 1, "instruction": { "en": "Call local addiction support (church addiction recovery program, SAMHSA national helpline).", "es": "Llame al apoyo local de adicciones (programa de recuperación de adicciones de la iglesia, línea nacional SAMHSA)." } }
+      ],
+      "outcome_metric": "HELP_SEEKING",
+      "priority": "high"
+    },
+    {
+      "id": "act_phy_009",
+      "trigger": { "conditions": ["dt_phy_004:true"] },
+      "name": { "en": "Develop Replacement Habit", "es": "Desarrollar Hábito de Reemplazo" },
+      "steps": [
+        { "order": 1, "instruction": { "en": "When craving arises, immediately drink a glass of water and do 10 push-ups.", "es": "Cuando surja el antojo, beba inmediatamente un vaso de agua y haga 10 lagartijas." } }
+      ],
+      "outcome_metric": "CRAVING_MANAGEMENT"
+    },
+    {
+      "id": "act_phy_010",
+      "trigger": { "conditions": ["dt_phy_005:true"] },
+      "name": { "en": "Add One Fruit/Vegetable Per Meal", "es": "Agregar Una Fruta/Verdura por Comida" },
+      "steps": [
+        { "order": 1, "instruction": { "en": "Add a banana at breakfast, carrots at lunch, greens at dinner.", "es": "Agregue un plátano en el desayuno, zanahorias en el almuerzo, verduras en la cena." } }
+      ],
+      "outcome_metric": "PRODUCE_INTAKE",
+      "repeat": "daily"
+    },
+    {
+      "id": "act_phy_011",
+      "trigger": { "conditions": ["dt_phy_005:true"] },
+      "name": { "en": "Limit Fast Food to Once a Week", "es": "Limitar Comida Rápida a Una Vez por Semana" },
+      "steps": [
+        { "order": 1, "instruction": { "en": "Plan and prep one extra meal at home to avoid impulse drive-thru.", "es": "Planifique y prepare una comida extra en casa para evitar el impulso del autoservicio." } }
+      ],
+      "outcome_metric": "FAST_FOOD_REDUCTION"
+    },
+    {
+      "id": "act_phy_012",
+      "trigger": { "conditions": ["dt_phy_006:true"] },
+      "name": { "en": "Chair Exercises for Beginners", "es": "Ejercicios en Silla para Principiantes" },
+      "steps": [
+        { "order": 1, "instruction": { "en": "While sitting, do 3 sets of: 10 arm raises, 10 leg extensions, 10 seated marches.", "es": "Sentado, haga 3 series de: 10 elevaciones de brazos, 10 extensiones de pierna, 10 marchas sentado." } }
+      ],
+      "outcome_metric": "SEATED_ACTIVITY"
+    },
+    {
+      "id": "act_phy_013",
+      "trigger": { "conditions": ["dt_phy_007:true"] },
+      "name": { "en": "Set Meal Reminders", "es": "Establecer Recordatorios de Comida" },
+      "steps": [
+        { "order": 1, "instruction": { "en": "Use phone alarm for breakfast, lunch, and dinner at consistent times.", "es": "Use la alarma del teléfono para desayuno, almuerzo y cena a horas consistentes." } }
+      ],
+      "outcome_metric": "MEAL_REGULARITY"
+    },
+    {
+      "id": "act_phy_014",
+      "trigger": { "conditions": ["dt_phy_007:true"] },
+      "name": { "en": "Keep Healthy Snacks Visible", "es": "Mantener Bocadillos Saludables a la Vista" },
+      "steps": [
+        { "order": 1, "instruction": { "en": "Place a fruit bowl on the counter and cut veggies in the fridge at eye level.", "es": "Coloque un frutero en la encimera y verduras cortadas en el refrigerador a la altura de los ojos." } }
+      ],
+      "outcome_metric": "HEALTHY_SNACKING"
+    },
+    {
+      "id": "act_phy_015",
+      "trigger": { "conditions": ["dt_phy_008:true"] },
+      "name": { "en": "Word of Wisdom Study & Prayer", "es": "Estudio y Oración sobre la Palabra de Sabiduría" },
+      "steps": [
+        { "order": 1, "instruction": { "en": "Read D&C 89 and pray for strength to live it fully.", "es": "Lea DyC 89 y ore pidiendo fortaleza para vivirlo plenamente." } }
+      ],
+      "outcome_metric": "SPIRITUAL_RESOLVE"
+    },
+    {
+      "id": "act_phy_016",
+      "trigger": { "conditions": ["dt_phy_008:true"] },
+      "name": { "en": "Gradual Substance Removal", "es": "Eliminación Gradual de Sustancias" },
+      "steps": [
+        { "order": 1, "instruction": { "en": "Reduce consumption by half this week, then half again next, aiming for zero.", "es": "Reduzca el consumo a la mitad esta semana, luego a la mitad la siguiente, con meta de cero." } }
+      ],
+      "outcome_metric": "SUBSTANCE_REDUCTION"
+    },
+    {
+      "id": "act_phy_017",
+      "trigger": { "conditions": ["dt_phy_009:true"] },
+      "name": { "en": "Progressive Muscle Relaxation", "es": "Relajación Muscular Progresiva" },
+      "steps": [
+        { "order": 1, "instruction": { "en": "Tense each muscle group for 5 seconds then release, from toes to head, before sleep.", "es": "Tense cada grupo muscular durante 5 segundos y luego suelte, desde los dedos de los pies hasta la cabeza, antes de dormir." } }
+      ],
+      "outcome_metric": "STRESS_REDUCTION"
+    },
+    {
+      "id": "act_phy_018",
+      "trigger": { "conditions": ["dt_phy_010:true"] },
+      "name": { "en": "Water Intake Tracking", "es": "Registro de Ingesta de Agua" },
+      "steps": [
+        { "order": 1, "instruction": { "en": "Carry a refillable bottle and aim for 8 cups. Mark with rubber bands per 2 cups.", "es": "Lleve una botella rellenable y apunte a 8 vasos. Marque con bandas elásticas cada 2 vasos." } }
+      ],
+      "outcome_metric": "HYDRATION_GOAL"
+    },
+    { "id": "act_phy_019", "trigger": { "conditions": [] }, "name": { "en": "Family Physical Activity", "es": "Actividad Física Familiar" }, "steps": [ { "order": 1, "instruction": { "en": "Plan a weekly active outing: park, bike ride, or sports with family.", "es": "Planee una salida activa semanal: parque, paseo en bicicleta o deportes con la familia." } } ], "outcome_metric": "FAMILY_ACTIVITY" },
+    { "id": "act_phy_020", "trigger": { "conditions": [] }, "name": { "en": "Stand Up Every Hour", "es": "Ponerse de Pie Cada Hora" }, "steps": [ { "order": 1, "instruction": { "en": "Set a recurring reminder to stand and move for 2 minutes every hour during desk work.", "es": "Programe un recordatorio recurrente para ponerse de pie y moverse 2 minutos cada hora durante el trabajo de escritorio." } } ], "outcome_metric": "SEDENTARY_REDUCTION", "repeat": "daily" },
+    { "id": "act_phy_021", "trigger": { "conditions": [] }, "name": { "en": "Stretch Before Sleep", "es": "Estirarse Antes de Dormir" }, "steps": [ { "order": 1, "instruction": { "en": "Do 5 minutes of gentle yoga or static stretches focusing on back and legs.", "es": "Haga 5 minutos de yoga suave o estiramientos estáticos enfocándose en espalda y piernas." } } ], "outcome_metric": "FLEXIBILITY" },
+    { "id": "act_phy_022", "trigger": { "conditions": [] }, "name": { "en": "Meal Prep Sunday", "es": "Preparación de Comidas el Domingo" }, "steps": [ { "order": 1, "instruction": { "en": "Prepare 3 lunches and chop veggies for the week on Sunday afternoon.", "es": "Prepare 3 almuerzos y pique verduras para la semana el domingo por la tarde." } } ], "outcome_metric": "MEAL_PREP_CONSISTENCY", "repeat": "weekly" },
+    { "id": "act_phy_023", "trigger": { "conditions": [] }, "name": { "en": "Caffeine Elimination (if applicable)", "es": "Eliminación de Cafeína (si aplica)" }, "steps": [ { "order": 1, "instruction": { "en": "Replace coffee/tea with herbal tea or grain-based beverages. Reduce gradually.", "es": "Reemplace café/té con infusiones de hierbas o bebidas a base de granos. Reduzca gradualmente." } } ], "outcome_metric": "CAFFEINE_FREE" },
+    { "id": "act_phy_024", "trigger": { "conditions": [] }, "name": { "en": "Morning Sunlight Exposure", "es": "Exposición a la Luz Solar Matutina" }, "steps": [ { "order": 1, "instruction": { "en": "Step outside for 5-10 minutes within 30 minutes of waking.", "es": "Salga al exterior de 5 a 10 minutos dentro de los 30 minutos después de despertar." } } ], "outcome_metric": "CIRCADIAN_BOOST", "repeat": "daily" },
+    { "id": "act_phy_025", "trigger": { "conditions": [] }, "name": { "en": "Sleep Environment Optimization", "es": "Optimización del Entorno de Sueño" }, "steps": [ { "order": 1, "instruction": { "en": "Make room completely dark, cool (65-68°F), and quiet. Use earplugs if needed.", "es": "Oscurezca completamente la habitación, temperatura fresca (18-20°C), y silencio. Use tapones para los oídos si es necesario." } } ], "outcome_metric": "SLEEP_QUALITY" },
+    { "id": "act_phy_026", "trigger": { "conditions": [] }, "name": { "en": "Healthy Snack Swaps", "es": "Intercambios de Bocadillos Saludables" }, "steps": [ { "order": 1, "instruction": { "en": "Replace chips with air-popped popcorn, candy with dried fruit, soda with sparkling water.", "es": "Reemplace papas fritas con palomitas de maíz naturales, dulces con fruta seca, refresco con agua con gas." } } ], "outcome_metric": "SNACK_QUALITY" },
+    { "id": "act_phy_027", "trigger": { "conditions": [] }, "name": { "en": "Track Steps Daily", "es": "Registrar Pasos Diarios" }, "steps": [ { "order": 1, "instruction": { "en": "Use phone or pedometer; goal: 5000 steps first week, increase by 500 weekly to 10k.", "es": "Use el teléfono o podómetro; meta: 5000 pasos la primera semana, aumente 500 semanalmente hasta 10k." } } ], "outcome_metric": "STEP_COUNT", "repeat": "daily" },
+    { "id": "act_phy_028", "trigger": { "conditions": [] }, "name": { "en": "Strength Training 2x/Week", "es": "Entrenamiento de Fuerza 2x/Semana" }, "steps": [ { "order": 1, "instruction": { "en": "Bodyweight routine: squats, push-ups, lunges, planks. 15 minutes.", "es": "Rutina con peso corporal: sentadillas, lagartijas, zancadas, planchas. 15 minutos." } } ], "outcome_metric": "STRENGTH_SESSIONS" },
+    { "id": "act_phy_029", "trigger": { "conditions": [] }, "name": { "en": "First Aid Kit Check", "es": "Revisión del Botiquín de Primeros Auxilios" }, "steps": [ { "order": 1, "instruction": { "en": "Ensure you have basic supplies: bandages, antiseptic, pain reliever, thermometer.", "es": "Asegúrese de tener suministros básicos: vendajes, antiséptico, analgésico, termómetro." } } ], "outcome_metric": "PREPAREDNESS" },
+    { "id": "act_phy_030", "trigger": { "conditions": [] }, "name": { "en": "Annual Physical Exam Scheduling", "es": "Programar Examen Físico Anual" }, "steps": [ { "order": 1, "instruction": { "en": "Call doctor or clinic to schedule a check-up if more than 12 months since last visit.", "es": "Llame al médico o clínica para programar un chequeo si han pasado más de 12 meses desde la última visita." } } ], "outcome_metric": "PREVENTIVE_CARE" }
+  ],
+  "metrics": [
+    {
+      "id": "metric_phy_001",
+      "name": { "en": "Sleep Score", "es": "Puntaje de Sueño" },
+      "formula": "averageSleepHours * 10 (max 10), adjusted for consistency.",
+      "target_range": { "min": 7, "max": 9, "unit": "hours" }
+    },
+    {
+      "id": "metric_phy_002",
+      "name": { "en": "Physical Activity Days/Week", "es": "Días de Actividad Física/Semana" },
+      "formula": "count of days with >=20 min moderate activity",
+      "target_range": { "min": 5, "max": 7 }
+    },
+    {
+      "id": "metric_phy_003",
+      "name": { "en": "Word of Wisdom Adherence", "es": "Adherencia a la Palabra de Sabiduría" },
+      "formula": "binary_yes_no * 100 if compliant with all aspects, else reduction in points per violation.",
+      "target_range": { "min": 100, "max": 100, "unit": "percent" }
+    }
+  ]
+}

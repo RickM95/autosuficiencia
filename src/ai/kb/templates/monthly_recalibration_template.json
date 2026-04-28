@@ -1,0 +1,10 @@
+// /templates/monthly_recalibration_template.json
+{
+  "recalibration_id": "monthly_001",
+  "all_domain_scores_updated": true,
+  "overall_score_change": "+5",
+  "phase_shift": null,
+  "plan_rescue_triggered": false,
+  "trend_analysis": "steady improvement",
+  "next_month_focus_domains": ["financial", "spiritual"]
+}

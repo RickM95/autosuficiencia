@@ -1,0 +1,343 @@
+// /core/spiritual.json
+{
+  "domain_id": "spiritual",
+  "name": {
+    "en": "Spiritual Development",
+    "es": "Desarrollo Espiritual"
+  },
+  "description": {
+    "en": "Strengthening faith in Jesus Christ through daily discipleship, covenant keeping, and service, aligned with teachings of The Church of Jesus Christ of Latter-day Saints.",
+    "es": "Fortaleciendo la fe en Jesucristo mediante el discipulado diario, la observancia de convenios y el servicio, alineado con las enseñanzas de La Iglesia de Jesucristo de los Santos de los Últimos Días."
+  },
+  "principles": [
+    {
+      "id": "spi_pr_1",
+      "title": { "en": "Faith in the Lord Jesus Christ", "es": "Fe en el Señor Jesucristo" },
+      "description": {
+        "en": "Developing a personal relationship with Christ through prayer, scripture study, and obedience.",
+        "es": "Desarrollar una relación personal con Cristo mediante la oración, el estudio de las Escrituras y la obediencia."
+      }
+    },
+    {
+      "id": "spi_pr_2",
+      "title": { "en": "Repentance & Change", "es": "Arrepentimiento y Cambio" },
+      "description": {
+        "en": "Daily application of the Atonement through sincere repentance and striving to improve.",
+        "es": "Aplicación diaria de la Expiación mediante el arrepentimiento sincero y el esfuerzo por mejorar."
+      }
+    },
+    {
+      "id": "spi_pr_3",
+      "title": { "en": "Covenant Keeping", "es": "Guardar Convenios" },
+      "description": {
+        "en": "Honoring baptismal and temple covenants, including Sabbath observance, tithing, and moral purity.",
+        "es": "Honrar los convenios bautismales y del templo, incluyendo la observancia del día de reposo, el diezmo y la pureza moral."
+      }
+    },
+    {
+      "id": "spi_pr_4",
+      "title": { "en": "Service & Charity", "es": "Servicio y Caridad" },
+      "description": {
+        "en": "Serving in callings, ministering, and loving your neighbor as yourself.",
+        "es": "Servir en llamamientos, ministrar y amar al prójimo como a uno mismo."
+      }
+    },
+    {
+      "id": "spi_pr_5",
+      "title": { "en": "Eternal Perspective", "es": "Perspectiva Eterna" },
+      "description": {
+        "en": "Viewing temporal challenges in the context of God's plan of salvation, fostering hope and long-term thinking.",
+        "es": "Ver los desafíos temporales en el contexto del plan de salvación de Dios, fomentando la esperanza y el pensamiento a largo plazo."
+      }
+    }
+  ],
+  "decision_trees": [
+    {
+      "id": "dt_spi_001",
+      "label": { "en": "Start Spiritual Habit", "es": "Iniciar Hábito Espiritual" },
+      "condition": { "field": "profile.assessment.spiritual.scriptureFrequency", "operator": "in", "value": ["rarely", "never"] },
+      "branches": [
+        { "result": "true", "action_ids": ["act_spi_001", "act_spi_002"] }
+      ]
+    },
+    {
+      "id": "dt_spi_002",
+      "label": { "en": "Tithing Not Paid", "es": "Diezmos No Pagados" },
+      "condition": { "field": "profile.assessment.spiritual.tithing", "operator": "eq", "value": "N" },
+      "branches": [
+        { "result": "true", "action_ids": ["act_spi_003", "act_spi_004"] }
+      ]
+    },
+    {
+      "id": "dt_spi_003",
+      "label": { "en": "No Active Calling or Service", "es": "Sin Llamamiento o Servicio Activo" },
+      "condition": { "field": "profile.assessment.spiritual.activeService", "operator": "eq", "value": false },
+      "branches": [
+        { "result": "true", "action_ids": ["act_spi_005", "act_spi_006"] }
+      ]
+    },
+    {
+      "id": "dt_spi_004",
+      "label": { "en": "Low Purpose / Hope", "es": "Bajo Propósito / Esperanza" },
+      "condition": { "field": "profile.assessment.spiritual.purposeScore", "operator": "lt", "value": 5 },
+      "branches": [
+        { "result": "true", "action_ids": ["act_spi_007", "act_spi_008"] }
+      ]
+    },
+    {
+      "id": "dt_spi_005",
+      "label": { "en": "Word of Wisdom Struggle", "es": "Lucha con la Palabra de Sabiduría" },
+      "condition": { "field": "profile.assessment.spiritual.wordOfWisdomCompliant", "operator": "eq", "value": false },
+      "branches": [
+        { "result": "true", "action_ids": ["act_spi_009", "act_spi_010"] }
+      ]
+    },
+    {
+      "id": "dt_spi_006",
+      "label": { "en": "Sabbath Day Not Holy", "es": "Día de Reposo No Santificado" },
+      "condition": { "field": "profile.assessment.spiritual.sabbathObservance", "operator": "eq", "value": false },
+      "branches": [
+        { "result": "true", "action_ids": ["act_spi_011"] }
+      ]
+    },
+    {
+      "id": "dt_spi_007",
+      "label": { "en": "Forgiveness Needed", "es": "Necesidad de Perdón" },
+      "condition": { "field": "profile.assessment.spiritual.unresolvedOffense", "operator": "eq", "value": true },
+      "branches": [
+        { "result": "true", "action_ids": ["act_spi_012", "act_spi_013"] }
+      ]
+    },
+    {
+      "id": "dt_spi_008",
+      "label": { "en": "Lack of Temple Attendance", "es": "Falta de Asistencia al Templo" },
+      "condition": {
+        "type": "and",
+        "conditions": [
+          { "field": "profile.assessment.spiritual.templeRecommend", "operator": "eq", "value": true },
+          { "field": "profile.assessment.spiritual.templeFrequency", "operator": "eq", "value": "never" }
+        ]
+      },
+      "branches": [
+        { "result": "true", "action_ids": ["act_spi_014", "act_spi_015"] }
+      ]
+    },
+    {
+      "id": "dt_spi_009",
+      "label": { "en": "Family History Neglected", "es": "Historia Familiar Descuidada" },
+      "condition": { "field": "profile.assessment.spiritual.familyHistoryActivity", "operator": "eq", "value": "never" },
+      "branches": [
+        { "result": "true", "action_ids": ["act_spi_016"] }
+      ]
+    },
+    {
+      "id": "dt_spi_010",
+      "label": { "en": "Need for Patriarchal Blessing Study", "es": "Necesidad de Estudio de la Bendición Patriarcal" },
+      "condition": {
+        "type": "and",
+        "conditions": [
+          { "field": "profile.assessment.spiritual.hasPatriarchalBlessing", "operator": "eq", "value": true },
+          { "field": "profile.assessment.spiritual.blessingStudyRegular", "operator": "eq", "value": false }
+        ]
+      },
+      "branches": [
+        { "result": "true", "action_ids": ["act_spi_017"] }
+      ]
+    }
+  ],
+  "actions": [
+    {
+      "id": "act_spi_001",
+      "trigger": { "conditions": ["dt_spi_001:true"] },
+      "name": { "en": "Commit to 5-Minute Daily Scripture", "es": "Comprometerse a 5 Minutos Diarios de Escrituras" },
+      "steps": [
+        { "order": 1, "instruction": { "en": "Set a specific time and place. Start with the Book of Mormon, one verse.", "es": "Establezca una hora y lugar específicos. Comience con el Libro de Mormón, un versículo." } }
+      ],
+      "outcome_metric": "SCRIPTURE_STUDY_START",
+      "repeat": "daily"
+    },
+    {
+      "id": "act_spi_002",
+      "trigger": { "conditions": ["dt_spi_001:true"] },
+      "name": { "en": "Morning Kneeling Prayer", "es": "Oración Matutina de Rodillas" },
+      "steps": [
+        { "order": 1, "instruction": { "en": "Kneel and offer a simple personal prayer each morning, thanking God and asking for His help.", "es": "Arrodíllese y ofrezca una oración personal sencilla cada mañana, agradeciendo a Dios y pidiendo Su ayuda." } }
+      ],
+      "outcome_metric": "PRAYER_HABIT",
+      "repeat": "daily"
+    },
+    {
+      "id": "act_spi_003",
+      "trigger": { "conditions": ["dt_spi_002:true"] },
+      "name": { "en": "Pay a Full Tithe This Month", "es": "Pagar un Diezmo Completo Este Mes" },
+      "steps": [
+        { "order": 1, "instruction": { "en": "Calculate 10% of your increase and pay online or to your bishop. Trust the promised blessings.", "es": "Calcule el 10% de su aumento y pague en línea o a su obispo. Confíe en las bendiciones prometidas." } }
+      ],
+      "outcome_metric": "TITHING_PAID",
+      "repeat": "monthly"
+    },
+    {
+      "id": "act_spi_004",
+      "trigger": { "conditions": ["dt_spi_002:true"] },
+      "name": { "en": "Attend Tithing Settlement / Declaration", "es": "Asistir a la Declaración de Diezmos" },
+      "steps": [
+        { "order": 1, "instruction": { "en": "Meet with the bishop to declare your tithing status and receive counsel.", "es": "Reúnase con el obispo para declarar su estado de diezmos y recibir consejo." } }
+      ],
+      "outcome_metric": "TITHING_DECLARATION"
+    },
+    {
+      "id": "act_spi_005",
+      "trigger": { "conditions": ["dt_spi_003:true"] },
+      "name": { "en": "Request a Calling / Assignment", "es": "Solicitar un Llamamiento / Asignación" },
+      "steps": [
+        { "order": 1, "instruction": { "en": "Speak with your bishop or branch president about opportunities to serve.", "es": "Hable con su obispo o presidente de rama sobre oportunidades para servir." } }
+      ],
+      "outcome_metric": "SERVICE_OPPORTUNITY"
+    },
+    {
+      "id": "act_spi_006",
+      "trigger": { "conditions": ["dt_spi_003:true"] },
+      "name": { "en": "Perform One Anonymous Act of Kindness Weekly", "es": "Realizar Un Acto de Bondad Anónimo Semanalmente" },
+      "steps": [
+        { "order": 1, "instruction": { "en": "Secretly serve a neighbor or family member; do not seek recognition.", "es": "Sirva en secreto a un vecino o familiar; no busque reconocimiento." } }
+      ],
+      "outcome_metric": "CHARITY_GROWTH",
+      "repeat": "weekly"
+    },
+    {
+      "id": "act_spi_007",
+      "trigger": { "conditions": ["dt_spi_004:true"] },
+      "name": { "en": "Study 'The Living Christ' and Write Your Testimony", "es": "Estudiar 'El Cristo Viviente' y Escribir Su Testimonio" },
+      "steps": [
+        { "order": 1, "instruction": { "en": "Read the document, then write a short testimony of Jesus Christ in a journal.", "es": "Lea el documento, luego escriba un breve testimonio de Jesucristo en un diario." } }
+      ],
+      "outcome_metric": "TESTIMONY_STRENGTHENED"
+    },
+    {
+      "id": "act_spi_008",
+      "trigger": { "conditions": ["dt_spi_004:true"] },
+      "name": { "en": "Identify Three Personal Blessings from God Daily", "es": "Identificar Tres Bendiciones Personales de Dios Diariamente" },
+      "steps": [
+        { "order": 1, "instruction": { "en": "In prayer, name three specific blessings you noticed today.", "es": "En la oración, nombre tres bendiciones específicas que notó hoy." } }
+      ],
+      "outcome_metric": "GRATITUDE_FOCUS"
+    },
+    {
+      "id": "act_spi_009",
+      "trigger": { "conditions": ["dt_spi_005:true"] },
+      "name": { "en": "Seek Priesthood Blessing for Strength", "es": "Buscar una Bendición del Sacerdocio para Fortaleza" },
+      "steps": [
+        { "order": 1, "instruction": { "en": "Request a blessing from your ministering brothers or home teachers to overcome Word of Wisdom challenges.", "es": "Solicite una bendición de sus hermanos ministrantes o maestros orientadores para superar desafíos de la Palabra de Sabiduría." } }
+      ],
+      "outcome_metric": "PRIESTHOOD_SUPPORT"
+    },
+    {
+      "id": "act_spi_010",
+      "trigger": { "conditions": ["dt_spi_005:true"] },
+      "name": { "en": "Remove Temptations from Home", "es": "Eliminar Tentaciones del Hogar" },
+      "steps": [
+        { "order": 1, "instruction": { "en": "Dispose of all alcohol, tobacco, coffee, tea, and harmful substances from your living space.", "es": "Deseche todo el alcohol, tabaco, café, té y sustancias dañinas de su espacio vital." } }
+      ],
+      "outcome_metric": "ENVIRONMENT_PURE"
+    },
+    {
+      "id": "act_spi_011",
+      "trigger": { "conditions": ["dt_spi_006:true"] },
+      "name": { "en": "Sabbath Day Covenant Renewal", "es": "Renovación del Convenio del Día de Reposo" },
+      "steps": [
+        { "order": 1, "instruction": { "en": "Plan your Sunday to include sacrament meeting, rest, family, and avoiding commerce/work.", "es": "Planifique su domingo para incluir la reunión sacramental, descanso, familia y evitar el comercio/trabajo." } }
+      ],
+      "outcome_metric": "SABBATH_HOLY",
+      "repeat": "weekly"
+    },
+    {
+      "id": "act_spi_012",
+      "trigger": { "conditions": ["dt_spi_007:true"] },
+      "name": { "en": "Pray for Help to Forgive", "es": "Orar pidiendo Ayuda para Perdonar" },
+      "steps": [
+        { "order": 1, "instruction": { "en": "Pray specifically for the person who offended you and ask for a forgiving heart.", "es": "Ore específicamente por la persona que lo ofendió y pida un corazón perdonador." } }
+      ],
+      "outcome_metric": "FORGIVENESS_PROCESS"
+    },
+    {
+      "id": "act_spi_013",
+      "trigger": { "conditions": ["dt_spi_007:true"] },
+      "name": { "en": "Write a Letter of Forgiveness (Not Sent)", "es": "Escribir una Carta de Perdón (No Enviada)" },
+      "steps": [
+        { "order": 1, "instruction": { "en": "Write down your feelings, then write a statement of forgiveness. Keep or destroy.", "es": "Escriba sus sentimientos, luego escriba una declaración de perdón. Consérvela o destrúyala." } }
+      ],
+      "outcome_metric": "EMOTIONAL_RELEASE"
+    },
+    {
+      "id": "act_spi_014",
+      "trigger": { "conditions": ["dt_spi_008:true"] },
+      "name": { "en": "Schedule a Temple Visit", "es": "Programar una Visita al Templo" },
+      "steps": [
+        { "order": 1, "instruction": { "en": "Make an appointment to attend an endowment session or perform baptisms for the dead.", "es": "Haga una cita para asistir a una sesión de investidura o realizar bautismos por los muertos." } }
+      ],
+      "outcome_metric": "TEMPLE_ATTENDANCE"
+    },
+    {
+      "id": "act_spi_015",
+      "trigger": { "conditions": ["dt_spi_008:true"] },
+      "name": { "en": "Read 'The Holy Temple' Book", "es": "Leer el Libro 'El Santo Templo'" },
+      "steps": [
+        { "order": 1, "instruction": { "en": "Study the book by Boyd K. Packer to deepen understanding of temple covenants.", "es": "Estudie el libro de Boyd K. Packer para profundizar la comprensión de los convenios del templo." } }
+      ],
+      "outcome_metric": "TEMPLE_KNOWLEDGE"
+    },
+    {
+      "id": "act_spi_016",
+      "trigger": { "conditions": ["dt_spi_009:true"] },
+      "name": { "en": "Index 10 Names This Week", "es": "Indexar 10 Nombres Esta Semana" },
+      "steps": [
+        { "order": 1, "instruction": { "en": "Use the FamilySearch indexing app and complete at least one batch.", "es": "Use la aplicación de indexación de FamilySearch y complete al menos un lote." } }
+      ],
+      "outcome_metric": "FAMILY_HISTORY_START",
+      "repeat": "weekly"
+    },
+    {
+      "id": "act_spi_017",
+      "trigger": { "conditions": ["dt_spi_010:true"] },
+      "name": { "en": "Study Patriarchal Blessing Weekly", "es": "Estudiar la Bendición Patriarcal Semanalmente" },
+      "steps": [
+        { "order": 1, "instruction": { "en": "Read a portion of your blessing and note promised blessings and warnings. Pray about them.", "es": "Lea una porción de su bendición y anote las bendiciones y advertencias prometidas. Ore al respecto." } }
+      ],
+      "outcome_metric": "BLESSING_STUDY",
+      "repeat": "weekly"
+    },
+    { "id": "act_spi_018", "trigger": { "conditions": [] }, "name": { "en": "Family Home Evening Weekly", "es": "Noche de Hogar Semanal" }, "steps": [ { "order": 1, "instruction": { "en": "Hold a simple, consistent family night with lesson, activity, and treat.", "es": "Realice una noche familiar sencilla y constante con lección, actividad y refrigerio." } } ], "outcome_metric": "FHE_CONSISTENCY", "repeat": "weekly" },
+    { "id": "act_spi_019", "trigger": { "conditions": [] }, "name": { "en": "Daily 'Come, Follow Me' Study", "es": "Estudio Diario de 'Ven, Sígueme'" }, "steps": [ { "order": 1, "instruction": { "en": "Follow the weekly reading schedule individually or with family.", "es": "Siga el programa de lectura semanal individualmente o con la familia." } } ], "outcome_metric": "COME_FOLLOW_ME", "repeat": "daily" },
+    { "id": "act_spi_020", "trigger": { "conditions": [] }, "name": { "en": "Prepare for the Sacrament", "es": "Prepararse para la Santa Cena" }, "steps": [ { "order": 1, "instruction": { "en": "On Saturday evening, repent and reflect, so you partake worthily on Sunday.", "es": "El sábado por la noche, arrepiéntase y reflexione para participar dignamente el domingo." } } ], "outcome_metric": "SACRAMENT_PREP", "repeat": "weekly" },
+    { "id": "act_spi_021", "trigger": { "conditions": [] }, "name": { "en": "Minister to an Assigned Family", "es": "Ministrar a una Familia Asignada" }, "steps": [ { "order": 1, "instruction": { "en": "Contact your ministering families regularly; learn their needs and serve.", "es": "Comuníquese con sus familias asignadas regularmente; conozca sus necesidades y sirva." } } ], "outcome_metric": "MINISTERING" },
+    { "id": "act_spi_022", "trigger": { "conditions": [] }, "name": { "en": "Attend Ward Activities", "es": "Asistir a Actividades del Barrio" }, "steps": [ { "order": 1, "instruction": { "en": "Participate in at least one ward social, service project, or activity monthly.", "es": "Participe en al menos una actividad social, proyecto de servicio o actividad del barrio mensualmente." } } ], "outcome_metric": "FELLOWSHIP" },
+    { "id": "act_spi_023", "trigger": { "conditions": [] }, "name": { "en": "Memorize a Scripture Each Week", "es": "Memorizar un Pasaje de las Escrituras Cada Semana" }, "steps": [ { "order": 1, "instruction": { "en": "Select one verse of scripture each week and recite it daily until memorized.", "es": "Seleccione un versículo cada semana y recítelo diariamente hasta memorizarlo." } } ], "outcome_metric": "SCRIPTURE_MEMORY" },
+    { "id": "act_spi_024", "trigger": { "conditions": [] }, "name": { "en": "Hold Personal Interviews with Children", "es": "Realizar Entrevistas Personales con los Hijos" }, "steps": [ { "order": 1, "instruction": { "en": "Monthly one-on-one time to discuss goals, feelings, and testimony.", "es": "Tiempo mensual uno a uno para hablar sobre metas, sentimientos y testimonio." } } ], "outcome_metric": "FAMILY_SPIRITUAL_LEADERSHIP" },
+    { "id": "act_spi_025", "trigger": { "conditions": [] }, "name": { "en": "Keep a Revelation Journal", "es": "Llevar un Diario de Revelación" }, "steps": [ { "order": 1, "instruction": { "en": "Record spiritual promptings and how you acted on them. Review monthly.", "es": "Registre las impresiones espirituales y cómo actuó. Revise mensualmente." } } ], "outcome_metric": "REVELATION_LOG" },
+    { "id": "act_spi_026", "trigger": { "conditions": [] }, "name": { "en": "Fast with a Purpose", "es": "Ayunar con un Propósito" }, "steps": [ { "order": 1, "instruction": { "en": "On fast Sunday, fast for a specific personal or family need, and donate a generous fast offering.", "es": "El domingo de ayuno, ayune por una necesidad personal o familiar específica, y done una generosa ofrenda de ayuno." } } ], "outcome_metric": "FASTING", "repeat": "monthly" },
+    { "id": "act_spi_027", "trigger": { "conditions": [] }, "name": { "en": "Read Conference Talks Daily", "es": "Leer Discursos de la Conferencia Diariamente" }, "steps": [ { "order": 1, "instruction": { "en": "Read one general conference talk per day and highlight key counsel.", "es": "Lea un discurso de la conferencia general por día y destaque el consejo clave." } } ], "outcome_metric": "PROPHETIC_GUIDANCE" },
+    { "id": "act_spi_028", "trigger": { "conditions": [] }, "name": { "en": "Share a Gospel Message on Social Media", "es": "Compartir un Mensaje del Evangelio en las Redes Sociales" }, "steps": [ { "order": 1, "instruction": { "en": "Post an uplifting scripture or quote with your testimony once a week.", "es": "Publique un pasaje de las Escrituras o cita edificante con su testimonio una vez por semana." } } ], "outcome_metric": "MISSIONARY_WORK" },
+    { "id": "act_spi_029", "trigger": { "conditions": [] }, "name": { "en": "Assist with Ward Emergency Preparedness", "es": "Ayudar con la Preparación para Emergencias del Barrio" }, "steps": [ { "order": 1, "instruction": { "en": "Volunteer to help the ward preparedness committee or assist a neighbor in need.", "es": "Ofrézcase como voluntario para ayudar al comité de preparación del barrio o ayudar a un vecino necesitado." } } ], "outcome_metric": "CHARITABLE_PREPAREDNESS" },
+    { "id": "act_spi_030", "trigger": { "conditions": [] }, "name": { "en": "Hold a Family Council", "es": "Realizar un Consejo Familiar" }, "steps": [ { "order": 1, "instruction": { "en": "Weekly gather to discuss schedules, concerns, and spiritual goals, and pray together.", "es": "Reúnanse semanalmente para hablar de horarios, preocupaciones y metas espirituales, y oren juntos." } } ], "outcome_metric": "FAMILY_COUNCIL", "repeat": "weekly" }
+  ],
+  "metrics": [
+    {
+      "id": "metric_spi_001",
+      "name": { "en": "Daily Spiritual Practice Score", "es": "Puntaje de Práctica Espiritual Diaria" },
+      "formula": "days_per_week_with_scripture_and_prayer / 7 * 100",
+      "target_range": { "min": 80, "max": 100, "unit": "percent" }
+    },
+    {
+      "id": "metric_spi_002",
+      "name": { "en": "Tithing Status", "es": "Estado de Diezmos" },
+      "formula": "full_tithe = 100, partial = 50, none = 0",
+      "target_range": { "min": 100, "max": 100 }
+    },
+    {
+      "id": "metric_spi_003",
+      "name": { "en": "Temple Worthiness and Attendance", "es": "Dignidad y Asistencia al Templo" },
+      "formula": "has_recommend * (monthly_attendance_bool * 50 + 50)",
+      "target_range": { "min": 70, "max": 100 }
+    }
+  ]
+}

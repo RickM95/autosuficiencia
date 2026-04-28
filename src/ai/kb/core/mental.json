@@ -1,0 +1,363 @@
+// /core/mental.json
+{
+  "domain_id": "mental",
+  "name": {
+    "en": "Mental & Emotional Stability",
+    "es": "Estabilidad Mental y Emocional"
+  },
+  "description": {
+    "en": "CBT-informed strategies to renew the mind, build resilience, and maintain emotional balance with faith.",
+    "es": "Estrategias informadas por TCC para renovar la mente, desarrollar resiliencia y mantener el equilibrio emocional con fe."
+  },
+  "principles": [
+    {
+      "id": "mnt_pr_1",
+      "title": { "en": "Renewing the Mind (Romans 12:2)", "es": "Renovación de la Mente (Romanos 12:2)" },
+      "description": {
+        "en": "Replace worldly thought patterns with truth, prayer, and scripture.",
+        "es": "Reemplace los patrones de pensamiento mundanos con verdad, oración y Escrituras."
+      }
+    },
+    {
+      "id": "mnt_pr_2",
+      "title": { "en": "Hope in Christ", "es": "Esperanza en Cristo" },
+      "description": {
+        "en": "Mental stability is anchored in the Atonement of Jesus Christ, which provides strength and healing.",
+        "es": "La estabilidad mental está anclada en la Expiación de Jesucristo, que brinda fortaleza y sanación."
+      }
+    },
+    {
+      "id": "mnt_pr_3",
+      "title": { "en": "Agency & Response-Ability", "es": "Albedrío y Capacidad de Respuesta" },
+      "description": {
+        "en": "You cannot always control circumstances, but you can choose your response. Focus on what you can change.",
+        "es": "No siempre puede controlar las circunstancias, pero puede elegir su respuesta. Concéntrese en lo que puede cambiar."
+      }
+    },
+    {
+      "id": "mnt_pr_4",
+      "title": { "en": "Accountability & Confession", "es": "Responsabilidad y Confesión" },
+      "description": {
+        "en": "Share burdens with a trusted friend, leader, or professional. Transparency promotes healing.",
+        "es": "Comparta las cargas con un amigo de confianza, líder o profesional. La transparencia promueve la sanación."
+      }
+    },
+    {
+      "id": "mnt_pr_5",
+      "title": { "en": "Gratitude as a Spiritual Discipline", "es": "La Gratitud como Disciplina Espiritual" },
+      "description": {
+        "en": "Counting blessings daily protects against despair and draws spiritual power.",
+        "es": "Contar las bendiciones diariamente protege contra la desesperación y atrae poder espiritual."
+      }
+    }
+  ],
+  "decision_trees": [
+    {
+      "id": "dt_men_001",
+      "label": { "en": "High Emotional Distress", "es": "Alta Angustia Emocional" },
+      "condition": { "field": "profile.assessment.wellbeing.downFrequency", "operator": "in", "value": ["more than half", "nearly every day"] },
+      "branches": [
+        { "result": "true", "action_ids": ["act_men_001", "act_men_002", "act_men_003"], "priority": "critical" }
+      ]
+    },
+    {
+      "id": "dt_men_002",
+      "label": { "en": "Lack of Emotional Support", "es": "Falta de Apoyo Emocional" },
+      "condition": { "field": "profile.assessment.wellbeing.emotionalSupport", "operator": "eq", "value": false },
+      "branches": [
+        { "result": "true", "action_ids": ["act_men_004", "act_men_005"] }
+      ]
+    },
+    {
+      "id": "dt_men_003",
+      "label": { "en": "Negative Thought Loops", "es": "Bucles de Pensamiento Negativo" },
+      "condition": { "field": "profile.behavioralTags", "operator": "contains", "value": "negative_thoughts" },
+      "branches": [
+        { "result": "true", "action_ids": ["act_men_006", "act_men_007"] }
+      ]
+    },
+    {
+      "id": "dt_men_004",
+      "label": { "en": "Stress Overwhelm", "es": "Abrumamiento por Estrés" },
+      "condition": { "field": "profile.assessment.productivity.wasteHoursPerWeek", "operator": "gt", "value": 20 },
+      "branches": [
+        { "result": "true", "action_ids": ["act_men_008", "act_men_009"] }
+      ]
+    },
+    {
+      "id": "dt_men_005",
+      "label": { "en": "Suicidal Ideation Referral", "es": "Derivación por Ideación Suicida" },
+      "condition": { "field": "profile.assessment.mental.suicidalThoughts", "operator": "eq", "value": true },
+      "branches": [
+        { "result": "true", "action_ids": ["act_men_010", "act_men_011"], "priority": "emergency" }
+      ]
+    },
+    {
+      "id": "dt_men_006",
+      "label": { "en": "Gratitude Deficiency", "es": "Deficiencia de Gratitud" },
+      "condition": { "field": "profile.scores.spiritual", "operator": "lt", "value": 40 },
+      "branches": [
+        { "result": "true", "action_ids": ["act_men_012", "act_men_013"] }
+      ]
+    },
+    {
+      "id": "dt_men_007",
+      "label": { "en": "Low Self-Efficacy", "es": "Baja Autoeficacia" },
+      "condition": { "field": "profile.assessment.goals.confidence", "operator": "lt", "value": 4 },
+      "branches": [
+        { "result": "true", "action_ids": ["act_men_014", "act_men_015"] }
+      ]
+    },
+    {
+      "id": "dt_men_008",
+      "label": { "en": "Isolation Patterns", "es": "Patrones de Aislamiento" },
+      "condition": { "field": "profile.assessment.social.socialContactDays", "operator": "lt", "value": 2 },
+      "branches": [
+        { "result": "true", "action_ids": ["act_men_016"] }
+      ]
+    },
+    {
+      "id": "dt_men_009",
+      "label": { "en": "Sleep-Impacted Mood", "es": "Estado de Ánimo Afectado por el Sueño" },
+      "condition": {
+        "type": "and",
+        "conditions": [
+          { "field": "profile.assessment.wellbeing.sleepHours", "operator": "lt", "value": 6 },
+          { "field": "profile.assessment.wellbeing.downFrequency", "operator": "in", "value": ["more than half"] }
+        ]
+      },
+      "branches": [
+        { "result": "true", "action_ids": ["act_men_017"] }
+      ]
+    },
+    {
+      "id": "dt_men_010",
+      "label": { "en": "Post-Trauma Signs", "es": "Signos de Trauma" },
+      "condition": { "field": "profile.assessment.mental.ptsdIndicator", "operator": "eq", "value": true },
+      "branches": [
+        { "result": "true", "action_ids": ["act_men_018", "act_men_019"] }
+      ]
+    }
+  ],
+  "actions": [
+    {
+      "id": "act_men_001",
+      "trigger": { "conditions": ["dt_men_001:true"] },
+      "name": { "en": "Professional Help Referral", "es": "Derivación a Ayuda Profesional" },
+      "steps": [
+        { "order": 1, "instruction": { "en": "Reach out to a licensed therapist, counselor, or your bishop for mental health resources.", "es": "Contacte a un terapeuta licenciado, consejero o a su obispo para recursos de salud mental." } }
+      ],
+      "outcome_metric": "PROFESSIONAL_CONTACT",
+      "priority": "critical"
+    },
+    {
+      "id": "act_men_002",
+      "trigger": { "conditions": ["dt_men_001:true"] },
+      "name": { "en": "Daily Gratitude Journal", "es": "Diario de Gratitud Diario" },
+      "steps": [
+        { "order": 1, "instruction": { "en": "Write 3 specific things you are grateful for every morning.", "es": "Escriba 3 cosas específicas por las que está agradecido cada mañana." } }
+      ],
+      "outcome_metric": "GRATITUDE_PRACTICE",
+      "repeat": "daily"
+    },
+    {
+      "id": "act_men_003",
+      "trigger": { "conditions": ["dt_men_001:true"] },
+      "name": { "en": "Mood & Energy Check-in", "es": "Registro de Estado de Ánimo y Energía" },
+      "steps": [
+        { "order": 1, "instruction": { "en": "Rate mood 1-10 and note one trigger. Share with support person if low.", "es": "Califique el estado de ánimo del 1-10 y anote un desencadenante. Comparta con persona de apoyo si está bajo." } }
+      ],
+      "outcome_metric": "SELF_AWARENESS",
+      "repeat": "daily"
+    },
+    {
+      "id": "act_men_004",
+      "trigger": { "conditions": ["dt_men_002:true"] },
+      "name": { "en": "Identify One Supportive Person", "es": "Identificar a Una Persona de Apoyo" },
+      "steps": [
+        { "order": 1, "instruction": { "en": "Think of someone safe (family, ministering brother/sister, friend). Contact them today.", "es": "Piense en alguien seguro (familiar, hermano/a ministrante, amigo). Comuníquese con ellos hoy." } }
+      ],
+      "outcome_metric": "SUPPORT_CONTACT"
+    },
+    {
+      "id": "act_men_005",
+      "trigger": { "conditions": ["dt_men_002:true"] },
+      "name": { "en": "Join a Support Group", "es": "Unirse a un Grupo de Apoyo" },
+      "steps": [
+        { "order": 1, "instruction": { "en": "Find a local or online support group (Church addiction recovery, NAMI).", "es": "Encuentre un grupo de apoyo local o en línea (recuperación de adicciones de la Iglesia, NAMI)." } }
+      ],
+      "outcome_metric": "GROUP_ENGAGEMENT"
+    },
+    {
+      "id": "act_men_006",
+      "trigger": { "conditions": ["dt_men_003:true"] },
+      "name": { "en": "CBT Thought Record", "es": "Registro de Pensamientos TCC" },
+      "steps": [
+        { "order": 1, "instruction": { "en": "When a negative thought arises, write: situation, automatic thought, emotion, then a balanced alternative thought.", "es": "Cuando surja un pensamiento negativo, escriba: situación, pensamiento automático, emoción, luego un pensamiento alternativo equilibrado." } }
+      ],
+      "outcome_metric": "COGNITIVE_RESTRUCTURING",
+      "repeat": "as_needed"
+    },
+    {
+      "id": "act_men_007",
+      "trigger": { "conditions": ["dt_men_003:true"] },
+      "name": { "en": "Scripture Counter-Statement", "es": "Contraargumento con Escrituras" },
+      "steps": [
+        { "order": 1, "instruction": { "en": "For each negative belief, find a scripture truth that counters it (e.g., 'I am worthless' → D&C 18:10).", "es": "Para cada creencia negativa, encuentre una verdad de las Escrituras que la contrarreste (ej. 'No valgo nada' → DyC 18:10)." } }
+      ],
+      "outcome_metric": "SPIRITUAL_TRUTH"
+    },
+    {
+      "id": "act_men_008",
+      "trigger": { "conditions": ["dt_men_004:true"] },
+      "name": { "en": "5-Minute Rule for Overwhelm", "es": "Regla de 5 Minutos para el Abrumamiento" },
+      "steps": [
+        { "order": 1, "instruction": { "en": "When feeling overwhelmed, commit to just 5 minutes of one task. Often momentum follows.", "es": "Cuando se sienta abrumado, comprométase a solo 5 minutos de una tarea. A menudo el impulso sigue." } }
+      ],
+      "outcome_metric": "ACTION_INITIATION"
+    },
+    {
+      "id": "act_men_009",
+      "trigger": { "conditions": ["dt_men_004:true"] },
+      "name": { "en": "Breathing Reset (4-7-8)", "es": "Reinicio de Respiración (4-7-8)" },
+      "steps": [
+        { "order": 1, "instruction": { "en": "Inhale 4 sec, hold 7 sec, exhale 8 sec. Repeat 3 times.", "es": "Inhale 4 seg, sostenga 7 seg, exhale 8 seg. Repita 3 veces." } }
+      ],
+      "outcome_metric": "CALM_RESPONSE"
+    },
+    {
+      "id": "act_men_010",
+      "trigger": { "conditions": ["dt_men_005:true"] },
+      "name": { "en": "URGENT: Call Crisis Line", "es": "URGENTE: Llame a la Línea de Crisis" },
+      "steps": [
+        { "order": 1, "instruction": { "en": "Call or text 988 (USA) or your local emergency number. You are not alone.", "es": "Llame o envíe un mensaje al 988 (EE.UU.) o a su número de emergencia local. No está solo." } }
+      ],
+      "outcome_metric": "CRISIS_RESPONSE",
+      "priority": "emergency"
+    },
+    {
+      "id": "act_men_011",
+      "trigger": { "conditions": ["dt_men_005:true"] },
+      "name": { "en": "Stay Safe Plan", "es": "Plan para Mantenerse Seguro" },
+      "steps": [
+        { "order": 1, "instruction": { "en": "Remove any means of self-harm from immediate environment. Inform a trusted person now.", "es": "Retire cualquier medio de autolesión del entorno inmediato. Informe a una persona de confianza ahora." } }
+      ],
+      "outcome_metric": "SAFETY_PLAN"
+    },
+    {
+      "id": "act_men_012",
+      "trigger": { "conditions": ["dt_men_006:true"] },
+      "name": { "en": "Three Good Things Exercise", "es": "Ejercicio de Tres Cosas Buenas" },
+      "steps": [
+        { "order": 1, "instruction": { "en": "Before bed, write three things that went well today and why.", "es": "Antes de dormir, escriba tres cosas que salieron bien hoy y por qué." } }
+      ],
+      "outcome_metric": "POSITIVITY",
+      "repeat": "daily"
+    },
+    {
+      "id": "act_men_013",
+      "trigger": { "conditions": ["dt_men_006:true"] },
+      "name": { "en": "Prayers of Gratitude Only", "es": "Oraciones Solo de Gratitud" },
+      "steps": [
+        { "order": 1, "instruction": { "en": "For one week, make every prayer a list of thanks without asking for anything.", "es": "Durante una semana, haga cada oración una lista de agradecimientos sin pedir nada." } }
+      ],
+      "outcome_metric": "GRATEFUL_HEART"
+    },
+    {
+      "id": "act_men_014",
+      "trigger": { "conditions": ["dt_men_007:true"] },
+      "name": { "en": "Small Wins List", "es": "Lista de Pequeñas Victorias" },
+      "steps": [
+        { "order": 1, "instruction": { "en": "At day's end, record every tiny success (made bed, said prayer, completed one MIT).", "es": "Al final del día, registre cada pequeño éxito (tendió la cama, dijo una oración, completó una TMI)." } }
+      ],
+      "outcome_metric": "SELF_EFFICACY_BUILD"
+    },
+    {
+      "id": "act_men_015",
+      "trigger": { "conditions": ["dt_men_007:true"] },
+      "name": { "en": "Visualize Success", "es": "Visualizar el Éxito" },
+      "steps": [
+        { "order": 1, "instruction": { "en": "Spend 2 minutes visualizing yourself completing your #1 goal, step by step, with feeling.", "es": "Dedique 2 minutos a visualizarse completando su meta #1, paso a paso, con sentimiento." } }
+      ],
+      "outcome_metric": "VISUALIZATION_PRACTICE"
+    },
+    {
+      "id": "act_men_016",
+      "trigger": { "conditions": ["dt_men_008:true"] },
+      "name": { "en": "Weekly Social Connection", "es": "Conexión Social Semanal" },
+      "steps": [
+        { "order": 1, "instruction": { "en": "Schedule a 15 min call or visit with someone outside your household, every week.", "es": "Programe una llamada o visita de 15 min con alguien fuera de su hogar, cada semana." } }
+      ],
+      "outcome_metric": "SOCIAL_CONTACT",
+      "repeat": "weekly"
+    },
+    {
+      "id": "act_men_017",
+      "trigger": { "conditions": ["dt_men_009:true"] },
+      "name": { "en": "Mood-Boosting Morning Light & Movement", "es": "Luz y Movimiento Matutinos para Mejorar el Ánimo" },
+      "steps": [
+        { "order": 1, "instruction": { "en": "Immediately upon waking, open curtains and do 20 jumping jacks.", "es": "Al despertar, abra las cortinas y haga 20 saltos de tijera." } }
+      ],
+      "outcome_metric": "MORNING_ENERGY"
+    },
+    {
+      "id": "act_men_018",
+      "trigger": { "conditions": ["dt_men_010:true"] },
+      "name": { "en": "Trauma-Informed Grounding", "es": "Técnica de Anclaje Informada por Trauma" },
+      "steps": [
+        { "order": 1, "instruction": { "en": "Use 5-4-3-2-1: identify 5 things you see, 4 you touch, 3 you hear, 2 you smell, 1 you taste.", "es": "Use 5-4-3-2-1: identifique 5 cosas que ve, 4 que toca, 3 que oye, 2 que huele, 1 que saborea." } }
+      ],
+      "outcome_metric": "GROUNDING"
+    },
+    {
+      "id": "act_men_019",
+      "trigger": { "conditions": ["dt_men_010:true"] },
+      "name": { "en": "Seek Trauma-Focused Therapy", "es": "Buscar Terapia Centrada en el Trauma" },
+      "steps": [
+        { "order": 1, "instruction": { "en": "Search for therapists specializing in EMDR or trauma-focused CBT.", "es": "Busque terapeutas especializados en EMDR o TCC centrada en el trauma." } }
+      ],
+      "outcome_metric": "TRAUMA_CARE_START"
+    },
+    {
+      "id": "act_men_020",
+      "trigger": { "conditions": [] },
+      "name": { "en": "Listen to Uplifting Music or Hymns", "es": "Escuchar Música Edificante o Himnos" },
+      "steps": [
+        { "order": 1, "instruction": { "en": "Create a playlist of hymns or calming music and play it during stressful moments.", "es": "Cree una lista de reproducción de himnos o música tranquila y reprodúzcala en momentos estresantes." } }
+      ],
+      "outcome_metric": "ENVIRONMENTAL_UPLIFT"
+    },
+    {
+      "id": "act_men_021",
+      "trigger": { "conditions": [] },
+      "name": { "en": "Progressive Relaxation at Bedtime", "es": "Relajación Progresiva a la Hora de Dormir" },
+      "steps": [
+        { "order": 1, "instruction": { "en": "Tense and release each muscle group, starting at feet, going to head.", "es": "Tense y suelte cada grupo muscular, comenzando por los pies y subiendo a la cabeza." } }
+      ],
+      "outcome_metric": "RELAXATION"
+    },
+    { "id": "act_men_022", "trigger": { "conditions": [] }, "name": { "en": "Limit News Consumption", "es": "Limitar el Consumo de Noticias" }, "steps": [ { "order": 1, "instruction": { "en": "Check news once a day for 10 minutes max. Avoid before bed.", "es": "Revise las noticias una vez al día por 10 minutos máximo. Evite antes de dormir." } } ], "outcome_metric": "MEDIA_DIET" },
+    { "id": "act_men_023", "trigger": { "conditions": [] }, "name": { "en": "Mindful Scripture Meditation", "es": "Meditación Consciente en las Escrituras" }, "steps": [ { "order": 1, "instruction": { "en": "Read one verse slowly, then sit quietly for 2 minutes pondering its meaning.", "es": "Lea un versículo lentamente, luego siéntese en silencio por 2 minutos meditando su significado." } } ], "outcome_metric": "SPIRITUAL_CALM" },
+    { "id": "act_men_024", "trigger": { "conditions": [] }, "name": { "en": "Self-Compassion Break", "es": "Pausa de Autocompasión" }, "steps": [ { "order": 1, "instruction": { "en": "Place hand on heart and say, 'This is hard. I am not alone. May I be kind to myself.'", "es": "Coloque la mano en el corazón y diga: 'Esto es difícil. No estoy solo. Que pueda ser amable conmigo mismo'." } } ], "outcome_metric": "SELF_KINDNESS" },
+    { "id": "act_men_025", "trigger": { "conditions": [] }, "name": { "en": "Weekly Sabbath Reflection", "es": "Reflexión Sabática Semanal" }, "steps": [ { "order": 1, "instruction": { "en": "On Sunday, review the week's emotional ups and downs and bring them to the Lord in prayer.", "es": "El domingo, repase los altibajos emocionales de la semana y llévelos al Señor en oración." } } ], "outcome_metric": "SPIRITUAL_INTEGRATION", "repeat": "weekly" },
+    { "id": "act_men_026", "trigger": { "conditions": [] }, "name": { "en": "Mental Declutter: Brain Dump", "es": "Orden Mental: Descarga de Pensamientos" }, "steps": [ { "order": 1, "instruction": { "en": "Spend 10 minutes writing every worry, task, and thought onto paper to clear the mind.", "es": "Dedique 10 minutos a escribir cada preocupación, tarea y pensamiento en papel para despejar la mente." } } ], "outcome_metric": "MENTAL_CLARITY" },
+    { "id": "act_men_027", "trigger": { "conditions": [] }, "name": { "en": "Service to Lift Mood", "es": "Servicio para Elevar el Ánimo" }, "steps": [ { "order": 1, "instruction": { "en": "Do one small anonymous act of service (send a note, help a neighbor). Note how you feel.", "es": "Haga un pequeño acto de servicio anónimo (envíe una nota, ayude a un vecino). Note cómo se siente." } } ], "outcome_metric": "ALTRIUSM_BOOST" },
+    { "id": "act_men_028", "trigger": { "conditions": [] }, "name": { "en": "Create a 'Cope Ahead' Plan", "es": "Crear un Plan de 'Afrontar por Adelantado'" }, "steps": [ { "order": 1, "instruction": { "en": "Identify a future stressor and write a specific plan: what you'll do, think, and say.", "es": "Identifique un factor estresante futuro y escriba un plan específico: qué hará, pensará y dirá." } } ], "outcome_metric": "COPING_PREPAREDNESS" },
+    { "id": "act_men_029", "trigger": { "conditions": [] }, "name": { "en": "Journal a Victory Letter", "es": "Escribir una Carta de Victoria" }, "steps": [ { "order": 1, "instruction": { "en": "Write a letter from your future self, having overcome the current struggle, describing how you did it.", "es": "Escriba una carta de su yo futuro, habiendo superado la lucha actual, describiendo cómo lo logró." } } ], "outcome_metric": "HOPE_ANCHOR" },
+    { "id": "act_men_030", "trigger": { "conditions": [] }, "name": { "en": "Track Emotional Triggers", "es": "Registrar Desencadenantes Emocionales" }, "steps": [ { "order": 1, "instruction": { "en": "Use a simple log: date, trigger event, intensity (1-10), reaction. Review weekly for patterns.", "es": "Use un registro simple: fecha, evento desencadenante, intensidad (1-10), reacción. Revise semanalmente para patrones." } } ], "outcome_metric": "TRIGGER_AWARENESS" }
+  ],
+  "metrics": [
+    {
+      "id": "metric_men_001",
+      "name": { "en": "Emotional Stability Score", "es": "Puntaje de Estabilidad Emocional" },
+      "formula": "reverse of downFrequency normalized + emotionalSupport + resilienceScore",
+      "target_range": { "min": 70, "max": 100 }
+    },
+    {
+      "id": "metric_men_002",
+      "name": { "en": "Gratitude Practice Consistency", "es": "Consistencia de Práctica de Gratitud" },
+      "formula": "days with gratitude entry per week / 7 * 100",
+      "target_range": { "min": 80, "max": 100, "unit": "percent" }
+    }
+  ]
+}

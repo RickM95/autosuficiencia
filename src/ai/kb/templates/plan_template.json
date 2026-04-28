@@ -1,0 +1,65 @@
+{
+  "version": "1.0.0",
+  "template_id": "self_sufficiency_plan_v1",
+  "sections": [
+    {
+      "id": "header",
+      "type": "static",
+      "en": "SELF-SUFFICIENCY PLAN",
+      "es": "PLAN DE AUTOSUFICIENCIA"
+    },
+    {
+      "id": "overall_score",
+      "type": "dynamic",
+      "source": "plan.overallScore",
+      "template_en": "{scoreColor} **Overall Score: {score}/100**\n   Needs: {needs}/100  |  Finances: {finances}/100  |  Goals: {goals}/100",
+      "template_es": "{scoreColor} **Puntaje General: {score}/100**\n   Necesidades: {needs}/100  |  Finanzas: {finances}/100  |  Metas: {goals}/100"
+    },
+    {
+      "id": "needs_assessment",
+      "type": "dynamic",
+      "source": "plan.needsAssessment",
+      "template_en": "1️⃣ Needs Assessment\n{items}",
+      "template_es": "1️⃣ Evaluación de Necesidades\n{items}",
+      "item_template": "   {emoji} {area}: {score}/5 — {status}"
+    },
+    {
+      "id": "financial_health",
+      "type": "dynamic",
+      "source": "plan.financeDetails",
+      "template_en": "2️⃣ Financial Health\n   Income: {income}  |  Expenses: {expenses}\n   Balance: {balance}  |  Total debt: {totalDebt}\n   Emergency fund: {emergencyFundMonths} month(s)",
+      "template_es": "2️⃣ Salud Financiera\n   Ingresos: {income}  |  Gastos: {expenses}\n   Balance: {balance}  |  Deuda total: {totalDebt}\n   Fondo emergencia: {emergencyFundMonths} mese(s)"
+    },
+    {
+      "id": "goals",
+      "type": "dynamic",
+      "source": "plan.goals",
+      "template_en": "3️⃣ SMART Goals\n{items}",
+      "template_es": "3️⃣ Metas SMART\n{items}",
+      "item_template": "   {emoji} **{timeframe}:** {goal}"
+    },
+    {
+      "id": "action_plan",
+      "type": "dynamic",
+      "source": "plan.actionItems",
+      "template_en": "4️⃣ Action Plan — Priorities\n{items}",
+      "template_es": "4️⃣ Plan de Acción — Prioridades\n{items}",
+      "item_template": "   {i}. {emoji} **{action}** — {detail}"
+    },
+    {
+      "id": "risk_analysis",
+      "type": "dynamic",
+      "source": "plan.risks",
+      "template_en": "5️⃣ Risk Analysis\n{items}",
+      "template_es": "5️⃣ Análisis de Riesgos\n{items}",
+      "item_template": "   {emoji} {risk}"
+    },
+    {
+      "id": "footer",
+      "type": "dynamic",
+      "source": "plan.nextReviewDate",
+      "template_en": "\n📅 Next review recommended: {nextReviewDate}\n\nWould you like me to detail any section or adjust something?",
+      "template_es": "\n📅 Próxima revisión recomendada: {nextReviewDate}\n\n¿Quieres que detalle alguna sección o ajuste algo?"
+    }
+  ]
+}

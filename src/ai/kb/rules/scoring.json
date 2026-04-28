@@ -1,0 +1,40 @@
+// /rules/scoring.json
+{
+  "domain_score_weights": {
+    "financial": 0.30,
+    "physical": 0.20,
+    "mental": 0.20,
+    "productivity": 0.15,
+    "environment": 0.05,
+    "spiritual": 0.10
+  },
+  "overall_score_formula": "sum(domain_score * weight)",
+  "classification_rules": [
+    {
+      "range": [0, 40],
+      "class_id": "unstable_foundation",
+      "label": { "en": "Unstable Foundation", "es": "Fundamento Inestable" },
+      "priority": "survival",
+      "response_mode": "advisor+gently"
+    },
+    {
+      "range": [41, 70],
+      "class_id": "growing_foundation",
+      "label": { "en": "Growing Foundation", "es": "Fundamento en Crecimiento" },
+      "priority": "build",
+      "response_mode": "coach"
+    },
+    {
+      "range": [71, 100],
+      "class_id": "optimization",
+      "label": { "en": "Optimization Phase", "es": "Fase de Optimización" },
+      "priority": "excel",
+      "response_mode": "strategist"
+    }
+  ],
+  "score_adjustment_triggers": {
+    "positive_actions_completed": "+2 per domain per completed weekly goal",
+    "missed_days_consecutive_3": "-5 for domain missed",
+    "checkin_streak_bonus": "+1 per 7-day streak"
+  }
+}

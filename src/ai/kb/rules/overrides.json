@@ -1,0 +1,53 @@
+{
+  "version": "1.0.0",
+  "rules": [
+    {
+      "id": "force_survival_mode",
+      "description": "When any basic need score is critical, force survival mode regardless of current stage",
+      "condition": "needsAnalysis.critical.length > 0",
+      "override": "force_stage(NEEDS_CRITICAL)",
+      "priority": 1,
+      "active": true
+    },
+    {
+      "id": "block_plan_generation_incomplete",
+      "description": "Do not generate a plan if form completeness is below 40%",
+      "condition": "completeness.percent < 40 AND stage == PLAN_BUILD",
+      "override": "redirect_to(WELCOME, 'Please complete more of the form first')",
+      "priority": 2,
+      "active": true
+    },
+    {
+      "id": "debt_first_if_critical",
+      "description": "If debt-to-income > 50%, prioritize debt advice over savings advice",
+      "condition": "financialAnalysis.debtToIncome > 50",
+      "override": "force_action(debt_advice)",
+      "priority": 2,
+      "active": true
+    },
+    {
+      "id": "emergency_fund_block",
+      "description": "If emergency fund is less than 1 month AND has debt, recommend fund before aggressive payoff",
+      "condition": "financialAnalysis.emergencyFundMonths < 1 AND financialAnalysis.hasDebt == true",
+      "override": "add_warning('Build emergency fund before aggressive debt payoff')",
+      "priority": 3,
+      "active": true
+    },
+    {
+      "id": "sentiment_override",
+      "description": "If user sentiment is overwhelmed, switch to stress management first",
+      "condition": "memory.sentiment == 'overwhelmed'",
+      "override": "force_action(stress_advice)",
+      "priority": 1,
+      "active": true
+    },
+    {
+      "id": "language_preserve",
+      "description": "Never switch languages mid-conversation",
+      "condition": "memory.language IS SET",
+      "override": "force_language(memory.language)",
+      "priority": 1,
+      "active": true
+    }
+  ]
+}

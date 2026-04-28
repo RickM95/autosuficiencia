@@ -1,0 +1,21 @@
+// /ingestion/source_authority.json
+{
+  "authority_levels": {
+    "1": "Official Church Publication (scriptures, general conference, handbook)",
+    "2": "Church-sponsored Self-Reliance materials",
+    "3": "Government financial/health guidelines (IRS, CDC)",
+    "4": "Peer-reviewed academic research",
+    "5": "Reputable non-profit resources (NAMI, Feeding America)",
+    "6": "Personal finance/coaching experts",
+    "7": "User-contributed documents"
+  },
+  "weight_multiplier": {
+    "1": 2.0,
+    "2": 1.8,
+    "3": 1.5,
+    "4": 1.3,
+    "5": 1.2,
+    "6": 1.0,
+    "7": 0.5
+  }
+}

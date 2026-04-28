@@ -1,0 +1,18 @@
+// /templates/weekly_review_template.json
+{
+  "review_id": "weekly_001",
+  "week_number": 1,
+  "summary_prompts": {
+    "en": "Compare actual vs. planned actions. What was your biggest win and biggest obstacle?",
+    "es": "Compare las acciones reales vs. planeadas. ¿Cuál fue su mayor victoria y su mayor obstáculo?"
+  },
+  "score_update_required": true,
+  "adjustment_questions": {
+    "en": "Shall we simplify or stretch next week's actions?",
+    "es": "¿Simplificamos o estiramos las acciones de la próxima semana?"
+  },
+  "output": {
+    "updated_plan_sections": ["dailyActions", "weeklyMilestones"],
+    "added_accountability": "none"
+  }
+}

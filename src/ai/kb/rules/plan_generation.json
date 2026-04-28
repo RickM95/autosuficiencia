@@ -1,0 +1,29 @@
+// /rules/plan_generation.json
+{
+  "plan_creation_rules": {
+    "max_daily_actions_initial": 3,
+    "priority_domains_count": 3,
+    "minimum_data_percent": 60,
+    "action_selection_strategy": "lowest_scores_first",
+    "difficulty_adjustment": {
+      "factor_based_on": "past_completion_rate",
+      "if_completion_under_50": { "multiplier": 0.5, "reduce_actions": true },
+      "if_completion_over_80": { "multiplier": 1.2 },
+      "default": 1.0
+    },
+    "failure_recovery": {
+      "miss_1_day": "unchanged_plan, encouragement",
+      "miss_3_consecutive": "simplify_sprint: reduce daily actions to 1 for 7 days",
+      "miss_1_week_negative_sentiment": "validate_emotion, ask_smallest_commitment, reset streak"
+    }
+  },
+  "cycle_lengths": {
+    "unstable_foundation": 14,
+    "growing_foundation": 30,
+    "optimization": 90
+  },
+  "risk_flags_thresholds": {
+    "financial_critical": "emergency_fund_months < 1 OR dti > 50",
+    "mental_critical": "suicidal_thoughts OR downFrequency nearly every day"
+  }
+}

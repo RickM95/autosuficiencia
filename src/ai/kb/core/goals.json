@@ -1,0 +1,89 @@
+{
+  "domain": "goals",
+  "version": "1.0.0",
+  "principles": [
+    {
+      "id": "smart_framework",
+      "en": "Goals must be Specific, Measurable, Achievable, Relevant, Time-bound to drive action.",
+      "es": "Las metas deben ser Específicas, Medibles, Alcanzables, Relevantes y con Plazo para impulsar la acción.",
+      "priority": 1
+    },
+    {
+      "id": "timeframe_cascade",
+      "en": "Short-term goals (0-3 months) build toward medium-term (3-12 months), which build toward long-term (1-5 years).",
+      "es": "Las metas a corto plazo (0-3 meses) construyen hacia el mediano plazo (3-12 meses), que construyen hacia el largo plazo (1-5 años).",
+      "priority": 1
+    },
+    {
+      "id": "goal_visibility",
+      "en": "Written goals viewed daily have 42% higher achievement rate. Place them where you see them.",
+      "es": "Las metas escritas vistas diariamente tienen 42% más probabilidad de logro. Ponlas donde las veas.",
+      "priority": 2
+    },
+    {
+      "id": "step_decomposition",
+      "en": "Each goal must have at least 3 concrete steps. A goal without steps is a wish.",
+      "es": "Cada meta debe tener al menos 3 pasos concretos. Una meta sin pasos es un deseo.",
+      "priority": 1
+    }
+  ],
+  "decision_trees": [
+    {
+      "id": "goal_assessment",
+      "en": "Evaluate existing goals for SMART completeness, identify gaps, suggest improvements",
+      "es": "Evalúa las metas existentes para completitud SMART, identifica brechas, sugiere mejoras",
+      "root": {
+        "condition": "totalGoals == 0",
+        "true_branch": {
+          "action": "goal_introduction",
+          "metrics": ["financial_health", "needs_status"]
+        },
+        "false_branch": {
+          "action": "goal_review",
+          "metrics": ["smart_score", "goals_with_steps", "goals_with_deadlines"]
+        }
+      }
+    }
+  ],
+  "actions": [
+    {
+      "id": "goal_introduction",
+      "triggers": ["shortTermGoals empty AND mediumTermGoals empty"],
+      "en": "Introduce SMART methodology and suggest first goal based on user's most pressing need.",
+      "es": "Introduce la metodología SMART y sugiere la primera meta basada en la necesidad más apremiante del usuario.",
+      "metrics": ["critical_needs", "financial_priority"],
+      "steps": [
+        "Explain SMART framework",
+        "Identify most pressing need",
+        "Suggest concrete first goal",
+        "Ask for commitment"
+      ]
+    },
+    {
+      "id": "goal_review",
+      "triggers": ["goals exist"],
+      "en": "Score each goal for SMART completeness, identify missing steps or deadlines, suggest improvements.",
+      "es": "Califica cada meta por completitud SMART, identifica pasos o fechas faltantes, sugiere mejoras.",
+      "metrics": ["short_count", "medium_count", "long_count", "steps_missing", "deadlines_missing"],
+      "steps": [
+        "Count goals per timeframe",
+        "Check each for specific steps",
+        "Check each for deadline",
+        "Report SMART score",
+        "Suggest specific improvements"
+      ]
+    }
+  ],
+  "metrics": {
+    "short_term_weight": 25,
+    "medium_term_weight": 25,
+    "long_term_weight": 20,
+    "smart_quality_weight": 30,
+    "min_goal_length": 15,
+    "timeframes": {
+      "short": { "label_es": "Corto Plazo (0-3m)", "label_en": "Short-term (0-3m)", "max_months": 3 },
+      "medium": { "label_es": "Mediano Plazo (3-12m)", "label_en": "Medium-term (3-12m)", "max_months": 12 },
+      "long": { "label_es": "Largo Plazo (1-5a)", "label_en": "Long-term (1-5y)", "max_months": 60 }
+    }
+  }
+}

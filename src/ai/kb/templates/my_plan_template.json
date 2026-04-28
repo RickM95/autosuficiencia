@@ -1,0 +1,64 @@
+// /templates/my_plan_template.json
+{
+  "planId": "sample_123",
+  "userId": "user_abc",
+  "created": "2026-04-27",
+  "active": true,
+  "vision": {
+    "en": "Become financially stable and spiritually anchored to serve my family and community.",
+    "es": "Lograr estabilidad financiera y anclaje espiritual para servir a mi familia y comunidad."
+  },
+  "currentScores": {
+    "financial": 42,
+    "physical": 55,
+    "mental": 60,
+    "productivity": 30,
+    "environment": 40,
+    "spiritual": 45,
+    "overall": 45
+  },
+  "priorityDomains": ["financial", "productivity", "spiritual"],
+  "goalBlocks": [
+    {
+      "domain": "financial",
+      "90dayOutcome": { "en": "Save $500 emergency fund", "es": "Ahorrar $500 de fondo de emergencia" },
+      "weeklyMilestones": [
+        { "en": "No eating out this week", "es": "No comer fuera esta semana" },
+        { "en": "Sell one unused item", "es": "Vender un artículo no usado" }
+      ],
+      "dailyActions": ["act_fin_012", "act_fin_001"],
+      "difficultyLevel": 0.6,
+      "completionHistory": []
+    },
+    {
+      "domain": "productivity",
+      "90dayOutcome": { "en": "Establish consistent planning and complete 80% of MITs", "es": "Establecer planificación consistente y completar el 80% de las TMI" },
+      "weeklyMilestones": [
+        { "en": "Sunday planning session completed", "es": "Sesión de planificación dominical completada" }
+      ],
+      "dailyActions": ["act_prd_008", "act_prd_001"],
+      "difficultyLevel": 0.5,
+      "completionHistory": []
+    },
+    {
+      "domain": "spiritual",
+      "90dayOutcome": { "en": "Read Book of Mormon daily and attend temple once", "es": "Leer el Libro de Mormón diariamente y asistir al templo una vez" },
+      "weeklyMilestones": [
+        { "en": "Complete 'Come, Follow Me' lesson", "es": "Completar la lección de 'Ven, Sígueme'" }
+      ],
+      "dailyActions": ["act_spi_001", "act_spi_002"],
+      "difficultyLevel": 0.6,
+      "completionHistory": []
+    }
+  ],
+  "riskFactors": [
+    {
+      "factor": { "en": "Irregular overtime income", "es": "Ingreso irregular por horas extra" },
+      "mitigation": { "en": "Base budget on minimum guaranteed income", "es": "Basar el presupuesto en el ingreso mínimo garantizado" }
+    }
+  ],
+  "spiritualFoundationHabit": {
+    "en": "Read one verse with family before dinner",
+    "es": "Leer un versículo con la familia antes de la cena"
+  }
+}

@@ -1,0 +1,88 @@
+// /schemas/domain_file.schema.json
+{
+  "$schema": "http://json-schema.org/draft-07/schema#",
+  "title": "Domain Module File",
+  "type": "object",
+  "properties": {
+    "domain_id": { "type": "string" },
+    "name": { "type": "object", "properties": { "en": { "type": "string" }, "es": { "type": "string" } } },
+    "description": { "type": "object", "properties": { "en": { "type": "string" }, "es": { "type": "string" } } },
+    "principles": {
+      "type": "array",
+      "items": {
+        "type": "object",
+        "properties": {
+          "id": { "type": "string" },
+          "title": { "type": "object", "properties": { "en": { "type": "string" }, "es": { "type": "string" } } },
+          "description": { "type": "object", "properties": { "en": { "type": "string" }, "es": { "type": "string" } } }
+        },
+        "required": ["id", "title", "description"]
+      }
+    },
+    "decision_trees": {
+      "type": "array",
+      "items": {
+        "type": "object",
+        "properties": {
+          "id": { "type": "string" },
+          "label": { "type": "object", "properties": { "en": { "type": "string" }, "es": { "type": "string" } } },
+          "condition": { "type": "object" },
+          "branches": {
+            "type": "array",
+            "items": {
+              "type": "object",
+              "properties": {
+                "result": { "type": "string" },
+                "action_ids": { "type": "array", "items": { "type": "string" } },
+                "priority": { "type": "string" },
+                "message": { "type": "object", "properties": { "en": { "type": "string" }, "es": { "type": "string" } } }
+              }
+            }
+          }
+        },
+        "required": ["id", "label", "condition", "branches"]
+      }
+    },
+    "actions": {
+      "type": "array",
+      "items": {
+        "type": "object",
+        "properties": {
+          "id": { "type": "string" },
+          "trigger": { "type": "object", "properties": { "conditions": { "type": "array", "items": { "type": "string" } } } },
+          "name": { "type": "object", "properties": { "en": { "type": "string" }, "es": { "type": "string" } } },
+          "description": { "type": "object", "properties": { "en": { "type": "string" }, "es": { "type": "string" } } },
+          "steps": {
+            "type": "array",
+            "items": {
+              "type": "object",
+              "properties": {
+                "order": { "type": "integer" },
+                "instruction": { "type": "object", "properties": { "en": { "type": "string" }, "es": { "type": "string" } } }
+              },
+              "required": ["order", "instruction"]
+            }
+          },
+          "outcome_metric": { "type": "string" },
+          "repeat": { "type": "string" },
+          "priority": { "type": "string" }
+        },
+        "required": ["id", "name", "steps", "outcome_metric"]
+      }
+    },
+    "metrics": {
+      "type": "array",
+      "items": {
+        "type": "object",
+        "properties": {
+          "id": { "type": "string" },
+          "name": { "type": "object", "properties": { "en": { "type": "string" }, "es": { "type": "string" } } },
+          "formula": { "type": "string" },
+          "target_range": { "type": "object" }
+        },
+        "required": ["id", "name", "formula", "target_range"]
+      }
+    }
+  },
+  "required": ["domain_id", "name", "principles", "decision_trees", "actions", "metrics"]
+}

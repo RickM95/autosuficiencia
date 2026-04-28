@@ -1,0 +1,294 @@
+// /core/environment.json
+{
+  "domain_id": "environment",
+  "name": {
+    "en": "Environment & Resource Management",
+    "es": "Entorno y Gestión de Recursos"
+  },
+  "description": {
+    "en": "Stewardship over living spaces and resources, including food storage, preparedness, and simplicity.",
+    "es": "Mayordomía sobre los espacios habitables y recursos, incluyendo almacenamiento de alimentos, preparación y sencillez."
+  },
+  "principles": [
+    {
+      "id": "env_pr_1",
+      "title": { "en": "Cleanliness & Order", "es": "Limpieza y Orden" },
+      "description": {
+        "en": "An orderly environment invites the Spirit, reduces stress, and increases efficiency.",
+        "es": "Un entorno ordenado invita al Espíritu, reduce el estrés y aumenta la eficiencia."
+      }
+    },
+    {
+      "id": "env_pr_2",
+      "title": { "en": "Preparedness (D&C 38:30)", "es": "Preparación (DyC 38:30)" },
+      "description": {
+        "en": "If ye are prepared ye shall not fear. Build temporal reserves gradually.",
+        "es": "Si estáis preparados, no temeréis. Construyan reservas temporales gradualmente."
+      }
+    },
+    {
+      "id": "env_pr_3",
+      "title": { "en": "Simplicity & Non-Attachment", "es": "Sencillez y Desapego" },
+      "description": {
+        "en": "Avoid excess possessions. Live with enough, freeing resources for service and saving.",
+        "es": "Evite posesiones excesivas. Viva con lo suficiente, liberando recursos para servicio y ahorro."
+      }
+    },
+    {
+      "id": "env_pr_4",
+      "title": { "en": "Resource Stewardship", "es": "Mayordomía de Recursos" },
+      "description": {
+        "en": "Use water, energy, and goods wisely. Reduce, reuse, repair.",
+        "es": "Use agua, energía y bienes con sabiduría. Reduzca, reutilice, repare."
+      }
+    }
+  ],
+  "decision_trees": [
+    {
+      "id": "dt_env_001",
+      "label": { "en": "Cluttered Home", "es": "Hogar Desordenado" },
+      "condition": { "field": "profile.assessment.environment.homeOrganizationScore", "operator": "lt", "value": 4 },
+      "branches": [
+        { "result": "true", "action_ids": ["act_env_001", "act_env_002"] }
+      ]
+    },
+    {
+      "id": "dt_env_002",
+      "label": { "en": "No Food Storage", "es": "Sin Almacenamiento de Alimentos" },
+      "condition": { "field": "profile.assessment.environment.hasFoodStorage", "operator": "eq", "value": false },
+      "branches": [
+        { "result": "true", "action_ids": ["act_env_003", "act_env_004"] }
+      ]
+    },
+    {
+      "id": "dt_env_003",
+      "label": { "en": "No Emergency Kit", "es": "Sin Kit de Emergencia" },
+      "condition": { "field": "profile.assessment.environment.has72hrKit", "operator": "eq", "value": false },
+      "branches": [
+        { "result": "true", "action_ids": ["act_env_005"] }
+      ]
+    },
+    {
+      "id": "dt_env_004",
+      "label": { "en": "High Utility Bills", "es": "Facturas de Servicios Altas" },
+      "condition": { "field": "profile.assessment.environment.utilityPercentIncome", "operator": "gt", "value": 15 },
+      "branches": [
+        { "result": "true", "action_ids": ["act_env_006", "act_env_007"] }
+      ]
+    },
+    {
+      "id": "dt_env_005",
+      "label": { "en": "Lack of Garden/Growing", "es": "Falta de Huerto/Cultivo" },
+      "condition": {
+        "type": "and",
+        "conditions": [
+          { "field": "profile.assessment.environment.hasGarden", "operator": "eq", "value": false },
+          { "field": "profile.assessment.environment.hasSpace", "operator": "eq", "value": true }
+        ]
+      },
+      "branches": [
+        { "result": "true", "action_ids": ["act_env_008"] }
+      ]
+    },
+    {
+      "id": "dt_env_006",
+      "label": { "en": "Vehicle Maintenance Lapsed", "es": "Mantenimiento del Vehículo Vencido" },
+      "condition": { "field": "profile.assessment.environment.carMaintenanceDue", "operator": "eq", "value": true },
+      "branches": [
+        { "result": "true", "action_ids": ["act_env_009"] }
+      ]
+    },
+    {
+      "id": "dt_env_007",
+      "label": { "en": "Food Spoilage Waste", "es": "Desperdicio de Alimentos" },
+      "condition": { "field": "profile.assessment.environment.foodSpoilageWeekly", "operator": "gt", "value": 2 },
+      "branches": [
+        { "result": "true", "action_ids": ["act_env_010", "act_env_011"] }
+      ]
+    },
+    {
+      "id": "dt_env_008",
+      "label": { "en": "Insufficient Home Safety", "es": "Seguridad Insuficiente en el Hogar" },
+      "condition": { "field": "profile.assessment.environment.smokeDetectorWorking", "operator": "eq", "value": false },
+      "branches": [
+        { "result": "true", "action_ids": ["act_env_012"] }
+      ]
+    },
+    {
+      "id": "dt_env_009",
+      "label": { "en": "Document Organization Needed", "es": "Necesidad de Organización de Documentos" },
+      "condition": { "field": "profile.assessment.environment.importantDocsOrganized", "operator": "eq", "value": false },
+      "branches": [
+        { "result": "true", "action_ids": ["act_env_013"] }
+      ]
+    },
+    {
+      "id": "dt_env_010",
+      "label": { "en": "Pest/Infestation Issue", "es": "Problema de Plagas/Infestación" },
+      "condition": { "field": "profile.assessment.environment.pestIssue", "operator": "eq", "value": true },
+      "branches": [
+        { "result": "true", "action_ids": ["act_env_014"] }
+      ]
+    }
+  ],
+  "actions": [
+    {
+      "id": "act_env_001",
+      "trigger": { "conditions": ["dt_env_001:true"] },
+      "name": { "en": "15-Min Room Rescue", "es": "Rescate de Habitación en 15 Minutos" },
+      "steps": [
+        { "order": 1, "instruction": { "en": "Pick one room. Set timer. Put away everything that doesn't belong, then clear surfaces.", "es": "Elija una habitación. Ponga temporizador. Guarde todo lo que no pertenece, luego limpie superficies." } }
+      ],
+      "outcome_metric": "DECLUTTER_SESSION",
+      "repeat": "daily"
+    },
+    {
+      "id": "act_env_002",
+      "trigger": { "conditions": ["dt_env_001:true"] },
+      "name": { "en": "Donation Bag Challenge", "es": "Desafío de Bolsa de Donación" },
+      "steps": [
+        { "order": 1, "instruction": { "en": "Fill one bag with items to donate or discard today. Put in car.", "es": "Llene una bolsa con artículos para donar o desechar hoy. Póngala en el auto." } }
+      ],
+      "outcome_metric": "DECLUTTER_ITEMS"
+    },
+    {
+      "id": "act_env_003",
+      "trigger": { "conditions": ["dt_env_002:true"] },
+      "name": { "en": "Buy 3 Extra Non-Perishables This Week", "es": "Comprar 3 Alimentos No Perecederos Extra Esta Semana" },
+      "steps": [
+        { "order": 1, "instruction": { "en": "Add 3 cans or bags of staples you eat: rice, beans, pasta, vegetables.", "es": "Agregue 3 latas o bolsas de alimentos básicos que consuma: arroz, frijoles, pasta, verduras." } }
+      ],
+      "outcome_metric": "FOOD_STORAGE_START",
+      "repeat": "weekly"
+    },
+    {
+      "id": "act_env_004",
+      "trigger": { "conditions": ["dt_env_002:true"] },
+      "name": { "en": "Create a Food Storage Inventory", "es": "Crear un Inventario de Almacenamiento" },
+      "steps": [
+        { "order": 1, "instruction": { "en": "List all food you have and mark expiration dates. Plan to rotate.", "es": "Enumere todos los alimentos que tiene y marque las fechas de vencimiento. Planee rotar." } }
+      ],
+      "outcome_metric": "INVENTORY_CREATED"
+    },
+    {
+      "id": "act_env_005",
+      "trigger": { "conditions": ["dt_env_003:true"] },
+      "name": { "en": "Assemble a 72-Hour Kit", "es": "Arme un Kit de 72 Horas" },
+      "steps": [
+        { "order": 1, "instruction": { "en": "Pack a backpack with water, food, first aid, flashlight, radio, clothes, and documents.", "es": "Empaque una mochila con agua, comida, botiquín, linterna, radio, ropa y documentos." } }
+      ],
+      "outcome_metric": "KIT_COMPLETE"
+    },
+    {
+      "id": "act_env_006",
+      "trigger": { "conditions": ["dt_env_004:true"] },
+      "name": { "en": "Energy Audit: Unplug Vampires", "es": "Auditoría Energética: Desenchufar Vampiros" },
+      "steps": [
+        { "order": 1, "instruction": { "en": "Unplug chargers and small appliances when not in use. Use power strips to switch off.", "es": "Desenchufe cargadores y pequeños electrodomésticos cuando no se usen. Use regletas con interruptor." } }
+      ],
+      "outcome_metric": "ENERGY_SAVING"
+    },
+    {
+      "id": "act_env_007",
+      "trigger": { "conditions": ["dt_env_004:true"] },
+      "name": { "en": "Weatherproof Windows/Doors", "es": "Sellar Ventanas/Puertas" },
+      "steps": [
+        { "order": 1, "instruction": { "en": "Apply weatherstripping or plastic film to reduce drafts and heating/cooling costs.", "es": "Aplique burletes o láminas de plástico para reducir corrientes de aire y costos de calefacción/refrigeración." } }
+      ],
+      "outcome_metric": "DRAFT_REDUCTION"
+    },
+    {
+      "id": "act_env_008",
+      "trigger": { "conditions": ["dt_env_005:true"] },
+      "name": { "en": "Start a Small Container Garden", "es": "Iniciar un Pequeño Huerto en Macetas" },
+      "steps": [
+        { "order": 1, "instruction": { "en": "Grow herbs or lettuce in a pot on a sunny windowsill or balcony.", "es": "Cultive hierbas o lechuga en una maceta en un alféizar soleado o balcón." } }
+      ],
+      "outcome_metric": "HOME_GARDEN_START"
+    },
+    {
+      "id": "act_env_009",
+      "trigger": { "conditions": ["dt_env_006:true"] },
+      "name": { "en": "Schedule Oil Change & Tire Rotation", "es": "Programar Cambio de Aceite y Rotación de Neumáticos" },
+      "steps": [
+        { "order": 1, "instruction": { "en": "Call mechanic or dealer; perform basic maintenance to avoid costly breakdowns.", "es": "Llame al mecánico o concesionario; realice mantenimiento básico para evitar averías costosas." } }
+      ],
+      "outcome_metric": "VEHICLE_CARE"
+    },
+    {
+      "id": "act_env_010",
+      "trigger": { "conditions": ["dt_env_007:true"] },
+      "name": { "en": "Meal Planning to Reduce Waste", "es": "Planificación de Comidas para Reducir Desperdicio" },
+      "steps": [
+        { "order": 1, "instruction": { "en": "Plan meals around what's already in fridge/pantry before shopping. Freeze leftovers.", "es": "Planee comidas basándose en lo que ya está en el refrigerador/despensa antes de comprar. Congele sobras." } }
+      ],
+      "outcome_metric": "FOOD_WASTE_REDUCTION"
+    },
+    {
+      "id": "act_env_011",
+      "trigger": { "conditions": ["dt_env_007:true"] },
+      "name": { "en": "Composting Start (if applicable)", "es": "Iniciar Compostaje (si aplica)" },
+      "steps": [
+        { "order": 1, "instruction": { "en": "Collect fruit/vegetable scraps in a container and add to outdoor compost bin or community drop-off.", "es": "Recolecte restos de frutas/verduras en un recipiente y agréguelos a un contenedor de compostaje exterior o punto comunitario." } }
+      ],
+      "outcome_metric": "COMPOST_START"
+    },
+    {
+      "id": "act_env_012",
+      "trigger": { "conditions": ["dt_env_008:true"] },
+      "name": { "en": "Test Smoke & CO Detectors", "es": "Probar Detectores de Humo y CO" },
+      "steps": [
+        { "order": 1, "instruction": { "en": "Press test button on all detectors. Replace batteries if needed.", "es": "Presione el botón de prueba en todos los detectores. Reemplace las baterías si es necesario." } }
+      ],
+      "outcome_metric": "SAFETY_CHECK"
+    },
+    {
+      "id": "act_env_013",
+      "trigger": { "conditions": ["dt_env_009:true"] },
+      "name": { "en": "Organize Vital Documents", "es": "Organizar Documentos Vitales" },
+      "steps": [
+        { "order": 1, "instruction": { "en": "Gather birth certificates, SSN, insurance, deeds, and wills in one fireproof box.", "es": "Reúna actas de nacimiento, SSN, seguros, escrituras y testamentos en una caja ignífuga." } }
+      ],
+      "outcome_metric": "DOCS_ORGANIZED"
+    },
+    {
+      "id": "act_env_014",
+      "trigger": { "conditions": ["dt_env_010:true"] },
+      "name": { "en": "Seal Cracks, Set Traps, Call Exterminator", "es": "Sellar Grietas, Poner Trampas, Llamar Exterminador" },
+      "steps": [
+        { "order": 1, "instruction": { "en": "Inspect perimeter, fill holes with steel wool, and use traps. If severe, call professional.", "es": "Inspeccione el perímetro, rellene agujeros con lana de acero y use trampas. Si es grave, llame profesional." } }
+      ],
+      "outcome_metric": "PEST_CONTROL"
+    },
+    { "id": "act_env_015", "trigger": { "conditions": [] }, "name": { "en": "Rotate Food Storage (FIFO)", "es": "Rotar Almacenamiento (PEPS: Primero en Entrar, Primero en Salir)" }, "steps": [ { "order": 1, "instruction": { "en": "Monthly, move older food to front and use in meals. Replace with new stock.", "es": "Mensualmente, ponga los alimentos más antiguos al frente y úselos en comidas. Reemplace con existencias nuevas." } } ], "outcome_metric": "ROTATION", "repeat": "monthly" },
+    { "id": "act_env_016", "trigger": { "conditions": [] }, "name": { "en": "Water Storage (2 weeks supply)", "es": "Almacenamiento de Agua (suministro de 2 semanas)" }, "steps": [ { "order": 1, "instruction": { "en": "Store 14 gallons per person in cleaned, food-grade containers. Treat with bleach if needed.", "es": "Almacene 14 galones por persona en recipientes limpios de grado alimenticio. Trate con cloro si es necesario." } } ], "outcome_metric": "WATER_STORAGE" },
+    { "id": "act_env_017", "trigger": { "conditions": [] }, "name": { "en": "Learn Basic Home Repair Skill", "es": "Aprender una Habilidad Básica de Reparación del Hogar" }, "steps": [ { "order": 1, "instruction": { "en": "Watch a tutorial and fix a minor leak, unclog a drain, or patch drywall yourself.", "es": "Vea un tutorial y repare una pequeña fuga, destape un desagüe o parche un panel de yeso usted mismo." } } ], "outcome_metric": "SKILL_ACQUIRED" },
+    { "id": "act_env_018", "trigger": { "conditions": [] }, "name": { "en": "Create a Household Maintenance Schedule", "es": "Crear un Calendario de Mantenimiento del Hogar" }, "steps": [ { "order": 1, "instruction": { "en": "List monthly, quarterly, and annual tasks (filter changes, gutter cleaning, appliance checks).", "es": "Enumere tareas mensuales, trimestrales y anuales (cambio de filtros, limpieza de canaletas, revisión de electrodomésticos)." } } ], "outcome_metric": "MAINTENANCE_PLAN" },
+    { "id": "act_env_019", "trigger": { "conditions": [] }, "name": { "en": "Emergency Plan Family Discussion", "es": "Discusión Familiar del Plan de Emergencia" }, "steps": [ { "order": 1, "instruction": { "en": "Discuss meeting places, out-of-area contact, and fire escape routes with household.", "es": "Discuta con el hogar los lugares de reunión, contacto fuera del área y rutas de escape en caso de incendio." } } ], "outcome_metric": "EMERGENCY_PLAN" },
+    { "id": "act_env_020", "trigger": { "conditions": [] }, "name": { "en": "Inventory Valuables with Photos", "es": "Inventariar Objetos de Valor con Fotos" }, "steps": [ { "order": 1, "instruction": { "en": "Take photos and serial numbers of electronics, appliances, jewelry for insurance purposes.", "es": "Tome fotos y números de serie de electrónicos, electrodomésticos, joyas para fines de seguro." } } ], "outcome_metric": "INVENTORY_INSURANCE" },
+    { "id": "act_env_021", "trigger": { "conditions": [] }, "name": { "en": "Go Paperless & Shred", "es": "Digitalizar y Triturar" }, "steps": [ { "order": 1, "instruction": { "en": "Sign up for electronic statements and shred old sensitive documents.", "es": "Regístrese para estados de cuenta electrónicos y triture documentos confidenciales antiguos." } } ], "outcome_metric": "PAPER_REDUCTION" },
+    { "id": "act_env_022", "trigger": { "conditions": [] }, "name": { "en": "Create a Home Binder (Finance, Medical, Manuals)", "es": "Crear una Carpeta del Hogar (Finanzas, Médico, Manuales)" }, "steps": [ { "order": 1, "instruction": { "en": "Gather important info in one binder for easy access.", "es": "Reúna información importante en una carpeta para fácil acceso." } } ], "outcome_metric": "HOME_BINDER" },
+    { "id": "act_env_023", "trigger": { "conditions": [] }, "name": { "en": "Declutter Digital Files", "es": "Ordenar Archivos Digitales" }, "steps": [ { "order": 1, "instruction": { "en": "Organize documents into folders: Finances, Medical, Legal, Personal. Backup to cloud.", "es": "Organice documentos en carpetas: Finanzas, Médico, Legal, Personal. Haga copia de seguridad en la nube." } } ], "outcome_metric": "DIGITAL_ORGANIZATION" },
+    { "id": "act_env_024", "trigger": { "conditions": [] }, "name": { "en": "Repurpose Before Buying", "es": "Reutilizar Antes de Comprar" }, "steps": [ { "order": 1, "instruction": { "en": "Before purchasing something new, check if you already own something that can serve the purpose.", "es": "Antes de comprar algo nuevo, verifique si ya posee algo que pueda cumplir el propósito." } } ], "outcome_metric": "REPURPOSING" },
+    { "id": "act_env_025", "trigger": { "conditions": [] }, "name": { "en": "Set Up a Recycling Station", "es": "Establecer una Estación de Reciclaje" }, "steps": [ { "order": 1, "instruction": { "en": "Designate bins for paper, plastic, metal, and glass. Take to local center.", "es": "Designe contenedores para papel, plástico, metal y vidrio. Llévelos al centro local." } } ], "outcome_metric": "RECYCLING" },
+    { "id": "act_env_026", "trigger": { "conditions": [] }, "name": { "en": "Ward Preparedness Specialist Consultation", "es": "Consultar con el Especialista de Preparación del Barrio" }, "steps": [ { "order": 1, "instruction": { "en": "Ask your ward preparedness specialist for resources and help with a self-reliance plan.", "es": "Pregunte al especialista de preparación de su barrio por recursos y ayuda con un plan de autosuficiencia." } } ], "outcome_metric": "STAKE_SUPPORT" },
+    { "id": "act_env_027", "trigger": { "conditions": [] }, "name": { "en": "Rainwater Collection (if legal)", "es": "Recolección de Agua de Lluvia (si es legal)" }, "steps": [ { "order": 1, "instruction": { "en": "Set up a rain barrel to water garden and reduce water bill.", "es": "Instale un barril de lluvia para regar el jardín y reducir la factura del agua." } } ], "outcome_metric": "WATER_HARVEST" },
+    { "id": "act_env_028", "trigger": { "conditions": [] }, "name": { "en": "Energy Efficient Light Bulbs", "es": "Bombillas de Bajo Consumo" }, "steps": [ { "order": 1, "instruction": { "en": "Replace incandescent bulbs with LEDs, starting with most used fixtures.", "es": "Reemplace bombillas incandescentes por LED, comenzando por las luminarias más usadas." } } ], "outcome_metric": "ENERGY_SAVINGS" },
+    { "id": "act_env_029", "trigger": { "conditions": [] }, "name": { "en": "Car Emergency Kit", "es": "Kit de Emergencia para el Auto" }, "steps": [ { "order": 1, "instruction": { "en": "Pack jumper cables, flashlight, blanket, water, and first aid in trunk.", "es": "Empaque cables de arranque, linterna, manta, agua y botiquín en el maletero." } } ], "outcome_metric": "CAR_KIT" },
+    { "id": "act_env_030", "trigger": { "conditions": [] }, "name": { "en": "Learn to Change a Tire", "es": "Aprender a Cambiar un Neumático" }, "steps": [ { "order": 1, "instruction": { "en": "Watch a tutorial and practice in your driveway with the spare tire and jack.", "es": "Vea un tutorial y practique en su entrada con la llanta de repuesto y el gato." } } ], "outcome_metric": "TIRE_SKILL" }
+  ],
+  "metrics": [
+    {
+      "id": "metric_env_001",
+      "name": { "en": "Home Organization Score", "es": "Puntaje de Organización del Hogar" },
+      "formula": "survey_score (1-10)",
+      "target_range": { "min": 8, "max": 10 }
+    },
+    {
+      "id": "metric_env_002",
+      "name": { "en": "Food Storage Level (months)", "es": "Nivel de Almacenamiento de Alimentos (meses)" },
+      "formula": "months_of_staples_stored",
+      "target_range": { "min": 3, "max": 12 }
+    }
+  ]
+}

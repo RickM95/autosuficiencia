@@ -1,0 +1,40 @@
+// /schemas/plan.schema.json
+{
+  "$schema": "http://json-schema.org/draft-07/schema#",
+  "title": "My Plan",
+  "type": "object",
+  "properties": {
+    "planId": { "type": "string" },
+    "userId": { "type": "string" },
+    "created": { "type": "string", "format": "date" },
+    "active": { "type": "boolean" },
+    "vision": { "type": "object", "properties": { "en": { "type": "string" }, "es": { "type": "string" } } },
+    "currentScores": { "$ref": "#/definitions/domainScores" },
+    "priorityDomains": { "type": "array", "items": { "type": "string" } },
+    "goalBlocks": {
+      "type": "array",
+      "items": {
+        "type": "object",
+        "properties": {
+          "domain": { "type": "string" },
+          "90dayOutcome": { "type": "object", "properties": { "en": { "type": "string" }, "es": { "type": "string" } } },
+          "weeklyMilestones": { "type": "array", "items": { "type": "object", "properties": { "en": { "type": "string" }, "es": { "type": "string" } } } },
+          "dailyActions": { "type": "array", "items": { "type": "string" } },
+          "difficultyLevel": { "type": "number" },
+          "completionHistory": { "type": "array", "items": { "type": "number" } }
+        }
+      }
+    },
+    "riskFactors": {
+      "type": "array",
+      "items": {
+        "type": "object",
+        "properties": {
+          "factor": { "type": "object", "properties": { "en": { "type": "string" }, "es": { "type": "string" } } },
+          "mitigation": { "type": "object", "properties": { "en": { "type": "string" }, "es": { "type": "string" } } }
+        }
+      }
+    },
+    "spiritualFoundationHabit": { "type": "object", "properties": { "en": { "type": "string" }, "es": { "type": "string" } } }
+  }
+}

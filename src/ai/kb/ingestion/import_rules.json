@@ -1,0 +1,32 @@
+// /ingestion/import_rules.json
+{
+  "supported_formats": ["pdf", "txt", "csv", "json", "url"],
+  "extraction": {
+    "pdf": "pdfminer.six via Pyodide",
+    "others": "plain_text"
+  },
+  "tagging_rules": {
+    "automatic_tags": ["domain", "need_type"],
+    "domain_keywords": {
+      "financial": ["money", "budget", "debt", "savings", "invest", "income", "expense"],
+      "physical": ["exercise", "sleep", "nutrition", "health", "weight", "fitness"],
+      "mental": ["anxiety", "depression", "stress", "CBT", "therapy", "mindfulness"],
+      "productivity": ["planning", "goals", "habits", "time management", "GTD"],
+      "environment": ["declutter", "food storage", "preparedness", "emergency kit", "water storage"],
+      "spiritual": ["scripture", "prayer", "temple", "tithing", "faith", "covenant"]
+    },
+    "priority_authority": {
+      "church_material": 10,
+      "government": 8,
+      "academic": 7,
+      "expert_blog": 5,
+      "user_provided": 3
+    }
+  },
+  "conflict_resolution": {
+    "default": "conservative_LDS_aligned",
+    "flag_for_review": "if_contradiction_with_core_principle"
+  },
+  "storage": "IndexedDB",
+  "retrieval_for_llm": "top_3_by_weight_and_relevance"
+}

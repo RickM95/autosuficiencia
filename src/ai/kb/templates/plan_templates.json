@@ -1,0 +1,117 @@
+{
+  "version": "1.0.0",
+  "template_count": 1,
+  "templates": [
+    {
+      "id": "self_sufficiency_plan_v1",
+      "name_en": "Self-Sufficiency Plan",
+      "name_es": "Plan de Autosuficiencia",
+      "schema_ref": "schemas/plan.schema.json",
+      "sections": [
+        {
+          "id": "header",
+          "type": "static",
+          "content_en": "SELF-SUFFICIENCY PLAN",
+          "content_es": "PLAN DE AUTOSUFICIENCIA",
+          "position": 0
+        },
+        {
+          "id": "overall_score",
+          "type": "dynamic",
+          "data_source": "plan.overallScore",
+          "fields": {
+            "scoreColor": { "source": "plan.overallScore", "mapping": ">=70:✅, >=40:⚠️, <40:🔴" },
+            "score": { "source": "plan.overallScore" },
+            "needs": { "source": "plan.scores.needs" },
+            "finances": { "source": "plan.scores.finances" },
+            "goals": { "source": "plan.scores.goals" }
+          },
+          "template_en": "{scoreColor} **Overall Score: {score}/100**\n   Needs: {needs}/100  |  Finances: {finances}/100  |  Goals: {goals}/100",
+          "template_es": "{scoreColor} **Puntaje General: {score}/100**\n   Necesidades: {needs}/100  |  Finanzas: {finances}/100  |  Metas: {goals}/100",
+          "position": 1
+        },
+        {
+          "id": "needs_assessment",
+          "type": "array",
+          "data_source": "plan.needsAssessment",
+          "item_template_en": "   {emoji} {area}: {score}/5 — {status}",
+          "item_template_es": "   {emoji} {area}: {score}/5 — {status}",
+          "header_en": "1️⃣ Needs Assessment",
+          "header_es": "1️⃣ Evaluación de Necesidades",
+          "position": 2
+        },
+        {
+          "id": "financial_health",
+          "type": "dynamic",
+          "data_source": "plan.financeDetails",
+          "fields": {
+            "income": { "source": "plan.financeDetails.income" },
+            "expenses": { "source": "plan.financeDetails.expenses" },
+            "balance": { "source": "plan.financeDetails.balance" },
+            "totalDebt": { "source": "plan.financeDetails.totalDebt" },
+            "emergencyFundMonths": { "source": "plan.financeDetails.emergencyFundMonths" }
+          },
+          "template_en": "2️⃣ Financial Health\n   Income: {income}  |  Expenses: {expenses}\n   Balance: {balance}  |  Total debt: {totalDebt}\n   Emergency fund: {emergencyFundMonths} month(s)",
+          "template_es": "2️⃣ Salud Financiera\n   Ingresos: {income}  |  Gastos: {expenses}\n   Balance: {balance}  |  Deuda total: {totalDebt}\n   Fondo emergencia: {emergencyFundMonths} mese(s)",
+          "position": 3
+        },
+        {
+          "id": "goals",
+          "type": "array",
+          "data_source": "plan.goals",
+          "item_template_en": "   {emoji} **{timeframe}:** {goal}",
+          "item_template_es": "   {emoji} **{timeframe}:** {goal}",
+          "header_en": "3️⃣ SMART Goals",
+          "header_es": "3️⃣ Metas SMART",
+          "position": 4
+        },
+        {
+          "id": "action_plan",
+          "type": "numbered_array",
+          "data_source": "plan.actionItems",
+          "item_template_en": "   {i}. {emoji} **{action}** — {detail}",
+          "item_template_es": "   {i}. {emoji} **{action}** — {detail}",
+          "header_en": "4️⃣ Action Plan — Priorities",
+          "header_es": "4️⃣ Plan de Acción — Prioridades",
+          "position": 5
+        },
+        {
+          "id": "risk_analysis",
+          "type": "array",
+          "data_source": "plan.risks",
+          "item_template_en": "   {emoji} {risk}",
+          "item_template_es": "   {emoji} {risk}",
+          "header_en": "5️⃣ Risk Analysis",
+          "header_es": "5️⃣ Análisis de Riesgos",
+          "position": 6
+        },
+        {
+          "id": "next_review",
+          "type": "dynamic",
+          "data_source": "plan.nextReviewDate",
+          "fields": {
+            "nextReviewDate": { "source": "plan.nextReviewDate" }
+          },
+          "template_en": "\n📅 Next review recommended: {nextReviewDate}\n\nWould you like me to detail any section or adjust something?",
+          "template_es": "\n📅 Próxima revisión recomendada: {nextReviewDate}\n\n¿Quieres que detalle alguna sección o ajuste algo?",
+          "position": 7
+        }
+      ],
+      "scoring": {
+        "needs_weight": 0.33,
+        "finances_weight": 0.33,
+        "goals_weight": 0.34,
+        "overall_strategy": "weighted_average"
+      },
+      "actions_required": [
+        "deficit_response",
+        "debt_snowball",
+        "no_emergency_fund",
+        "income_diversification",
+        "critical_needs_response",
+        "goal_introduction"
+      ],
+      "risk_categories": ["critical", "warning", "stable"]
+    }
+  ]
+}

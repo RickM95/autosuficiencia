@@ -1,0 +1,157 @@
+{
+  "domain": "finances",
+  "version": "1.0.0",
+  "principles": [
+    {
+      "id": "zero_based_budget",
+      "en": "Every lempira must be assigned a purpose before the month begins. Zero-based budgeting ensures intentional spending.",
+      "es": "Cada lempira debe tener un propósito asignado antes de que comience el mes. El presupuesto cero asegura gastos intencionales.",
+      "priority": 1
+    },
+    {
+      "id": "pay_yourself_first",
+      "en": "Save before spending. Automate a percentage of income to savings on payday.",
+      "es": "Ahorra antes de gastar. Automatiza un porcentaje de ingresos al ahorro el día de cobro.",
+      "priority": 1
+    },
+    {
+      "id": "emergency_fund_first",
+      "en": "Build 3-6 months of expenses before aggressive debt payoff. Without a fund, emergencies create more debt.",
+      "es": "Construye 3-6 meses de gastos antes del pago agresivo de deudas. Sin un fondo, las emergencias crean más deudas.",
+      "priority": 1
+    },
+    {
+      "id": "snowball_over_avalanche",
+      "en": "For most people, paying smallest debts first (snowball) builds momentum better than highest interest first (avalanche).",
+      "es": "Para la mayoría, pagar las deudas más pequeñas primero (bola de nieve) genera mejor impulso que la tasa más alta primero.",
+      "priority": 2
+    }
+  ],
+  "decision_trees": [
+    {
+      "id": "budget_analysis",
+      "en": "Analyze income vs expenses, identify deficit/surplus, recommend zero-based budgeting",
+      "es": "Analiza ingresos vs gastos, identifica déficit/superávit, recomienda presupuesto cero",
+      "root": {
+        "condition": "isDeficit == true",
+        "true_branch": {
+          "action": "deficit_response",
+          "metrics": ["deficit_amount", "expense_categories"]
+        },
+        "false_branch": {
+          "condition": "savingsRate < 10",
+          "true_branch": { "action": "savings_rate_low" },
+          "false_branch": { "action": "surplus_healthy" }
+        }
+      }
+    },
+    {
+      "id": "debt_strategy",
+      "en": "Determine snowball vs avalanche, calculate payoff timeline",
+      "es": "Determina bola de nieve vs avalancha, calcula cronograma de pago",
+      "root": {
+        "condition": "hasDebt == true",
+        "true_branch": {
+          "action": "debt_snowball",
+          "metrics": ["total_debt", "debt_to_income", "smallest_balance"]
+        },
+        "false_branch": { "action": "no_debt" }
+      }
+    },
+    {
+      "id": "savings_priority",
+      "en": "Assess emergency fund status and recommend savings strategy",
+      "es": "Evalúa el estado del fondo de emergencia y recomienda estrategia de ahorro",
+      "root": {
+        "condition": "emergencyFundMonths < 3",
+        "true_branch": {
+          "condition": "emergencyFundMonths < 1",
+          "true_branch": { "action": "no_emergency_fund" },
+          "false_branch": { "action": "partial_emergency_fund", "metrics": ["months_covered", "target_amount"] }
+        },
+        "false_branch": { "action": "emergency_fund_healthy" }
+      }
+    }
+  ],
+  "actions": [
+    {
+      "id": "deficit_response",
+      "triggers": ["balance < 0"],
+      "en": "Review every expense category. Cut non-essentials. Consider income increase.",
+      "es": "Revisa cada categoría de gasto. Corta lo no esencial. Considera aumentar ingresos.",
+      "metrics": ["deficit_amount"],
+      "steps": [
+        "List all expenses by category",
+        "Identify top 3 reducible expenses",
+        "Set a target reduction amount",
+        "Explore income increase options"
+      ]
+    },
+    {
+      "id": "debt_snowball",
+      "triggers": ["debtToIncome > 0"],
+      "en": "List debts smallest to largest. Pay minimums on all. Attack smallest with extra cash.",
+      "es": "Lista deudas de menor a mayor. Paga mínimos en todas. Ataca la más pequeña con extra.",
+      "metrics": ["total_debt", "smallest_balance"],
+      "steps": [
+        "List all debts with balances",
+        "Sort smallest to largest",
+        "Pay minimum on all except smallest",
+        "Put all extra money toward smallest",
+        "When paid, roll payment to next debt"
+      ]
+    },
+    {
+      "id": "no_emergency_fund",
+      "triggers": ["emergencyFund == 0 OR emergencyFundMonths < 0.5"],
+      "en": "Start with a small initial goal. Open a separate account. Automate transfers on payday.",
+      "es": "Empieza con una meta pequeña. Abre una cuenta separada. Automatiza transferencias el día de cobro.",
+      "metrics": ["monthly_expenses"],
+      "steps": [
+        "Open separate savings account",
+        "Set initial goal of L500-1000",
+        "Automate transfer on payday",
+        "Build to 1 month of expenses",
+        "Continue to 3-6 months"
+      ]
+    },
+    {
+      "id": "savings_rate_low",
+      "triggers": ["savingsRate < 10 AND balance > 0"],
+      "en": "Increase savings rate to 10-20% of income. Start with 5% if necessary.",
+      "es": "Aumenta la tasa de ahorro al 10-20% de ingresos. Empieza con 5% si es necesario.",
+      "metrics": ["savingsRate", "income"],
+      "steps": [
+        "Calculate current savings rate",
+        "Set target rate (10-20%)",
+        "Reduce one expense category",
+        "Redirect savings on payday"
+      ]
+    },
+    {
+      "id": "income_diversification",
+      "triggers": ["income < 10000 OR employment == unemployed"],
+      "en": "Identify monetizable skills. Start low-cost micro-business. Leverage free training.",
+      "es": "Identifica habilidades monetizables. Empieza micro-negocio de bajo costo. Aprovecha capacitación gratuita.",
+      "metrics": ["current_income", "skills_count"],
+      "steps": [
+        "List all skills and talents",
+        "Identify top 3 monetizable skills",
+        "Research market rates",
+        "Start with lowest-cost option",
+        "Scale what works"
+      ]
+    }
+  ],
+  "metrics": {
+    "income_thresholds": { "low": 10000, "medium": 25000, "high": 50000 },
+    "debt_to_income_warning": 30,
+    "debt_to_income_critical": 50,
+    "savings_rate_target_min": 10,
+    "savings_rate_target_max": 20,
+    "emergency_fund_months_min": 3,
+    "emergency_fund_months_ideal": 6,
+    "housing_pct_max": 35,
+    "food_pct_max": 15
+  }
+}

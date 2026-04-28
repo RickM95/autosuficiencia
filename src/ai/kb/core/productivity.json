@@ -1,0 +1,306 @@
+// /core/productivity.json
+{
+  "domain_id": "productivity",
+  "name": {
+    "en": "Productivity & Execution Systems",
+    "es": "Sistemas de Productividad y Ejecución"
+  },
+  "description": {
+    "en": "Building habits of planning, focus, and consistent execution anchored in spiritual principles of order and diligence.",
+    "es": "Construir hábitos de planificación, enfoque y ejecución consistente anclados en principios espirituales de orden y diligencia."
+  },
+  "principles": [
+    {
+      "id": "prd_pr_1",
+      "title": { "en": "Diligence & Consecration", "es": "Diligencia y Consagración" },
+      "description": {
+        "en": "Work is an eternal principle. Do all things with purpose, as unto the Lord.",
+        "es": "El trabajo es un principio eterno. Haga todas las cosas con propósito, como para el Señor."
+      }
+    },
+    {
+      "id": "prd_pr_2",
+      "title": { "en": "Order & Planning (Mosiah 4:27)", "es": "Orden y Planificación (Mosíah 4:27)" },
+      "description": {
+        "en": "Do not run faster than you have strength. Sequential, wise pacing prevents burnout.",
+        "es": "No corra más aprisa de lo que sus fuerzas permitan. Un ritmo secuencial y sabio previene el agotamiento."
+      }
+    },
+    {
+      "id": "prd_pr_3",
+      "title": { "en": "First Things First", "es": "Primero lo Primero" },
+      "description": {
+        "en": "Prioritize spiritual nourishment and family before tasks. God's order brings power.",
+        "es": "Priorice el alimento espiritual y la familia antes que las tareas. El orden de Dios trae poder."
+      }
+    },
+    {
+      "id": "prd_pr_4",
+      "title": { "en": "Accountability & Self-Mastery", "es": "Responsabilidad y Autodominio" },
+      "description": {
+        "en": "Plan, track, and report. Small consistent efforts lead to great things.",
+        "es": "Planifique, registre e informe. Pequeños esfuerzos consistentes llevan a grandes cosas."
+      }
+    }
+  ],
+  "decision_trees": [
+    {
+      "id": "dt_prd_001",
+      "label": { "en": "No Planning System", "es": "Sin Sistema de Planificación" },
+      "condition": { "field": "profile.assessment.productivity.hasPlanningSystem", "operator": "eq", "value": false },
+      "branches": [
+        { "result": "true", "action_ids": ["act_prd_001", "act_prd_002"] }
+      ]
+    },
+    {
+      "id": "dt_prd_002",
+      "label": { "en": "Low Task Completion", "es": "Baja Finalización de Tareas" },
+      "condition": { "field": "profile.assessment.productivity.taskCompletionRate", "operator": "lt", "value": 50 },
+      "branches": [
+        { "result": "true", "action_ids": ["act_prd_003", "act_prd_004"] }
+      ]
+    },
+    {
+      "id": "dt_prd_003",
+      "label": { "en": "Excessive Time Waste", "es": "Desperdicio Excesivo de Tiempo" },
+      "condition": { "field": "profile.assessment.productivity.wasteHoursPerWeek", "operator": "gt", "value": 20 },
+      "branches": [
+        { "result": "true", "action_ids": ["act_prd_005", "act_prd_006"] }
+      ]
+    },
+    {
+      "id": "dt_prd_004",
+      "label": { "en": "Morning Routine Missing", "es": "Falta de Rutina Matutina" },
+      "condition": { "field": "profile.assessment.productivity.hasMorningRoutine", "operator": "eq", "value": false },
+      "branches": [
+        { "result": "true", "action_ids": ["act_prd_007"] }
+      ]
+    },
+    {
+      "id": "dt_prd_005",
+      "label": { "en": "Evening Planning Gap", "es": "Falta de Planificación Vespertina" },
+      "condition": { "field": "profile.assessment.productivity.eveningPlan", "operator": "eq", "value": false },
+      "branches": [
+        { "result": "true", "action_ids": ["act_prd_008"] }
+      ]
+    },
+    {
+      "id": "dt_prd_006",
+      "label": { "en": "Digital Distraction", "es": "Distracción Digital" },
+      "condition": { "field": "profile.assessment.productivity.screenTime", "operator": "gt", "value": 40 },
+      "branches": [
+        { "result": "true", "action_ids": ["act_prd_009", "act_prd_010"] }
+      ]
+    },
+    {
+      "id": "dt_prd_007",
+      "label": { "en": "Lack of MIT Focus", "es": "Falta de Enfoque en TMI" },
+      "condition": { "field": "profile.assessment.productivity.mitIdentified", "operator": "eq", "value": false },
+      "branches": [
+        { "result": "true", "action_ids": ["act_prd_011"] }
+      ]
+    },
+    {
+      "id": "dt_prd_008",
+      "label": { "en": "Sabbath Planning Reset Needed", "es": "Necesidad de Reinicio de Planificación Sabática" },
+      "condition": {
+        "type": "and",
+        "conditions": [
+          { "field": "profile.assessment.spiritual.sabbathObservance", "operator": "eq", "value": false },
+          { "field": "profile.scores.productivity", "operator": "lt", "value": 50 }
+        ]
+      },
+      "branches": [
+        { "result": "true", "action_ids": ["act_prd_012"] }
+      ]
+    },
+    {
+      "id": "dt_prd_009",
+      "label": { "en": "Chaotic Environment", "es": "Entorno Caótico" },
+      "condition": { "field": "profile.assessment.environment.homeOrganizationScore", "operator": "lt", "value": 4 },
+      "branches": [
+        { "result": "true", "action_ids": ["act_prd_013"] }
+      ]
+    },
+    {
+      "id": "dt_prd_010",
+      "label": { "en": "Overwhelm by Task Size", "es": "Abrumamiento por el Tamaño de la Tarea" },
+      "condition": { "field": "profile.behavioralTags", "operator": "contains", "value": "overwhelmed" },
+      "branches": [
+        { "result": "true", "action_ids": ["act_prd_014", "act_prd_015"] }
+      ]
+    }
+  ],
+  "actions": [
+    {
+      "id": "act_prd_001",
+      "trigger": { "conditions": ["dt_prd_001:true"] },
+      "name": { "en": "Start a Simple Paper Planner", "es": "Iniciar un Planificador de Papel Simple" },
+      "steps": [
+        { "order": 1, "instruction": { "en": "Get a notebook. Each evening write tomorrow's date and 2 Most Important Tasks (MITs).", "es": "Consiga un cuaderno. Cada noche escriba la fecha de mañana y las 2 Tareas Más Importantes (TMI)." } }
+      ],
+      "outcome_metric": "PLANNER_STARTED",
+      "repeat": "daily"
+    },
+    {
+      "id": "act_prd_002",
+      "trigger": { "conditions": ["dt_prd_001:true"] },
+      "name": { "en": "Capture All Open Loops", "es": "Capturar Todos los Cabos Sueltos" },
+      "steps": [
+        { "order": 1, "instruction": { "en": "Do a brain dump of every task, appointment, and worry onto paper. Sort by urgency.", "es": "Haga una descarga mental de cada tarea, cita y preocupación en papel. Ordenar por urgencia." } }
+      ],
+      "outcome_metric": "MENTAL_CAPTURE"
+    },
+    {
+      "id": "act_prd_003",
+      "trigger": { "conditions": ["dt_prd_002:true"] },
+      "name": { "en": "Reduce MITs to 1-2 Daily", "es": "Reducir las TMI a 1-2 Diarias" },
+      "steps": [
+        { "order": 1, "instruction": { "en": "Commit to completing only 1 critical task per day until consistency builds.", "es": "Comprométase a completar solo 1 tarea crítica al día hasta que la consistencia se construya." } }
+      ],
+      "outcome_metric": "COMPLETION_RATE",
+      "repeat": "daily"
+    },
+    {
+      "id": "act_prd_004",
+      "trigger": { "conditions": ["dt_prd_002:true"] },
+      "name": { "en": "Public Commitment", "es": "Compromiso Público" },
+      "steps": [
+        { "order": 1, "instruction": { "en": "Tell someone your specific plan for tomorrow and report back.", "es": "Dígale a alguien su plan específico para mañana e infórmele." } }
+      ],
+      "outcome_metric": "ACCOUNTABILITY"
+    },
+    {
+      "id": "act_prd_005",
+      "trigger": { "conditions": ["dt_prd_003:true"] },
+      "name": { "en": "Time Audit: Track Every 30-Minute Block", "es": "Auditoría de Tiempo: Registrar Cada Bloque de 30 Minutos" },
+      "steps": [
+        { "order": 1, "instruction": { "en": "For 3 days, write what you do every half hour. Identify time leaks.", "es": "Durante 3 días, escriba lo que hace cada media hora. Identifique fugas de tiempo." } }
+      ],
+      "outcome_metric": "TIME_AUDIT_DONE"
+    },
+    {
+      "id": "act_prd_006",
+      "trigger": { "conditions": ["dt_prd_003:true"] },
+      "name": { "en": "Set Phone App Limits", "es": "Establecer Límites de Aplicaciones en el Teléfono" },
+      "steps": [
+        { "order": 1, "instruction": { "en": "Use built-in screen time controls to limit social media to 30 min/day.", "es": "Use los controles de tiempo de pantalla integrados para limitar las redes sociales a 30 min/día." } }
+      ],
+      "outcome_metric": "SCREEN_REDUCTION"
+    },
+    {
+      "id": "act_prd_007",
+      "trigger": { "conditions": ["dt_prd_004:true"] },
+      "name": { "en": "Create a 15-Minute Morning Ritual", "es": "Crear un Ritual Matutino de 15 Minutos" },
+      "steps": [
+        { "order": 1, "instruction": { "en": "Wake, pray, read one verse, drink water, review your MITs. No phone until done.", "es": "Despierte, ore, lea un versículo, beba agua, revise sus TMI. Sin teléfono hasta terminar." } }
+      ],
+      "outcome_metric": "MORNING_ROUTINE",
+      "repeat": "daily"
+    },
+    {
+      "id": "act_prd_008",
+      "trigger": { "conditions": ["dt_prd_005:true"] },
+      "name": { "en": "Evening MIT Selection", "es": "Selección Vespertina de TMI" },
+      "steps": [
+        { "order": 1, "instruction": { "en": "Before leaving work or by 9pm, write the next day's 1-2 MITs and place them visible.", "es": "Antes de salir del trabajo o a las 9 p.m., escriba las 1-2 TMI del día siguiente y colóquelas visibles." } }
+      ],
+      "outcome_metric": "EVENING_PLAN",
+      "repeat": "daily"
+    },
+    {
+      "id": "act_prd_009",
+      "trigger": { "conditions": ["dt_prd_006:true"] },
+      "name": { "en": "No-Phone Focus Blocks", "es": "Bloques de Enfoque sin Teléfono" },
+      "steps": [
+        { "order": 1, "instruction": { "en": "Schedule two 45-minute blocks daily with phone in another room. Use timer.", "es": "Programe dos bloques diarios de 45 minutos con el teléfono en otra habitación. Use temporizador." } }
+      ],
+      "outcome_metric": "DEEP_WORK_MINUTES"
+    },
+    {
+      "id": "act_prd_010",
+      "trigger": { "conditions": ["dt_prd_006:true"] },
+      "name": { "en": "Declutter Digital Workspace", "es": "Ordenar el Espacio de Trabajo Digital" },
+      "steps": [
+        { "order": 1, "instruction": { "en": "Close all unnecessary browser tabs and organize desktop icons into 3 folders: To-Do, Reference, Archive.", "es": "Cierre todas las pestañas innecesarias del navegador y organice los íconos del escritorio en 3 carpetas: Por Hacer, Referencia, Archivo." } }
+      ],
+      "outcome_metric": "DIGITAL_CLARITY"
+    },
+    {
+      "id": "act_prd_011",
+      "trigger": { "conditions": ["dt_prd_007:true"] },
+      "name": { "en": "MIT Identification Process", "es": "Proceso de Identificación de TMI" },
+      "steps": [
+        { "order": 1, "instruction": { "en": "Ask: 'If I complete only one task today, which will make the biggest impact?' Write it down.", "es": "Pregunte: 'Si solo completo una tarea hoy, ¿cuál tendrá el mayor impacto?' Escríbala." } }
+      ],
+      "outcome_metric": "MIT_CLARITY",
+      "repeat": "daily"
+    },
+    {
+      "id": "act_prd_012",
+      "trigger": { "conditions": ["dt_prd_008:true"] },
+      "name": { "en": "Sabbath Weekly Review & Rest", "es": "Revisión Sabática y Descanso Semanal" },
+      "steps": [
+        { "order": 1, "instruction": { "en": "On Sunday, avoid work. Review the past week spiritually, not just tasks. Re-center on Christ.", "es": "El domingo, evite el trabajo. Revise la semana pasada espiritualmente, no solo en tareas. Vuelva a centrarse en Cristo." } }
+      ],
+      "outcome_metric": "SABBATH_REST",
+      "repeat": "weekly"
+    },
+    {
+      "id": "act_prd_013",
+      "trigger": { "conditions": ["dt_prd_009:true"] },
+      "name": { "en": "10-Minute Evening Declutter", "es": "10 Minutos de Orden Nocturno" },
+      "steps": [
+        { "order": 1, "instruction": { "en": "Set a 10-minute timer and tidy the main living area before bed.", "es": "Programe un temporizador de 10 minutos y ordene el área principal de la vivienda antes de dormir." } }
+      ],
+      "outcome_metric": "TIDY_ENVIRONMENT"
+    },
+    {
+      "id": "act_prd_014",
+      "trigger": { "conditions": ["dt_prd_010:true"] },
+      "name": { "en": "Task Slicing (Break into Tiny Steps)", "es": "Dividir Tareas (Dividir en Pasos Diminutos)" },
+      "steps": [
+        { "order": 1, "instruction": { "en": "Take the overwhelming task and list every sub-step that takes less than 5 minutes.", "es": "Tome la tarea abrumadora y enumere cada subpaso que tome menos de 5 minutos." } }
+      ],
+      "outcome_metric": "TASK_SLICED"
+    },
+    {
+      "id": "act_prd_015",
+      "trigger": { "conditions": ["dt_prd_010:true"] },
+      "name": { "en": "Start with the Easiest Step", "es": "Comience con el Paso Más Fácil" },
+      "steps": [
+        { "order": 1, "instruction": { "en": "Identify the absolute smallest physical action to move forward and do it now.", "es": "Identifique la acción física más pequeña para avanzar y hágalo ahora." } }
+      ],
+      "outcome_metric": "MOMENTUM_START"
+    },
+    { "id": "act_prd_016", "trigger": { "conditions": [] }, "name": { "en": "Weekly Review Session", "es": "Sesión de Revisión Semanal" }, "steps": [ { "order": 1, "instruction": { "en": "Every Sunday, review completed vs. planned MITs, clear inbox, and set upcoming week's focus.", "es": "Cada domingo, revise las TMI completadas vs. planeadas, limpie la bandeja de entrada y establezca el enfoque de la próxima semana." } } ], "outcome_metric": "WEEKLY_REVIEW", "repeat": "weekly" },
+    { "id": "act_prd_017", "trigger": { "conditions": [] }, "name": { "en": "Set Spiritual Priorities First", "es": "Establecer Prioridades Espirituales Primero" }, "steps": [ { "order": 1, "instruction": { "en": "Schedule prayer and scripture study as fixed appointments in your daily calendar.", "es": "Programe la oración y el estudio de las Escrituras como citas fijas en su calendario diario." } } ], "outcome_metric": "SPIRITUAL_SCHEDULING" },
+    { "id": "act_prd_018", "trigger": { "conditions": [] }, "name": { "en": "Batch Similar Tasks", "es": "Agrupar Tareas Similares" }, "steps": [ { "order": 1, "instruction": { "en": "Group errands, phone calls, and emails into dedicated time blocks.", "es": "Agrupe mandados, llamadas telefónicas y correos electrónicos en bloques de tiempo dedicados." } } ], "outcome_metric": "BATCHING" },
+    { "id": "act_prd_019", "trigger": { "conditions": [] }, "name": { "en": "Adopt a 'One In, One Out' Rule", "es": "Adoptar la Regla 'Uno Entra, Uno Sale'" }, "steps": [ { "order": 1, "instruction": { "en": "For every new possession or commitment, release an old one to maintain simplicity.", "es": "Por cada nueva posesión o compromiso, libere uno antiguo para mantener la sencillez." } } ], "outcome_metric": "SIMPLICITY" },
+    { "id": "act_prd_020", "trigger": { "conditions": [] }, "name": { "en": "Plan for Interruptions", "es": "Planificar para Interrupciones" }, "steps": [ { "order": 1, "instruction": { "en": "Leave 20% of your day unscheduled as buffer for the unexpected.", "es": "Deje el 20% de su día sin programar como margen para lo inesperado." } } ], "outcome_metric": "BUILT_IN_MARGIN" },
+    { "id": "act_prd_021", "trigger": { "conditions": [] }, "name": { "en": "Use a 'To-Do' vs 'To-Be' List", "es": "Usar una Lista de 'Por Hacer' y 'Ser'" }, "steps": [ { "order": 1, "instruction": { "en": "Each day, list not just tasks but one character trait to develop (e.g., patience).", "es": "Cada día, enumere no solo tareas sino un rasgo de carácter a desarrollar (ej. paciencia)." } } ], "outcome_metric": "CHARACTER_DEVELOPMENT" },
+    { "id": "act_prd_022", "trigger": { "conditions": [] }, "name": { "en": "Energy-Base Task Matching", "es": "Emparejar Tareas según Energía" }, "steps": [ { "order": 1, "instruction": { "en": "Do high-focus work when energy peaks (morning for most). Save routine tasks for slumps.", "es": "Haga trabajo de alto enfoque cuando la energía es máxima (mañana para la mayoría). Guarde tareas rutinarias para bajones." } } ], "outcome_metric": "ENERGY_OPTIMIZATION" },
+    { "id": "act_prd_023", "trigger": { "conditions": [] }, "name": { "en": "Celebrate Completed MITs", "es": "Celebrar TMI Completadas" }, "steps": [ { "order": 1, "instruction": { "en": "Give yourself a small, healthy reward when you complete all MITs for the day.", "es": "Dése una pequeña recompensa saludable cuando complete todas las TMI del día." } } ], "outcome_metric": "POSITIVE_REINFORCEMENT" },
+    { "id": "act_prd_024", "trigger": { "conditions": [] }, "name": { "en": "Plan Tomorrow Today", "es": "Planificar Mañana Hoy" }, "steps": [ { "order": 1, "instruction": { "en": "Before ending work, write the next day's schedule, MITs, and needed materials.", "es": "Antes de terminar el trabajo, escriba el horario del día siguiente, las TMI y los materiales necesarios." } } ], "outcome_metric": "PROACTIVE_PLANNING" },
+    { "id": "act_prd_025", "trigger": { "conditions": [] }, "name": { "en": "Limit Multitasking", "es": "Limitar la Multitarea" }, "steps": [ { "order": 1, "instruction": { "en": "Commit to single-tasking during focus blocks. Use a 'Do Not Disturb' sign if needed.", "es": "Comprométase a una sola tarea durante los bloques de enfoque. Use un letrero de 'No Molestar' si es necesario." } } ], "outcome_metric": "SINGLE_TASKING" },
+    { "id": "act_prd_026", "trigger": { "conditions": [] }, "name": { "en": "Develop a Personal Mission Statement", "es": "Desarrollar una Declaración de Misión Personal" }, "steps": [ { "order": 1, "instruction": { "en": "Write a short statement aligning your daily actions with your eternal purpose.", "es": "Escriba una declaración corta que alinee sus acciones diarias con su propósito eterno." } } ], "outcome_metric": "MISSION_CLARITY" },
+    { "id": "act_prd_027", "trigger": { "conditions": [] }, "name": { "en": "Time Block Spiritual Growth", "es": "Bloquear Tiempo para Crecimiento Espiritual" }, "steps": [ { "order": 1, "instruction": { "en": "Schedule a weekly block for family history, temple attendance, or deep scripture study.", "es": "Programe un bloque semanal para historia familiar, asistencia al templo o estudio profundo de las Escrituras." } } ], "outcome_metric": "SPIRITUAL_DEPTH" },
+    { "id": "act_prd_028", "trigger": { "conditions": [] }, "name": { "en": "Keep a 'Done' List", "es": "Llevar una Lista de 'Hecho'" }, "steps": [ { "order": 1, "instruction": { "en": "At day's end, write down everything you accomplished, no matter how small. Counteracts negativity.", "es": "Al final del día, escriba todo lo que logró, sin importar cuán pequeño sea. Contrarresta la negatividad." } } ], "outcome_metric": "ACCOMPLISHMENT_TRACKING" },
+    { "id": "act_prd_029", "trigger": { "conditions": [] }, "name": { "en": "Weekly Goals Review with Spouse/Friend", "es": "Revisión Semanal de Metas con Cónyuge/Amigo" }, "steps": [ { "order": 1, "instruction": { "en": "Have a 15-min conversation about progress, obstacles, and next week's priorities.", "es": "Tenga una conversación de 15 min sobre el progreso, obstáculos y prioridades de la próxima semana." } } ], "outcome_metric": "SUPPORT_ACCOUNTABILITY" },
+    { "id": "act_prd_030", "trigger": { "conditions": [] }, "name": { "en": "Morning Routine Includes 'Do One Hard Thing'", "es": "La Rutina Matutina Incluye 'Hacer Una Cosa Difícil'" }, "steps": [ { "order": 1, "instruction": { "en": "Identify the most challenging MIT and tackle it first, before any easy tasks.", "es": "Identifique la TMI más desafiante y enfréntela primero, antes de cualquier tarea fácil." } } ], "outcome_metric": "PROCRASTINATION_BEATING" }
+  ],
+  "metrics": [
+    {
+      "id": "metric_prd_001",
+      "name": { "en": "MIT Completion Rate", "es": "Tasa de Finalización de TMI" },
+      "formula": "(completed MITs / planned MITs) * 100",
+      "target_range": { "min": 80, "max": 100, "unit": "percent" }
+    },
+    {
+      "id": "metric_prd_002",
+      "name": { "en": "Time Wasted Reduction", "es": "Reducción de Tiempo Perdido" },
+      "formula": "(baselineWasteHours - currentWasteHours) / baselineWasteHours * 100",
+      "target_range": { "min": 20, "increase": true }
+    }
+  ]
+}

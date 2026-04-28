@@ -1,0 +1,109 @@
+{
+  "domain": "wellbeing",
+  "version": "1.0.0",
+  "principles": [
+    {
+      "id": "survival_first",
+      "en": "Basic needs (food, housing, health, safety) must be addressed before higher-level planning.",
+      "es": "Las necesidades básicas (alimentación, vivienda, salud, seguridad) deben abordarse antes que la planificación superior.",
+      "priority": 1
+    },
+    {
+      "id": "trauma_informed",
+      "en": "Financial stress is real. Acknowledge emotions before giving advice. Never shame.",
+      "es": "El estrés financiero es real. Reconoce las emociones antes de dar consejos. Nunca avergüences.",
+      "priority": 1
+    },
+    {
+      "id": "small_wins",
+      "en": "Celebrate small victories. Progress builds motivation more than perfection.",
+      "es": "Celebra las pequeñas victorias. El progreso construye motivación más que la perfección.",
+      "priority": 2
+    },
+    {
+      "id": "community_first",
+      "en": "Local resources (church, municipality, NGO) are often more accessible than national programs.",
+      "es": "Los recursos locales (iglesia, municipalidad, ONG) suelen ser más accesibles que los programas nacionales.",
+      "priority": 2
+    }
+  ],
+  "decision_trees": [
+    {
+      "id": "needs_triage",
+      "en": "Prioritize critical needs (score <=2) — address immediately. Warning needs (score 3) — plan within 30 days.",
+      "es": "Prioriza necesidades críticas (puntaje <=2) — atiende inmediatamente. Necesidades de advertencia (puntaje 3) — planifica en 30 días.",
+      "root": {
+        "condition": "hasCriticalNeeds == true",
+        "true_branch": {
+          "action": "critical_needs_response",
+          "order": ["food", "housing", "health", "safety"]
+        },
+        "false_branch": {
+          "condition": "hasWarningNeeds == true",
+          "true_branch": { "action": "warning_needs_response" },
+          "false_branch": { "action": "needs_stable" }
+        }
+      }
+    },
+    {
+      "id": "stress_intervention",
+      "en": "Assess emotional state, provide immediate coping strategies, connect to resources",
+      "es": "Evalúa el estado emocional, proporciona estrategias de afrontamiento inmediatas, conecta con recursos",
+      "root": {
+        "condition": "sentiment == overwhelmed",
+        "true_branch": { "action": "immediate_stress_relief" },
+        "false_branch": {
+          "condition": "sentiment == improving",
+          "true_branch": { "action": "reinforce_progress" },
+          "false_branch": { "action": "maintenance_strategies" }
+        }
+      }
+    }
+  ],
+  "actions": [
+    {
+      "id": "critical_needs_response",
+      "triggers": ["any_need_score <= 2"],
+      "en": "Provide immediate concrete steps for each critical need. Refer to local resources.",
+      "es": "Proporciona pasos concretos inmediatos para cada necesidad crítica. Refiere a recursos locales.",
+      "metrics": ["critical_areas", "total_score"],
+      "steps": [
+        "Identify all critical areas",
+        "Provide one action per area",
+        "Suggest local resource",
+        "Schedule follow-up within 48 hours"
+      ]
+    },
+    {
+      "id": "immediate_stress_relief",
+      "triggers": ["sentiment == overwhelmed"],
+      "en": "Validate feelings. Breathing exercise. Identify one controllable action today.",
+      "es": "Valida sentimientos. Ejercicio de respiración. Identifica una acción controlable hoy.",
+      "steps": [
+        "Acknowledge emotional state",
+        "Deep breathing exercise",
+        "Write down worries",
+        "Identify one controllable action",
+        "Offer support resources"
+      ]
+    },
+    {
+      "id": "resource_referral",
+      "triggers": ["need_type matches resource_type"],
+      "en": "Match user need with available community resource from knowledge base.",
+      "es": "Empareja la necesidad del usuario con el recurso comunitario disponible en la base de conocimiento.",
+      "steps": [
+        "Identify need type",
+        "Query knowledge base for matching resources",
+        "Present top 2-3 options",
+        "Include contact information"
+      ]
+    }
+  ],
+  "metrics": {
+    "needs_critical_threshold": 2,
+    "needs_warning_threshold": 3,
+    "needs_assessment_fields": ["foodSecurity", "housingSecurity", "healthStatus", "mentalHealth", "safetyLevel", "clothingNeeds", "transportAccess"],
+    "stress_triggers": ["overwhelm", "estoy perdido", "no sé", "confused", "depressed", "stuck", "no puedo", "desesperado", "crisis", "estresado", "ansioso"]
+  }
+}

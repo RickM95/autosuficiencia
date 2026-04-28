@@ -1,0 +1,98 @@
+{
+  "version": "1.0.0",
+  "rule_count": 9,
+  "evaluation_order": "priority_ascending",
+  "halt_on_match": false,
+  "rules": [
+    {
+      "id": "force_survival_stage",
+      "description_en": "When any basic need score is 2 or below, force Needs Critical stage immediately",
+      "description_es": "Cuando cualquier necesidad básica tiene puntaje 2 o menor, forzar etapa Necesidades Críticas inmediatamente",
+      "condition": "needsAnalysis.critical.length > 0",
+      "override": "force_stage(NEEDS_CRITICAL)",
+      "priority": 1,
+      "active": true,
+      "category": "safety"
+    },
+    {
+      "id": "sentiment_overwhelm_override",
+      "description_en": "If user shows signs of emotional overwhelm, redirect to stress management first",
+      "description_es": "Si el usuario muestra señales de agobio emocional, redirigir a manejo del estrés primero",
+      "condition": "memory.sentiment == 'overwhelmed'",
+      "override": "force_action(stress_advice)",
+      "priority": 1,
+      "active": true,
+      "category": "wellbeing"
+    },
+    {
+      "id": "language_preservation",
+      "description_en": "Never switch languages mid-conversation once established",
+      "description_es": "Nunca cambiar de idioma a mitad de conversación una vez establecido",
+      "condition": "memory.language IS SET",
+      "override": "force_language(memory.language)",
+      "priority": 1,
+      "active": true,
+      "category": "communication"
+    },
+    {
+      "id": "block_incomplete_plan",
+      "description_en": "Prevent plan generation when form completeness is below 40%",
+      "description_es": "Prevenir generación de plan cuando completitud del formulario está por debajo de 40%",
+      "condition": "completeness.percent < 40 AND stage == PLAN_BUILD",
+      "override": "redirect_to(WELCOME, 'Please complete more of the form first')",
+      "priority": 2,
+      "active": true,
+      "category": "planning"
+    },
+    {
+      "id": "debt_crisis_override",
+      "description_en": "When debt-to-income exceeds 50%, force debt advice even if user asks about other topics",
+      "description_es": "Cuando la deuda-ingreso excede 50%, forzar consejo de deuda aunque el usuario pregunte otros temas",
+      "condition": "financialAnalysis.debtToIncome > 50",
+      "override": "force_action(debt_advice)",
+      "priority": 2,
+      "active": true,
+      "category": "finances"
+    },
+    {
+      "id": "emergency_fund_before_debt",
+      "description_en": "If emergency fund is less than 1 month AND user has debt, warn before aggressive payoff",
+      "description_es": "Si el fondo de emergencia es menor a 1 mes Y el usuario tiene deuda, advertir antes de pago agresivo",
+      "condition": "financialAnalysis.emergencyFundMonths < 1 AND financialAnalysis.hasDebt == true",
+      "override": "add_warning(Build emergency fund before aggressive debt payoff)",
+      "priority": 3,
+      "active": true,
+      "category": "finances"
+    },
+    {
+      "id": "income_crisis_override",
+      "description_en": "When income is zero and expenses exist, force income advice as top priority",
+      "description_es": "Cuando el ingreso es cero y existen gastos, forzar consejo de ingresos como prioridad máxima",
+      "condition": "financialAnalysis.income == 0 AND financialAnalysis.expenses > 0",
+      "override": "force_action(income_advice)",
+      "priority": 2,
+      "active": true,
+      "category": "finances"
+    },
+    {
+      "id": "goals_missing_steps",
+      "description_en": "When goals exist but lack steps or deadlines, highlight improvement areas",
+      "description_es": "Cuando existen metas pero faltan pasos o fechas, resaltar áreas de mejora",
+      "condition": "goalsAnalysis.score > 0 AND goalsAnalysis.score < 50",
+      "override": "add_warning(Goals need specific steps and deadlines)",
+      "priority": 4,
+      "active": true,
+      "category": "goals"
+    },
+    {
+      "id": "repetition_prevention",
+      "description_en": "If the same topic was discussed in the last 3 interactions, suggest adjacent topic",
+      "description_es": "Si el mismo tema se discutió en las últimas 3 interacciones, sugerir tema adyacente",
+      "condition": "memory.consecutiveOffTopic >= 3",
+      "override": "force_action(stress_advice)",
+      "priority": 5,
+      "active": true,
+      "category": "engagement"
+    }
+  ]
+}

@@ -1,0 +1,97 @@
+// /schemas/user_profile.schema.json
+{
+  "$schema": "http://json-schema.org/draft-07/schema#",
+  "title": "User Profile",
+  "type": "object",
+  "properties": {
+    "userId": { "type": "string" },
+    "language": { "enum": ["en", "es"] },
+    "assessment": {
+      "type": "object",
+      "properties": {
+        "dates": { "type": "array", "items": { "type": "string", "format": "date" } },
+        "stability": {
+          "type": "object",
+          "properties": {
+            "sleepSafe": { "type": "boolean" },
+            "food48h": { "type": "boolean" },
+            "water": { "type": "boolean" },
+            "danger": { "type": "boolean" }
+          },
+          "required": ["sleepSafe", "food48h", "water", "danger"]
+        },
+        "baseline": {
+          "type": "object",
+          "properties": {
+            "employment": { "type": "string" },
+            "monthlyNetIncome": { "type": "number" },
+            "monthlyFixedExpenses": { "type": "number" },
+            "liquidSavings": { "type": "number" },
+            "nonMortgageDebt": { "type": "number" },
+            "dependents": { "type": "integer" },
+            "primaryLanguage": { "type": "string" }
+          }
+        },
+        "financeDeep": {
+          "type": "object",
+          "properties": {
+            "trackExpenses": { "type": "boolean" },
+            "housingPercent": { "type": "number" },
+            "irregularIncome": { "type": "array", "items": { "type": "string" } },
+            "creditScoreRange": { "type": "string" },
+            "bankruptcy": { "type": "boolean" }
+          }
+        },
+        "wellbeing": {
+          "type": "object",
+          "properties": {
+            "sleepHours": { "type": "number" },
+            "activityDays": { "type": "integer" },
+            "energyLevel": { "type": "integer" },
+            "downFrequency": { "type": "string" },
+            "emotionalSupport": { "type": "boolean" },
+            "substanceConcern": { "type": "boolean" }
+          }
+        },
+        "productivity": {
+          "type": "object",
+          "properties": {
+            "hasPlanningSystem": { "type": "boolean" },
+            "homeOrganizationScore": { "type": "integer" },
+            "wasteHoursPerWeek": { "type": "number" }
+          }
+        },
+        "spiritual": {
+          "type": "object",
+          "properties": {
+            "scriptureFrequency": { "type": "string" },
+            "activeService": { "type": "boolean" },
+            "purposeScore": { "type": "integer" },
+            "tithing": { "type": "string" }
+          }
+        },
+        "goals": {
+          "type": "object",
+          "properties": {
+            "topGoal": { "type": "string" },
+            "confidence": { "type": "integer" }
+          }
+        }
+      }
+    },
+    "profileScores": {
+      "type": "object",
+      "properties": {
+        "financial": { "type": "number" },
+        "physical": { "type": "number" },
+        "mental": { "type": "number" },
+        "productivity": { "type": "number" },
+        "environment": { "type": "number" },
+        "spiritual": { "type": "number" },
+        "overall": { "type": "number" }
+      }
+    },
+    "classification": { "type": "string" },
+    "behavioralTags": { "type": "array", "items": { "type": "string" } }
+  }
+}

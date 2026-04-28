@@ -1,0 +1,66 @@
+{
+  "version": "1.0.0",
+  "extraction_patterns": {
+    "financial_principles": {
+      "triggers": ["budget", "save", "debt", "income", "interest", "emergency fund"],
+      "target": "core/finances.json",
+      "section": "principles",
+      "confidence_multiplier": 0.8
+    },
+    "wellbeing_principles": {
+      "triggers": ["stress", "anxiety", "emotional", "wellbeing", "self-care", "coping"],
+      "target": "core/wellbeing.json",
+      "section": "principles",
+      "confidence_multiplier": 0.8
+    },
+    "goal_frameworks": {
+      "triggers": ["goal", "objective", "target", "milestone", "smart", "planning"],
+      "target": "core/goals.json",
+      "section": "principles",
+      "confidence_multiplier": 0.8
+    },
+    "community_resources": {
+      "triggers": ["program", "resource", "ngo", "government", "assistance", "support"],
+      "target": "wellbeing",
+      "section": "resources",
+      "confidence_multiplier": 0.9
+    },
+    "actionable_advice": {
+      "detect": {
+        "pattern": "(steps?:|how to:|pasos:|cómo |guía:|guide:)([\\s\\S]{50,500})",
+        "flags": "gi"
+      },
+      "target_field": "actions",
+      "confidence_multiplier": 1.0
+    },
+    "numeric_metrics": {
+      "detect": {
+        "pattern": "(\\d+(\\.\\d+)?\\s*%|L\\s*[\\d,]+(\\.\\d+)?|\\$\\s*[\\d,]+(\\.\\d+)?)",
+        "flags": "g"
+      },
+      "target_field": "metrics",
+      "confidence_multiplier": 0.7
+    }
+  },
+  "categorization": {
+    "keyword_map": {
+      "presupuesto|budget|gasto|gastos|ahorro|ahorrar|ingreso|ingresos|gastar|diner": "finances",
+      "deuda|deudas|deber|préstamo|préstamos|credito|crediticia|tarjeta": "debt",
+      "meta|metas|objetivo|objetivos|plan|futuro|sueño": "goals",
+      "estrés|ansiedad|depresión|emocional|salud mental|bienestar|autoestima|motivación": "wellbeing",
+      "recurso|recurso comunitario|ong|iglesia|gobierno|programa social|ayuda": "resources",
+      "negocio|emprender|emprendimiento|microempresa|venta|ingreso extra|trabajo": "income",
+      "vivienda|casa|alquiler|hogar|propiedad|hipoteca": "housing",
+      "alimentación|alimento|comida|huerto|cocina|nutrición|cultivar": "food",
+      "educación|estudio|curso|capacitación|aprender|escuela|técnico": "education",
+      "salud|médico|medicina|enfermedad|hospital|clinica|consulta": "health"
+    },
+    "fallback_category": "uncategorized",
+    "minimum_keyword_score": 0.5
+  },
+  "merging": {
+    "strategy": "append",
+    "dedup_field": "id",
+    "weight_decay": 0.95
+  }
+}

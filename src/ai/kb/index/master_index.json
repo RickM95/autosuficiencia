@@ -1,0 +1,108 @@
+{
+  "version": "1.0.0",
+  "last_updated": "2026-04-27",
+  "triggers": {
+    "budget": {
+      "domain": "finances",
+      "action": "budget_advice",
+      "weight": 1.0,
+      "keywords": ["presupuesto", "budget", "gasto", "expense", "gastar", "spend", "dinero", "money", "costo"],
+      "stage": "FINANCIAL_REVIEW"
+    },
+    "debt": {
+      "domain": "finances",
+      "action": "debt_advice",
+      "weight": 1.0,
+      "keywords": ["deuda", "debt", "préstamo", "loan", "tarjeta", "credit", "interés", "interest"],
+      "stage": "FINANCIAL_REVIEW"
+    },
+    "savings": {
+      "domain": "finances",
+      "action": "savings_advice",
+      "weight": 1.0,
+      "keywords": ["emergencia", "emergency", "ahorro", "saving", "fondo", "fund", "ahorrar", "save"],
+      "stage": "FINANCIAL_REVIEW"
+    },
+    "income": {
+      "domain": "finances",
+      "action": "income_advice",
+      "weight": 1.0,
+      "keywords": ["trabajo", "work", "empleo", "job", "ganar", "earn", "negocio", "business", "ingreso", "income"],
+      "stage": "FINANCIAL_REVIEW"
+    },
+    "stress": {
+      "domain": "wellbeing",
+      "action": "stress_advice",
+      "weight": 1.0,
+      "keywords": ["estrés", "stress", "ansiedad", "anxiety", "deprim", "triste", "overwhelm", "agobiado"],
+      "stage": "TOPIC_ADVICE"
+    },
+    "goals": {
+      "domain": "goals",
+      "action": "goals_advice",
+      "weight": 1.0,
+      "keywords": ["meta", "goal", "objetivo", "plan", "futuro", "future", "sueño", "dream"],
+      "stage": "GOALS_REVIEW"
+    },
+    "housing": {
+      "domain": "wellbeing",
+      "action": "needs_advice",
+      "weight": 0.8,
+      "keywords": ["vivienda", "housing", "casa", "house", "alquiler", "rent", "hogar", "home"],
+      "stage": "NEEDS_CRITICAL"
+    },
+    "food": {
+      "domain": "wellbeing",
+      "action": "needs_advice",
+      "weight": 0.8,
+      "keywords": ["comida", "food", "alimentación", "nutrición", "cocina", "cooking", "huerto", "garden"],
+      "stage": "NEEDS_CRITICAL"
+    },
+    "education": {
+      "domain": "finances",
+      "action": "income_advice",
+      "weight": 0.7,
+      "keywords": ["educación", "education", "estudio", "study", "curso", "course", "capacitación", "training"],
+      "stage": "TOPIC_ADVICE"
+    },
+    "resources": {
+      "domain": "wellbeing",
+      "action": "resources_advice",
+      "weight": 0.7,
+      "keywords": ["recurso", "resource", "ayuda", "help", "programa", "program", "gobierno", "government", "ong", "ngo"],
+      "stage": "TOPIC_ADVICE"
+    },
+    "health": {
+      "domain": "wellbeing",
+      "action": "needs_advice",
+      "weight": 0.8,
+      "keywords": ["salud", "health", "médico", "medical", "medicina", "medicine", "doctor", "enfermedad", "illness"],
+      "stage": "NEEDS_CRITICAL"
+    },
+    "plan": {
+      "domain": "plan",
+      "action": "generate_plan",
+      "weight": 1.0,
+      "keywords": ["plan", "generate", "generar", "crear", "create", "hacer", "make", "documento", "document", "print"],
+      "stage": "PLAN_BUILD"
+    },
+    "import": {
+      "domain": "knowledge",
+      "action": "import_document",
+      "weight": 1.0,
+      "keywords": ["import", "upload", "cargar", "subir", "pdf", "document", "documento", "file", "archivo", "leer", "read"],
+      "stage": "KNOWLEDGE_IMPORT"
+    }
+  },
+  "stage_map": {
+    "WELCOME": { "priority": 2, "fallback_domain": "none", "triggers": [] },
+    "NEEDS_CRITICAL": { "priority": 1, "fallback_domain": "wellbeing", "triggers": ["needs_critical_score"] },
+    "FINANCIAL_REVIEW": { "priority": 3, "fallback_domain": "finances", "triggers": ["has_financial_data"] },
+    "GOALS_REVIEW": { "priority": 4, "fallback_domain": "goals", "triggers": ["has_goals_data"] },
+    "TOPIC_ADVICE": { "priority": 6, "fallback_domain": "none", "triggers": ["user_message"] },
+    "PLAN_BUILD": { "priority": 5, "fallback_domain": "plan", "triggers": ["request_plan", "completeness_60"] },
+    "PLAN_REVIEW": { "priority": 7, "fallback_domain": "plan", "triggers": ["plan_exists"] },
+    "KNOWLEDGE_IMPORT": { "priority": 8, "fallback_domain": "knowledge", "triggers": ["import_request"] },
+    "FOLLOW_UP": { "priority": 9, "fallback_domain": "none", "triggers": ["stalled_conversation"] }
+  }
+}

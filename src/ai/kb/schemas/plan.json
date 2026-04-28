@@ -1,0 +1,82 @@
+{
+  "$schema": "self-sufficiency-plan-v1",
+  "version": "1.0.0",
+  "sections": {
+    "overall": {
+      "fields": {
+        "overallScore": { "type": "number", "min": 0, "max": 100, "required": true },
+        "scores": {
+          "type": "object",
+          "properties": {
+            "needs": { "type": "number", "min": 0, "max": 100 },
+            "finances": { "type": "number", "min": 0, "max": 100 },
+            "goals": { "type": "number", "min": 0, "max": 100 }
+          },
+          "required": true
+        },
+        "generatedAt": { "type": "string", "format": "date-time" },
+        "nextReviewDate": { "type": "string", "format": "date" }
+      }
+    },
+    "needsAssessment": {
+      "type": "array",
+      "items": {
+        "type": "object",
+        "fields": {
+          "area": { "type": "string", "required": true },
+          "score": { "type": "number", "min": 1, "max": 5 },
+          "status": { "type": "string", "enum": ["🔴 Crítico", "🔴 Critical", "🟡 Atención", "🟡 Attention", "🟢 Estable", "🟢 Stable"] },
+          "emoji": { "type": "string" }
+        }
+      }
+    },
+    "financeDetails": {
+      "type": "object",
+      "fields": {
+        "income": { "type": "string", "required": true },
+        "expenses": { "type": "string", "required": true },
+        "balance": { "type": "string", "required": true },
+        "totalDebt": { "type": "string" },
+        "emergencyFundMonths": { "type": "string" },
+        "isDeficit": { "type": "boolean" },
+        "debtToIncome": { "type": "string" },
+        "savingsRate": { "type": "string" }
+      }
+    },
+    "goals": {
+      "type": "array",
+      "items": {
+        "type": "object",
+        "fields": {
+          "timeframe": { "type": "string", "required": true },
+          "goal": { "type": "string", "required": true },
+          "steps": { "type": "string" },
+          "deadline": { "type": "string" },
+          "emoji": { "type": "string" }
+        }
+      }
+    },
+    "actionItems": {
+      "type": "array",
+      "items": {
+        "type": "object",
+        "fields": {
+          "action": { "type": "string", "required": true },
+          "detail": { "type": "string" },
+          "emoji": { "type": "string" },
+          "priority": { "type": "number", "min": 1, "max": 10 }
+        }
+      }
+    },
+    "risks": {
+      "type": "array",
+      "items": {
+        "type": "object",
+        "fields": {
+          "risk": { "type": "string" },
+          "emoji": { "type": "string", "enum": ["🔴", "🟡", "🟢"] }
+        }
+      }
+    }
+  }
+}

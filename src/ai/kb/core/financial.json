@@ -1,0 +1,570 @@
+// /core/financial.json
+{
+  "domain_id": "financial",
+  "name": {
+    "en": "Financial Self-Sufficiency",
+    "es": "Autosuficiencia Financiera"
+  },
+  "description": {
+    "en": "Principles and actions for provident living, budgeting, debt elimination, savings, and income growth.",
+    "es": "Principios y acciones para una vida providente, presupuesto, eliminación de deudas, ahorro y crecimiento de ingresos."
+  },
+  "principles": [
+    {
+      "id": "fin_pr_1",
+      "title": { "en": "Stewardship", "es": "Mayordomía" },
+      "description": {
+        "en": "All resources belong to the Lord; we are accountable stewards. Use money wisely, avoid waste, and prepare for the future.",
+        "es": "Todos los recursos pertenecen al Señor; somos mayordomos responsables. Use el dinero con sabiduría, evite el desperdicio y prepárese para el futuro."
+      }
+    },
+    {
+      "id": "fin_pr_2",
+      "title": { "en": "Provident Living", "es": "Vida Providente" },
+      "description": {
+        "en": "Live within your means, avoid debt bondage, build reserves, and be self-reliant through work and frugality.",
+        "es": "Viva dentro de sus posibilidades, evite la servidumbre por deudas, acumule reservas y sea autosuficiente mediante el trabajo y la frugalidad."
+      }
+    },
+    {
+      "id": "fin_pr_3",
+      "title": { "en": "Agency & Accountability", "es": "Albedrío y Responsabilidad" },
+      "description": {
+        "en": "Financial choices are yours; take ownership. Honest reporting and accountability lead to growth.",
+        "es": "Las decisiones financieras son suyas; asúmalas. El informe honesto y la responsabilidad conducen al crecimiento."
+      }
+    },
+    {
+      "id": "fin_pr_4",
+      "title": { "en": "Preparedness", "es": "Preparación" },
+      "description": {
+        "en": "Gradually build a financial reserve to withstand emergencies and serve others.",
+        "es": "Construya gradualmente una reserva financiera para soportar emergencias y servir a otros."
+      }
+    },
+    {
+      "id": "fin_pr_5",
+      "title": { "en": "Work & Self-Reliance", "es": "Trabajo y Autosuficiencia" },
+      "description": {
+        "en": "The capacity to work is a blessing. Develop skills, seek better employment, and create additional income streams.",
+        "es": "La capacidad de trabajar es una bendición. Desarrolle habilidades, busque mejor empleo y cree fuentes de ingreso adicionales."
+      }
+    }
+  ],
+  "decision_trees": [
+    {
+      "id": "dt_fin_001",
+      "label": { "en": "Emergency Fund Priority", "es": "Prioridad del Fondo de Emergencia" },
+      "condition": {
+        "type": "comparison",
+        "field": "profile.assessment.financial.liquidSavings",
+        "operator": "less_than",
+        "value": "profile.assessment.baseline.monthlyFixedExpenses"
+      },
+      "branches": [
+        {
+          "result": "true",
+          "priority": "critical",
+          "action_ids": ["act_fin_001", "act_fin_002", "act_fin_003"],
+          "next_tree": "dt_fin_002"
+        },
+        {
+          "result": "false",
+          "priority": "medium",
+          "action_ids": ["act_fin_010"],
+          "next_tree": "dt_fin_002"
+        }
+      ]
+    },
+    {
+      "id": "dt_fin_002",
+      "label": { "en": "High-Interest Debt Triage", "es": "Clasificación de Deuda de Alto Interés" },
+      "condition": {
+        "type": "and",
+        "conditions": [
+          { "field": "profile.assessment.baseline.nonMortgageDebt", "operator": "gt", "value": 5000 },
+          { "field": "profile.assessment.financeDeep.creditScoreRange", "operator": "in", "value": ["<580", "580-669"] }
+        ]
+      },
+      "branches": [
+        {
+          "result": "true",
+          "action_ids": ["act_fin_004", "act_fin_005", "act_fin_006"],
+          "priority": "high"
+        },
+        {
+          "result": "false",
+          "action_ids": ["act_fin_007"]
+        }
+      ]
+    },
+    {
+      "id": "dt_fin_003",
+      "label": { "en": "Budget Deficit Response", "es": "Respuesta al Déficit Presupuestario" },
+      "condition": {
+        "type": "comparison",
+        "field": "profile.assessment.baseline.monthlyNetIncome",
+        "operator": "lt",
+        "value": "profile.assessment.baseline.monthlyFixedExpenses"
+      },
+      "branches": [
+        {
+          "result": "true",
+          "action_ids": ["act_fin_008", "act_fin_009", "act_fin_010"],
+          "priority": "critical"
+        },
+        {
+          "result": "false",
+          "action_ids": ["act_fin_011"]
+        }
+      ]
+    },
+    {
+      "id": "dt_fin_004",
+      "label": { "en": "Expense Tracking Gap", "es": "Brecha en el Registro de Gastos" },
+      "condition": { "field": "profile.assessment.financeDeep.trackExpenses", "operator": "eq", "value": false },
+      "branches": [
+        {
+          "result": "true",
+          "action_ids": ["act_fin_012", "act_fin_013"],
+          "message": {
+            "en": "Tracking is the first step to control. Let's start with a simple method.",
+            "es": "Registrar es el primer paso para controlar. Comencemos con un método simple."
+          }
+        }
+      ]
+    },
+    {
+      "id": "dt_fin_005",
+      "label": { "en": "Income Increase Need", "es": "Necesidad de Aumentar Ingresos" },
+      "condition": {
+        "type": "or",
+        "conditions": [
+          { "field": "profile.scores.financial", "operator": "lt", "value": 40 },
+          { "field": "profile.assessment.baseline.monthlyNetIncome", "operator": "lt", "value": 1500 }
+        ]
+      },
+      "branches": [
+        {
+          "result": "true",
+          "action_ids": ["act_fin_014", "act_fin_015", "act_fin_016", "act_fin_017"],
+          "priority": "high"
+        }
+      ]
+    },
+    {
+      "id": "dt_fin_006",
+      "label": { "en": "Retirement Savings Starter", "es": "Inicio de Ahorro para Jubilación" },
+      "condition": {
+        "type": "and",
+        "conditions": [
+          { "field": "profile.assessment.financeDeep.hasRetirementSaving", "operator": "eq", "value": false },
+          { "field": "profile.assessment.baseline.monthlyNetIncome", "operator": "gte", "value": 2000 }
+        ]
+      },
+      "branches": [
+        {
+          "result": "true",
+          "action_ids": ["act_fin_018", "act_fin_019"]
+        }
+      ]
+    },
+    {
+      "id": "dt_fin_007",
+      "label": { "en": "Credit Score Improvement", "es": "Mejora del Puntaje Crediticio" },
+      "condition": { "field": "profile.assessment.financeDeep.creditScoreRange", "operator": "in", "value": ["<580", "580-669"] },
+      "branches": [
+        {
+          "result": "true",
+          "action_ids": ["act_fin_020", "act_fin_021", "act_fin_022"],
+          "priority": "medium"
+        }
+      ]
+    },
+    {
+      "id": "dt_fin_008",
+      "label": { "en": "Tithing as Foundation", "es": "El Diezmo como Fundamento" },
+      "condition": {
+        "type": "and",
+        "conditions": [
+          { "field": "profile.assessment.spiritual.tithing", "operator": "eq", "value": "N" },
+          { "field": "profile.assessment.spiritual.scriptureFrequency", "operator": "not_in", "value": ["daily"] }
+        ]
+      },
+      "branches": [
+        {
+          "result": "true",
+          "action_ids": ["act_fin_023"],
+          "message": {
+            "en": "Consider the principle of tithing as an act of faith and a key to spiritual and temporal windows of heaven.",
+            "es": "Considere el principio del diezmo como un acto de fe y una llave a las ventanas espirituales y temporales de los cielos."
+          }
+        }
+      ]
+    },
+    {
+      "id": "dt_fin_009",
+      "label": { "en": "Food Storage Start", "es": "Inicio de Almacenamiento de Alimentos" },
+      "condition": {
+        "type": "and",
+        "conditions": [
+          { "field": "profile.assessment.environment.hasFoodStorage", "operator": "eq", "value": false },
+          { "field": "profile.scores.financial", "operator": "gte", "value": 50 }
+        ]
+      },
+      "branches": [
+        {
+          "result": "true",
+          "action_ids": ["act_fin_024", "act_fin_025"]
+        }
+      ]
+    },
+    {
+      "id": "dt_fin_010",
+      "label": { "en": "Avoiding Predatory Lending", "es": "Evitar Préstamos Abusivos" },
+      "condition": {
+        "type": "or",
+        "conditions": [
+          { "field": "profile.assessment.baseline.nonMortgageDebt", "operator": "gt", "value": 10000 },
+          { "field": "profile.assessment.financeDeep.bankruptcy", "operator": "eq", "value": true }
+        ]
+      },
+      "branches": [
+        {
+          "result": "true",
+          "action_ids": ["act_fin_026"],
+          "priority": "high"
+        }
+      ]
+    }
+  ],
+  "actions": [
+    {
+      "id": "act_fin_001",
+      "trigger": { "conditions": ["dt_fin_001:true"] },
+      "name": { "en": "Immediate Survival Budget", "es": "Presupuesto de Supervivencia Inmediata" },
+      "description": {
+        "en": "List only food, shelter, utilities, and transportation. Cut all non-essential spending.",
+        "es": "Enumere solo comida, vivienda, servicios públicos y transporte. Corte todos los gastos no esenciales."
+      },
+      "steps": [
+        { "order": 1, "instruction": { "en": "Gather last month's bank statements.", "es": "Reúna los extractos bancarios del mes pasado." } },
+        { "order": 2, "instruction": { "en": "Identify and total spending in 4 categories: housing, food, utilities, transport.", "es": "Identifique y sume los gastos en 4 categorías: vivienda, comida, servicios, transporte." } },
+        { "order": 3, "instruction": { "en": "Calculate the minimum needed to survive; divert all else to emergency cash.", "es": "Calcule el mínimo necesario para sobrevivir; desvíe todo lo demás a efectivo de emergencia." } }
+      ],
+      "outcome_metric": "SURVIVAL_BUDGET_CREATED",
+      "repeat": "once"
+    },
+    {
+      "id": "act_fin_002",
+      "trigger": { "conditions": ["dt_fin_001:true"] },
+      "name": { "en": "Apply for Utility/ Rent Assistance", "es": "Solicitar Asistencia para Servicios/Alquiler" },
+      "steps": [
+        { "order": 1, "instruction": { "en": "Search '[your city] rental assistance' or call 211.", "es": "Busque '[su ciudad] asistencia de alquiler' o llame al 211." } },
+        { "order": 2, "instruction": { "en": "Prepare required documents (ID, lease, income proof).", "es": "Prepare los documentos requeridos (identificación, contrato, comprobante de ingresos)." } }
+      ],
+      "outcome_metric": "ASSISTANCE_APPLIED",
+      "repeat": "as_needed"
+    },
+    {
+      "id": "act_fin_003",
+      "trigger": { "conditions": ["dt_fin_001:true"] },
+      "name": { "en": "Establish $100 Starter Emergency Fund", "es": "Establecer Fondo de Emergencia Inicial de $100" },
+      "steps": [
+        { "order": 1, "instruction": { "en": "Open a separate savings account if you don't have one.", "es": "Abra una cuenta de ahorros separada si no la tiene." } },
+        { "order": 2, "instruction": { "en": "Transfer $100 as soon as possible, even if it means skipping one non-critical bill.", "es": "Transfiera $100 lo antes posible, incluso si significa omitir un pago no crítico." } }
+      ],
+      "outcome_metric": "BASIC_EF_ESTABLISHED"
+    },
+    {
+      "id": "act_fin_004",
+      "trigger": { "conditions": ["dt_fin_002:true"] },
+      "name": { "en": "Debt Snowball Setup", "es": "Configuración Bola de Nieve de Deudas" },
+      "steps": [
+        { "order": 1, "instruction": { "en": "List all non-mortgage debts from smallest balance to largest.", "es": "Enumere todas las deudas no hipotecarias de menor a mayor saldo." } },
+        { "order": 2, "instruction": { "en": "Pay minimums on all but the smallest; attack that one with any extra money.", "es": "Pague los mínimos de todas excepto la más pequeña; ataque esa con cualquier dinero extra." } }
+      ],
+      "outcome_metric": "DEBT_SNOWBALL_STARTED",
+      "repeat": "monthly"
+    },
+    {
+      "id": "act_fin_005",
+      "trigger": { "conditions": ["dt_fin_002:true"] },
+      "name": { "en": "Negotiate Interest Rates", "es": "Negociar Tasas de Interés" },
+      "steps": [
+        { "order": 1, "instruction": { "en": "Call each credit card issuer and ask for a lower APR, citing your history.", "es": "Llame a cada emisor de tarjeta y solicite una TAE más baja, citando su historial." } },
+        { "order": 2, "instruction": { "en": "If denied, ask about hardship programs.", "es": "Si se le niega, pregunte sobre programas de dificultad." } }
+      ],
+      "outcome_metric": "INTEREST_REDUCED"
+    },
+    {
+      "id": "act_fin_006",
+      "trigger": { "conditions": ["dt_fin_002:true"] },
+      "name": { "en": "Stop Using Credit Cards", "es": "Dejar de Usar Tarjetas de Crédito" },
+      "steps": [
+        { "order": 1, "instruction": { "en": "Remove saved cards from online stores and wallets.", "es": "Elimine las tarjetas guardadas de tiendas en línea y billeteras." } },
+        { "order": 2, "instruction": { "en": "Use cash or debit only for daily purchases.", "es": "Use solo efectivo o débito para compras diarias." } }
+      ],
+      "outcome_metric": "CREDIT_CARDS_FROZEN"
+    },
+    {
+      "id": "act_fin_007",
+      "trigger": { "conditions": ["dt_fin_002:false"] },
+      "name": { "en": "Debt Avalanche Strategy", "es": "Estrategia de Avalancha de Deudas" },
+      "steps": [
+        { "order": 1, "instruction": { "en": "Rank debts by interest rate, highest first.", "es": "Clasifique las deudas por tasa de interés, la más alta primero." } },
+        { "order": 2, "instruction": { "en": "Allocate extra payments to the highest-rate debt while paying minimums on others.", "es": "Asigne pagos extra a la deuda de mayor tasa mientras paga los mínimos de las demás." } }
+      ],
+      "outcome_metric": "DEBT_AVALANCHE_STARTED"
+    },
+    {
+      "id": "act_fin_008",
+      "trigger": { "conditions": ["dt_fin_003:true"] },
+      "name": { "en": "Immediate Income Generation", "es": "Generación Inmediata de Ingresos" },
+      "steps": [
+        { "order": 1, "instruction": { "en": "Identify quick cash opportunities: sell unused items, gig work, plasma donation, day labor.", "es": "Identifique oportunidades de efectivo rápido: vender artículos no usados, trabajos temporales, donación de plasma, trabajo diario." } },
+        { "order": 2, "instruction": { "en": "Set a target of $200 this week.", "es": "Establezca una meta de $200 esta semana." } }
+      ],
+      "outcome_metric": "EMERGENCY_INCOME_BOOST"
+    },
+    {
+      "id": "act_fin_009",
+      "trigger": { "conditions": ["dt_fin_003:true"] },
+      "name": { "en": "Utilize Community Food Programs", "es": "Usar Programas Comunitarios de Alimentos" },
+      "steps": [
+        { "order": 1, "instruction": { "en": "Find local food banks/pantries (search Feeding America or local church resources).", "es": "Encuentre bancos de alimentos locales (busque Feeding America o recursos de la iglesia local)." } },
+        { "order": 2, "instruction": { "en": "Visit weekly to reduce grocery bill drastically.", "es": "Visítelos semanalmente para reducir drásticamente la factura de alimentos." } }
+      ],
+      "outcome_metric": "FOOD_COST_REDUCED"
+    },
+    {
+      "id": "act_fin_010",
+      "trigger": { "conditions": ["dt_fin_003:true"] },
+      "name": { "en": "Vital Service Preservation", "es": "Preservación de Servicios Vitales" },
+      "steps": [
+        { "order": 1, "instruction": { "en": "Contact providers (electric, water, phone) and request payment plans or low-income discounts.", "es": "Contacte a los proveedores (electricidad, agua, teléfono) y solicite planes de pago o descuentos para bajos ingresos." } }
+      ],
+      "outcome_metric": "SERVICES_MAINTAINED"
+    },
+    {
+      "id": "act_fin_011",
+      "trigger": { "conditions": ["dt_fin_003:false"] },
+      "name": { "en": "50/30/20 Budget Allocation", "es": "Asignación de Presupuesto 50/30/20" },
+      "steps": [
+        { "order": 1, "instruction": { "en": "Allocate 50% of take-home pay to needs, 30% to wants, 20% to savings/debt.", "es": "Asigne el 50% del salario neto a necesidades, 30% a deseos, 20% a ahorros/deudas." } },
+        { "order": 2, "instruction": { "en": "Adjust ratios if income low: 70/20/10.", "es": "Ajuste las proporciones si el ingreso es bajo: 70/20/10." } }
+      ],
+      "outcome_metric": "BUDGET_ALLOCATED"
+    },
+    {
+      "id": "act_fin_012",
+      "trigger": { "conditions": ["dt_fin_004:true"] },
+      "name": { "en": "Start Daily Expense Log", "es": "Iniciar Registro Diario de Gastos" },
+      "steps": [
+        { "order": 1, "instruction": { "en": "Use a small notebook or a free app like Google Sheets.", "es": "Use una libreta pequeña o una aplicación gratuita como Google Sheets." } },
+        { "order": 2, "instruction": { "en": "Record every transaction, amount, and category immediately.", "es": "Registre cada transacción, cantidad y categoría inmediatamente." } }
+      ],
+      "outcome_metric": "TRACKING_STARTED",
+      "repeat": "daily"
+    },
+    {
+      "id": "act_fin_013",
+      "trigger": { "conditions": ["dt_fin_004:true"] },
+      "name": { "en": "Weekly Expense Review", "es": "Revisión Semanal de Gastos" },
+      "steps": [
+        { "order": 1, "instruction": { "en": "Every Sunday, total spending by category bar charts.", "es": "Cada domingo, totalice los gastos y compárelos con la semana anterior." } },
+        { "order": 2, "instruction": { "en": "Identify one area to cut next week.", "es": "Identifique un área para recortar la próxima semana." } }
+      ],
+      "outcome_metric": "EXPENSE_AWARENESS",
+      "repeat": "weekly"
+    },
+    {
+      "id": "act_fin_014",
+      "trigger": { "conditions": ["dt_fin_005:true"] },
+      "name": { "en": "Skills Inventory for Income", "es": "Inventario de Habilidades para Ingresos" },
+      "steps": [
+        { "order": 1, "instruction": { "en": "List your marketable skills (writing, driving, handyman, bilingual, etc.).", "es": "Enumere sus habilidades comercializables (escritura, conducción, mantenimiento, bilingüe, etc.)." } },
+        { "order": 2, "instruction": { "en": "Research freelance platforms or local opportunities matching those skills.", "es": "Investigue plataformas de trabajo independiente u oportunidades locales que coincidan." } }
+      ],
+      "outcome_metric": "SKILL_INVENTORY_DONE"
+    },
+    {
+      "id": "act_fin_015",
+      "trigger": { "conditions": ["dt_fin_005:true"] },
+      "name": { "en": "Overtime/ Extra Shift Request", "es": "Solicitud de Horas Extra/Turnos Adicionales" },
+      "steps": [
+        { "order": 1, "instruction": { "en": "If employed, ask supervisor about overtime or additional shifts.", "es": "Si está empleado, pregunte al supervisor sobre horas extras o turnos adicionales." } }
+      ],
+      "outcome_metric": "EXTRA_INCOME_GAINED"
+    },
+    {
+      "id": "act_fin_016",
+      "trigger": { "conditions": ["dt_fin_005:true"] },
+      "name": { "en": "Reduce Transportation Costs", "es": "Reducir Costos de Transporte" },
+      "steps": [
+        { "order": 1, "instruction": { "en": "Consider carpooling, public transit, biking, or combining errands.", "es": "Considere compartir coche, transporte público, bicicleta o combinar mandados." } },
+        { "order": 2, "instruction": { "en": "Shop around for cheaper auto insurance.", "es": "Busque un seguro de auto más barato." } }
+      ],
+      "outcome_metric": "TRANSPORT_SAVINGS"
+    },
+    {
+      "id": "act_fin_017",
+      "trigger": { "conditions": ["dt_fin_005:true"] },
+      "name": { "en": "Enroll in Income-Boosting Training", "es": "Inscribirse en Capacitación para Aumentar Ingresos" },
+      "steps": [
+        { "order": 1, "instruction": { "en": "Identify a high-demand skill (coding, medical billing, trades).", "es": "Identifique una habilidad de alta demanda (programación, facturación médica, oficios)." } },
+        { "order": 2, "instruction": { "en": "Apply for free or low-cost online certificates (Coursera, local workforce center).", "es": "Solicite certificados en línea gratuitos o de bajo costo (Coursera, centro laboral local)." } }
+      ],
+      "outcome_metric": "TRAINING_ENROLLED"
+    },
+    {
+      "id": "act_fin_018",
+      "trigger": { "conditions": ["dt_fin_006:true"] },
+      "name": { "en": "Start 1% Retirement Contribution", "es": "Empezar Contribución del 1% para Jubilación" },
+      "steps": [
+        { "order": 1, "instruction": { "en": "Set up 1% automatic deduction to a retirement account (401k/IRA) if available.", "es": "Configure una deducción automática del 1% a una cuenta de jubilación (401k/IRA) si está disponible." } }
+      ],
+      "outcome_metric": "RETIREMENT_STARTED"
+    },
+    {
+      "id": "act_fin_019",
+      "trigger": { "conditions": ["dt_fin_006:true"] },
+      "name": { "en": "Increase Contribution by 1% Quarterly", "es": "Aumentar Contribución en 1% Trimestralmente" },
+      "steps": [
+        { "order": 1, "instruction": { "en": "Every 3 months, increase retirement deduction by 1% until reaching 10-15%.", "es": "Cada 3 meses, aumente la deducción para jubilación en un 1% hasta alcanzar el 10-15%." } }
+      ],
+      "outcome_metric": "RETIREMENT_GROWTH",
+      "repeat": "quarterly"
+    },
+    {
+      "id": "act_fin_020",
+      "trigger": { "conditions": ["dt_fin_007:true"] },
+      "name": { "en": "Get Free Credit Reports", "es": "Obtener Informes de Crédito Gratuitos" },
+      "steps": [
+        { "order": 1, "instruction": { "en": "Visit annualcreditreport.com and download all three bureau reports.", "es": "Visite annualcreditreport.com y descargue los informes de las tres agencias." } }
+      ],
+      "outcome_metric": "CREDIT_REPORTS_OBTAINED"
+    },
+    {
+      "id": "act_fin_021",
+      "trigger": { "conditions": ["dt_fin_007:true"] },
+      "name": { "en": "Dispute Errors on Credit Report", "es": "Disputar Errores en el Informe de Crédito" },
+      "steps": [
+        { "order": 1, "instruction": { "en": "Identify any inaccuracies and file disputes online with each bureau.", "es": "Identifique cualquier inexactitud y presente disputas en línea con cada agencia." } }
+      ],
+      "outcome_metric": "ERRORS_DISPUTED"
+    },
+    {
+      "id": "act_fin_022",
+      "trigger": { "conditions": ["dt_fin_007:true"] },
+      "name": { "en": "Maintain On-Time Payments", "es": "Mantener Pagos a Tiempo" },
+      "steps": [
+        { "order": 1, "instruction": { "en": "Set up auto-pay for minimum payments on all accounts to avoid late marks.", "es": "Configure el pago automático mínimo en todas las cuentas para evitar marcas de morosidad." } }
+      ],
+      "outcome_metric": "PAYMENT_HISTORY_PERFECT",
+      "repeat": "monthly"
+    },
+    {
+      "id": "act_fin_023",
+      "trigger": { "conditions": ["dt_fin_008:true"] },
+      "name": { "en": "Tithing Faith Experiment", "es": "Experimento de Fe con el Diezmo" },
+      "steps": [
+        { "order": 1, "instruction": { "en": "Commit to paying a full tithe for 3 months, trusting the Lord's promise in Malachi 3:10.", "es": "Comprométase a pagar un diezmo completo durante 3 meses, confiando en la promesa del Señor en Malaquías 3:10." } },
+        { "order": 2, "instruction": { "en": "Track financial blessings and share testimony after the trial.", "es": "Lleve un registro de las bendiciones financieras y comparta su testimonio después de la prueba." } }
+      ],
+      "outcome_metric": "TITHING_COMMITMENT"
+    },
+    {
+      "id": "act_fin_024",
+      "trigger": { "conditions": ["dt_fin_009:true"] },
+      "name": { "en": "Purchase First Week's Food Storage", "es": "Comprar la Primera Semana de Almacenamiento de Alimentos" },
+      "steps": [
+        { "order": 1, "instruction": { "en": "Buy an extra of 5 non-perishable staples you normally eat (rice, beans, pasta).", "es": "Compre un extra de 5 alimentos básicos no perecederos que normalmente consume (arroz, frijoles, pasta)." } }
+      ],
+      "outcome_metric": "FOOD_STORAGE_STARTED"
+    },
+    {
+      "id": "act_fin_025",
+      "trigger": { "conditions": ["dt_fin_009:true"] },
+      "name": { "en": "Set Monthly Food Storage Budget", "es": "Establecer Presupuesto Mensual para Almacenamiento" },
+      "steps": [
+        { "order": 1, "instruction": { "en": "Allocate $5-10 per week specifically for building food storage.", "es": "Asigne $5-10 por semana específicamente para construir el almacenamiento de alimentos." } }
+      ],
+      "outcome_metric": "FOOD_STORAGE_CONSISTENCY"
+    },
+    {
+      "id": "act_fin_026",
+      "trigger": { "conditions": ["dt_fin_010:true"] },
+      "name": { "en": "Avoid Payday/TItle Loans", "es": "Evitar Préstamos de Día de Pago/Título" },
+      "steps": [
+        { "order": 1, "instruction": { "en": "Identify every alternative before considering high-interest loans: church assistance, 0% credit card transfer, payment plan.", "es": "Identifique todas las alternativas antes de considerar préstamos de alto interés: ayuda de la iglesia, transferencia de tarjeta al 0%, plan de pago." } }
+      ],
+      "outcome_metric": "PREDATORY_AVOIDED"
+    },
+    {
+      "id": "act_fin_027",
+      "trigger": { "conditions": [] },
+      "name": { "en": "Monthly Net Worth Calculation", "es": "Cálculo Mensual del Patrimonio Neto" },
+      "steps": [
+        { "order": 1, "instruction": { "en": "List assets (savings, retirement, home value) minus liabilities (debts).", "es": "Enumere activos (ahorros, jubilación, valor de la vivienda) menos pasivos (deudas)." } },
+        { "order": 2, "instruction": { "en": "Track trend monthly to see progress.", "es": "Siga la tendencia mensual para ver el progreso." } }
+      ],
+      "outcome_metric": "NET_WORTH_TRACKED",
+      "repeat": "monthly"
+    },
+    {
+      "id": "act_fin_028",
+      "trigger": { "conditions": [] },
+      "name": { "en": "Automate Savings Transfers", "es": "Automatizar Transferencias de Ahorro" },
+      "steps": [
+        { "order": 1, "instruction": { "en": "Set up an automatic transfer of even $10 to savings the day after payday.", "es": "Configure una transferencia automática de incluso $10 a ahorros el día después del pago." } }
+      ],
+      "outcome_metric": "SAVINGS_AUTOMATED"
+    },
+    {
+      "id": "act_fin_029",
+      "trigger": { "conditions": [] },
+      "name": { "en": "Cut Subscription Services", "es": "Cancelar Servicios de Suscripción" },
+      "steps": [
+        { "order": 1, "instruction": { "en": "List all streaming, app, and membership fees; cancel anything not essential.", "es": "Enumere todas las suscripciones de streaming, aplicaciones y membresías; cancele lo no esencial." } }
+      ],
+      "outcome_metric": "SUBSCRIPTIONS_REDUCED"
+    },
+    {
+      "id": "act_fin_030",
+      "trigger": { "conditions": [] },
+      "name": { "en": "Create a Sinking Fund for Irregular Expenses", "es": "Crear un Fondo de Amortización para Gastos Irregulares" },
+      "steps": [
+        { "order": 1, "instruction": { "en": "Identify annual or surprise expenses (car repair, gifts, insurance) and divide by 12.", "es": "Identifique gastos anuales o sorpresivos (reparación del auto, regalos, seguro) y divídalos entre 12." } },
+        { "order": 2, "instruction": { "en": "Set aside that amount monthly in a separate savings sub-account.", "es": "Aparte esa cantidad mensualmente en una subcuenta de ahorros separada." } }
+      ],
+      "outcome_metric": "SINKING_FUND_ESTABLISHED"
+    }
+  ],
+  "metrics": [
+    {
+      "id": "metric_fin_001",
+      "name": { "en": "Savings Rate", "es": "Tasa de Ahorro" },
+      "formula": "(monthlyNetIncome - monthlyTotalExpenses) / monthlyNetIncome * 100",
+      "target_range": { "min": 10, "max": 50, "unit": "percent" }
+    },
+    {
+      "id": "metric_fin_002",
+      "name": { "en": "Emergency Fund Coverage (months)", "es": "Cobertura del Fondo de Emergencia (meses)" },
+      "formula": "liquidSavings / monthlyFixedExpenses",
+      "target_range": { "min": 3, "max": 6, "unit": "months" }
+    },
+    {
+      "id": "metric_fin_003",
+      "name": { "en": "Debt-to-Income Ratio", "es": "Relación Deuda-Ingreso" },
+      "formula": "(sum of monthly debt payments) / monthlyNetIncome * 100",
+      "target_range": { "min": 0, "max": 36, "unit": "percent", "warning": "Max 43% for most lenders" }
+    },
+    {
+      "id": "metric_fin_004",
+      "name": { "en": "Credit Score Trend", "es": "Tendencia del Puntaje Crediticio" },
+      "formula": "currentScore - previousScore",
+      "target_range": { "min": 0, "positive": true }
+    }
+  ]
+}
