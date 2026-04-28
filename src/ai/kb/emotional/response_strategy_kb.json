@@ -1,0 +1,163 @@
+{
+  "version": "1.0.0",
+  "strategies": {
+    "validate_emotion_offer_support": {
+      "applicable_to": ["sadness", "grief"],
+      "style": "validating_and_gentle",
+      "do_not": ["problem_solve", "give_advice", "rush_to_fix", "minimize_feelings"],
+      "response_templates": {
+        "es": [
+          "Escucho que estás pasando por un momento difícil. Quiero que sepas que está bien no estar bien.",
+          "Tus sentimientos son válidos. No tienes que pasar por esto solo.",
+          "A veces lo más importante es reconocer lo que sentimos. Gracias por compartirlo.",
+          "No hay prisa para resolver todo hoy. Un paso a la vez."
+        ],
+        "en": [
+          "I hear that you're going through a difficult time. I want you to know it's okay to not be okay.",
+          "Your feelings are valid. You don't have to go through this alone.",
+          "Sometimes the most important thing is acknowledging what we feel. Thank you for sharing.",
+          "There's no rush to solve everything today. One step at a time."
+        ]
+      },
+      "follow_up": "offer_reflective_question"
+    },
+    "clarify_and_guide": {
+      "applicable_to": ["confusion"],
+      "style": "patient_and_clear",
+      "do_not": ["assume_understanding", "technical_explanation", "dev_mode_redirect"],
+      "response_templates": {
+        "es": [
+          "Entiendo que esto puede ser confuso. Vamos a desglosarlo paso a paso.",
+          "No te preocupes por no entenderlo todo ahora. ¿Qué parte te gustaría aclarar primero?",
+          "Déjame explicarlo de otra manera. A veces verlo desde otro ángulo ayuda."
+        ],
+        "en": [
+          "I understand this can be confusing. Let's break it down step by step.",
+          "Don't worry about understanding everything right now. What part would you like me to clarify first?",
+          "Let me explain it differently. Sometimes seeing it from another angle helps."
+        ]
+      },
+      "follow_up": "invite_specific_question"
+    },
+    "reflective_grounding": {
+      "applicable_to": ["existential_uncertainty", "identity_confusion"],
+      "style": "reflective_and_grounding",
+      "do_not": ["give_direct_answers", "dev_mode", "plan_force", "rush_to_solution"],
+      "response_templates": {
+        "es": [
+          "Esa es una pregunta profunda. En lugar de buscar una respuesta rápida, exploremos juntos qué resuena contigo.",
+          "No tener todas las respuestas está bien. A veces la claridad llega caminando, no esperando.",
+          "Hablemos de lo que sí sabes sobre ti, aunque sea pequeño. Desde ahí podemos construir.",
+          "No necesitas tener un propósito definido hoy. El propósito se descubre, no se inventa."
+        ],
+        "en": [
+          "That's a deep question. Instead of rushing to an answer, let's explore together what resonates with you.",
+          "Not having all the answers is okay. Sometimes clarity comes through walking, not waiting.",
+          "Let's talk about what you DO know about yourself, even if it's small. We can build from there.",
+          "You don't need to have a defined purpose today. Purpose is discovered, not invented."
+        ]
+      },
+      "follow_up": "gentle_exploration"
+    },
+    "build_self_worth": {
+      "applicable_to": ["low_self_worth"],
+      "style": "affirming_and_gentle",
+      "do_not": ["false_praise", "dev_mode", "plan_force", "compare_to_others"],
+      "response_templates": {
+        "es": [
+          "Mereces ocupar espacio en este mundo. Tus desafíos no definen tu valor.",
+          "A veces somos nuestro crítico más duro. ¿Qué te diría alguien que te quiere?",
+          "No tienes que ser perfecto para ser valioso. Tu valor es inherente.",
+          "Hablemos de las cosas que sí has logrado, incluso las pequeñas."
+        ],
+        "en": [
+          "You deserve to take up space in this world. Your challenges do not define your worth.",
+          "Sometimes we are our own harshest critic. What would someone who loves you say?",
+          "You don't have to be perfect to be valuable. Your worth is inherent.",
+          "Let's talk about the things you HAVE accomplished, even the small ones."
+        ]
+      },
+      "follow_up": "strength_inventory"
+    },
+    "reduce_and_prioritize": {
+      "applicable_to": ["overwhelm"],
+      "style": "calming_and_structuring",
+      "do_not": ["add_tasks", "dev_mode", "plan_force", "minimize_stress"],
+      "response_templates": {
+        "es": [
+          "Parece que tienes mucho en tu mente. Vamos a respirar y enfocarnos en UNA cosa a la vez.",
+          "Cuando todo es urgente, nada lo es. ¿Cuál es la única cosa que más importa ahora?",
+          "No necesitas resolverlo todo. Solo necesitas dar el siguiente paso.",
+          "Vamos a priorizar juntos. ¿Qué es lo más pesado en tu mente ahora?"
+        ],
+        "en": [
+          "It sounds like you have a lot on your mind. Let's breathe and focus on ONE thing at a time.",
+          "When everything is urgent, nothing is. What's the one thing that matters most right now?",
+          "You don't need to solve everything. You just need to take the next step.",
+          "Let's prioritize together. What's the heaviest thing on your mind right now?"
+        ]
+      },
+      "follow_up": "single_action_focus"
+    },
+    "gentle_reconnection": {
+      "applicable_to": ["emotional_numbness"],
+      "style": "patient_and_present",
+      "do_not": ["force_feelings", "dev_mode", "demand_engagement", "fix_it"],
+      "response_templates": {
+        "es": [
+          "Sentirse desconectado es más común de lo que crees. No te apresures a 'sentir algo'. Solo estar presente basta.",
+          "A veces el cuerpo y la mente necesitan un descanso de sentir. Está bien.",
+          "No necesitas tener una reacción. Solo estar aquí, ahora, es suficiente.",
+          "El solo hecho de estar aquí y reconocerlo ya es un paso."
+        ],
+        "en": [
+          "Feeling disconnected is more common than you think. Don't rush to 'feel something.' Just being present is enough.",
+          "Sometimes the mind and body need a break from feeling. That's okay.",
+          "You don't need to have a reaction. Just being here, now, is enough.",
+          "Just being here and acknowledging it is already a step."
+        ]
+      },
+      "follow_up": "gentle_check_in"
+    },
+    "small_steps_and_encouragement": {
+      "applicable_to": ["motivation_loss"],
+      "style": "encouraging_and_practical",
+      "do_not": ["dev_mode", "overwhelm_with_plan", "blame", "demand_consistency"],
+      "response_templates": {
+        "es": [
+          "La motivación no siempre llega antes de empezar. A veces llega después.",
+          "Empieza con algo muy pequeño. Cinco minutos. Solo eso.",
+          "No necesitas estar motivado todo el tiempo. La constancia no es perfección, es presencia.",
+          "¿Qué sería un paso pequeño pero significativo hoy?"
+        ],
+        "en": [
+          "Motivation doesn't always come before starting. Sometimes it comes after.",
+          "Start with something very small. Five minutes. Just that.",
+          "You don't need to be motivated all the time. Consistency isn't perfection, it's presence.",
+          "What would be one small but meaningful step today?"
+        ]
+      },
+      "follow_up": "celebrate_small_wins"
+    },
+    "identity_exploration": {
+      "applicable_to": ["identity_confusion"],
+      "style": "exploratory_and_open",
+      "do_not": ["label_person", "dev_mode", "force_decision", "give_identity"],
+      "response_templates": {
+        "es": [
+          "La identidad no es algo fijo. Es algo que exploramos y redescubrimos constantemente.",
+          "No necesitas tener todo definido. La vida es un proceso de descubrimiento.",
+          "Hablemos de lo que te hace sentir vivo, aunque sea pequeño.",
+          "¿Qué cosas te importaban antes que has dejado de lado? A veces ahí hay pistas."
+        ],
+        "en": [
+          "Identity isn't something fixed. It's something we explore and rediscover constantly.",
+          "You don't need to have everything figured out. Life is a process of discovery.",
+          "Let's talk about what makes you feel alive, even if it's small.",
+          "What things used to matter to you that you've set aside? Sometimes there are clues there."
+        ]
+      },
+      "follow_up": "values_exploration"
+    }
+  }
+}

@@ -115,6 +115,7 @@ export default class ReasoningEngine {
       activeRules: [],
       validation: pipeline.validation,
       kbGapDetected: true,
+      structureError: false,
     }
   }
 

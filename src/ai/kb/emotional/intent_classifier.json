@@ -1,0 +1,113 @@
+{
+  "version": "1.0.0",
+  "classification_order": [
+    "emotional_support_needed",
+    "identity_confusion",
+    "existential_questions",
+    "planning_request",
+    "financial_request",
+    "goal_setting_request",
+    "technical_dev_request"
+  ],
+  "categories": {
+    "emotional_support_needed": {
+      "priority": 1,
+      "trigger_phrases": [
+        "i feel", "i am feeling", "i'm feeling", "i've been feeling",
+        "it hurts", "i'm struggling", "i'm having a hard time",
+        "emotionally", "mental health", "anxiety", "depression",
+        "i need help", "can't cope", "not okay", "not doing well"
+      ],
+      "confidence_rules": {
+        "first_person_emotional": 0.9,
+        "distress_vocabulary": 0.85,
+        "helper_phrases": 0.8
+      },
+      "routing_destination": "EMOTIONAL_SUPPORT_MODE"
+    },
+    "identity_confusion": {
+      "priority": 2,
+      "trigger_phrases": [
+        "who am i", "don't know myself", "lost myself",
+        "don't know who", "identity", "self-discovery",
+        "don't know my strengths", "what am i good at",
+        "don't know what i want", "what should i do with my life",
+        "i don't know what to do", "no direction", "no purpose"
+      ],
+      "confidence_rules": {
+        "existential_language": 0.85,
+        "self_reflection": 0.8,
+        "future_uncertainty": 0.75
+      },
+      "routing_destination": "REFLECTION_MODE"
+    },
+    "existential_questions": {
+      "priority": 3,
+      "trigger_phrases": [
+        "meaning of life", "point of life", "why am i here",
+        "what's the point", "purpose of", "existential",
+        "why do we exist", "life has no meaning"
+      ],
+      "confidence_rules": {
+        "philosophical_language": 0.9,
+        "abstract_questioning": 0.85,
+        "deep_reflection": 0.8
+      },
+      "routing_destination": "REFLECTION_MODE"
+    },
+    "planning_request": {
+      "priority": 4,
+      "trigger_phrases": [
+        "create a plan", "generate plan", "build a plan",
+        "help me plan", "plan for", "my plan",
+        "self-sufficiency plan", "action plan"
+      ],
+      "confidence_rules": {
+        "plan_keywords": 0.9,
+        "action_oriented": 0.8
+      },
+      "routing_destination": "PLANNING_MODE"
+    },
+    "financial_request": {
+      "priority": 5,
+      "trigger_phrases": [
+        "budget", "debt", "savings", "income", "expenses",
+        "money", "financial", "emergency fund", "save money",
+        "pay off", "loan", "interest rate"
+      ],
+      "confidence_rules": {
+        "financial_keywords": 0.9,
+        "money_talk": 0.85
+      },
+      "routing_destination": "PLANNING_MODE"
+    },
+    "goal_setting_request": {
+      "priority": 6,
+      "trigger_phrases": [
+        "set a goal", "my goals", "goal planning", "short-term goal",
+        "long-term goal", "achieve", "milestone", "objective",
+        "want to accomplish", "want to achieve"
+      ],
+      "confidence_rules": {
+        "goal_keywords": 0.9,
+        "future_focus": 0.8
+      },
+      "routing_destination": "PLANNING_MODE"
+    },
+    "technical_dev_request": {
+      "priority": 7,
+      "trigger_phrases": [
+        "inspect module", "scan dependencies", "install package",
+        "patch function", "modify code", "fix bug",
+        "implement feature", "build function", "check dependency",
+        "npm install", "validate system", "check integrity"
+      ],
+      "confidence_rules": {
+        "dev_keywords": 0.9,
+        "code_references": 0.85,
+        "technical_verbs": 0.8
+      },
+      "routing_destination": "DEV_MODE"
+    }
+  }
+}

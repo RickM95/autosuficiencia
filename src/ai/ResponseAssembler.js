@@ -3,18 +3,28 @@ import { getNeedsAdvice, getStressAdvice, getResourcesAdvice } from './advice/we
 import { getGoalsAdvice } from './advice/goals.js'
 import { analyzeCompleteness } from './Analyzer.js'
 import { generatePlan } from './PlanGenerator.js'
+import { isDevRequest, routeDevRequest, buildModuleRegistry, buildPackageJson, classifyAndRoute } from './devAgent/index.js'
 import KbEngine from './kb/KbEngine.js'
 
 const kb = new KbEngine()
 
+const PRECISION_PREFIX = '⚡'
+
+function nephiFrame(text, lang) {
+  const prefix = lang === 'es'
+    ? `${PRECISION_PREFIX} **Nephi Dev Agent — Análisis**\n\n`
+    : `${PRECISION_PREFIX} **Nephi Dev Agent — Analysis**\n\n`
+  return prefix + text
+}
+
 const WELCOME_MESSAGES = {
   es: {
-    first: `👋 **¡Hola! Soy Asesor AS**, tu asistente experto en autosuficiencia, bienestar emocional y finanzas personales.\n\nPuedo ayudarte a:\n- 📊 **Analizar tu situación** — evaluar tus necesidades y finanzas\n- 🎯 **Crear metas** — establecer objetivos SMART alcanzables\n- 💰 **Manejar tu dinero** — presupuesto, deudas, ahorro\n- 📋 **Generar tu plan** — un plan de autosuficiencia profesional\n- 📚 **Importar conocimiento** — sube PDFs, artículos o enlaces para enriquecer mi base de datos\n\n¿En qué te puedo ayudar hoy?`,
-    returning: `👋 **¡Hola de nuevo!** ¿Cómo puedo ayudarte hoy a avanzar en tu plan de autosuficiencia?`,
+    first: `${PRECISION_PREFIX} **Nephi Dev Agent** — Asesor AS\n\nSoy un motor de razonamiento determinístico basado en una base de conocimiento estructurada. No soy un chatbot genérico.\n\n**Capacidades:**\n- 📊 **Analizar situación** — evaluar necesidades y finanzas\n- 🎯 **Crear metas** — objetivos SMART con pasos precisos\n- 💰 **Gestión financiera** — presupuesto, deudas, ahorro\n- 📋 **Generar plan** — plan de autosuficiencia profesional\n- 📚 **Importar conocimiento** — PDFs, enlaces, documentos\n\n¿En qué área necesitas intervención precisa?`,
+    returning: `${PRECISION_PREFIX} **Nephi Dev Agent** — ¿Qué requieres analizar o modificar en tu plan de autosuficiencia?`,
   },
   en: {
-    first: `👋 **Hello! I'm Asesor AS**, your expert assistant in self-sufficiency, emotional wellbeing, and personal finance.\n\nI can help you:\n- 📊 **Analyze your situation** — assess your needs and finances\n- 🎯 **Create goals** — set achievable SMART objectives\n- 💰 **Manage your money** — budget, debt, savings\n- 📋 **Generate your plan** — a professional self-sufficiency plan\n- 📚 **Import knowledge** — upload PDFs, articles, or links to enrich my database\n\nHow can I help you today?`,
-    returning: `👋 **Welcome back!** How can I help you move forward with your self-sufficiency plan today?`,
+    first: `${PRECISION_PREFIX} **Nephi Dev Agent** — Asesor AS\n\nI am a deterministic reasoning engine operating on a structured Knowledge Base. I am NOT a generic chatbot.\n\n**Capabilities:**\n- 📊 **Analyze situation** — assess needs and finances\n- 🎯 **Create goals** — SMART objectives with precise steps\n- 💰 **Manage money** — budget, debt, savings\n- 📋 **Generate plan** — professional self-sufficiency plan\n- 📚 **Import knowledge** — PDFs, links, documents\n\nWhat area requires precise intervention?`,
+    returning: `${PRECISION_PREFIX} **Nephi Dev Agent** — What requires analysis or modification in your self-sufficiency plan?`,
   },
 }
 
@@ -36,6 +46,15 @@ export function assembleResponse(stage, analysis, formData, budgetData, memory, 
       : '⚠️ Knowledge base structure error. Please contact the administrator.')
   }
 
+  if (userMessage && isDevRequest(userMessage)) {
+    const routing = classifyAndRoute(userMessage)
+    if (routing.shouldBlockDevTrigger) {
+      const response = buildEmotionalResponse(routing, userMessage, lang)
+      if (response) return response
+    }
+    return _handleDevRequest(userMessage, lang)
+  }
+
   if (analysis.kbDrivenResponse) {
     return analysis.kbDrivenResponse
   }
@@ -50,15 +69,6 @@ export function assembleResponse(stage, analysis, formData, budgetData, memory, 
   }
 
   const response = _buildFallbackResponse(stage, analysis, formData, budgetData, memory, userMessage, lang)
-  const validation = kb.validateResponse({
-    actions: [{ actionId: 'fallback', steps: [response.substring(0, 100)] }],
-    principles: [],
-  })
-
-  if (!validation.valid) {
-    return kb.kbStructureError + '\n\n' + response
-  }
-
   return response
 }
 
@@ -154,8 +164,8 @@ function _buildFallbackResponse(stage, analysis, formData, budgetData, memory, u
 function _ensureActionRef(responseText, actionId, lang) {
   if (!actionId) return responseText
   const actionRefFootnote = lang === 'es'
-    ? `\n\n📋 **Acción de referencia:** ${actionId}`
-    : `\n\n📋 **Reference action:** ${actionId}`
+    ? `\n\n📐 **Acción de referencia Nephi:** ${actionId}`
+    : `\n\n📐 **Nephi reference action:** ${actionId}`
   return responseText + actionRefFootnote
 }
 
@@ -169,44 +179,46 @@ function getReviewAdvice(analysis, formData, budgetData, lang) {
   const finances = analysis.financialAnalysis
   const goals = analysis.goalsAnalysis
 
-  const lines = []
-  if (lang === 'es') {
-    lines.push('📋 **Revisión de tu Progreso**\n')
-    lines.push(`**Completitud del formulario:** ${completeness.percent}%`)
-    lines.push(`**Necesidades:** ${needs.score}/100 — ${needs.critical.length > 0 ? `${needs.critical.length} crítica(s)` : 'Estable'}${needs.warnings.length > 0 ? `, ${needs.warnings.length} área(s) pendiente(s)` : ''}`)
-    lines.push(`**Finanzas:** ${finances.score}/100 — ${finances.isDeficit ? 'Déficit mensual' : 'Equilibrado'}${finances.hasDebt ? `, ${finances.debts.length} deuda(s)` : ''}`)
-    lines.push(`**Metas:** ${goals.score}/100 — ${goals.totalGoals} meta(s) definidas`)
+  const lines = [lang === 'es'
+    ? `⚡ **Nephi Dev Agent — Revisión de progreso**`
+    : `⚡ **Nephi Dev Agent — Progress review**`
+  ]
+  lines.push('')
+  lines.push(lang === 'es'
+    ? `**Completitud del formulario:** ${completeness.percent}%`
+    : `**Form completeness:** ${completeness.percent}%`
+  )
+  lines.push(lang === 'es'
+    ? `**Necesidades:** ${needs.score}/100 — ${needs.critical.length > 0 ? `${needs.critical.length} crítica(s)` : 'Estable'}${needs.warnings.length > 0 ? `, ${needs.warnings.length} pendiente(s)` : ''}`
+    : `**Needs:** ${needs.score}/100 — ${needs.critical.length > 0 ? `${needs.critical.length} critical` : 'Stable'}${needs.warnings.length > 0 ? `, ${needs.warnings.length} pending` : ''}`
+  )
+  lines.push(lang === 'es'
+    ? `**Finanzas:** ${finances.score}/100 — ${finances.isDeficit ? 'Déficit mensual' : 'Equilibrado'}${finances.hasDebt ? `, ${finances.debts.length} deuda(s)` : ''}`
+    : `**Finances:** ${finances.score}/100 — ${finances.isDeficit ? 'Monthly deficit' : 'Balanced'}${finances.hasDebt ? `, ${finances.debts.length} debt(s)` : ''}`
+  )
+  lines.push(lang === 'es'
+    ? `**Metas:** ${goals.score}/100 — ${goals.totalGoals} meta(s) definidas`
+    : `**Goals:** ${goals.score}/100 — ${goals.totalGoals} goal(s) defined`
+  )
+  lines.push('')
+
+  const suggestions = []
+  if (finances.needsEmergencyFund) suggestions.push(lang === 'es' ? 'Construir fondo de emergencia (3-6 meses de gastos)' : 'Build emergency fund (3-6 months of expenses)')
+  if (finances.isDeficit) suggestions.push(lang === 'es' ? 'Eliminar déficit — reducir gastos o aumentar ingresos' : 'Eliminate deficit — reduce expenses or increase income')
+  if (goals.score < 50) suggestions.push(lang === 'es' ? 'Agregar pasos y fechas a las metas' : 'Add steps and deadlines to goals')
+  if (completeness.missing.includes('commitmentStatement')) suggestions.push(lang === 'es' ? 'Completar declaración de compromiso' : 'Complete commitment statement')
+
+  if (suggestions.length > 0) {
+    lines.push(lang === 'es' ? '**Intervenciones requeridas:**' : '**Required interventions:**')
+    for (const s of suggestions) lines.push(`- ${s}`)
     lines.push('')
-    const suggestions = []
-    if (finances.needsEmergencyFund) suggestions.push('Construir fondo de emergencia (cubre 3-6 meses de gastos)')
-    if (finances.isDeficit) suggestions.push('Reducir gastos o aumentar ingresos para eliminar el déficit')
-    if (goals.score < 50) suggestions.push('Agregar pasos específicos y fechas límite a tus metas')
-    if (completeness.missing.includes('commitmentStatement')) suggestions.push('Completar tu declaración de compromiso')
-    if (suggestions.length > 0) {
-      lines.push('**Sugerencias para mejorar:**')
-      for (const s of suggestions) lines.push(`- ${s}`)
-      lines.push('')
-    }
-    lines.push('¿Quieres que genere una versión mejorada del plan o te ayudo con algún aspecto específico?')
-  } else {
-    lines.push('📋 **Progress Review**\n')
-    lines.push(`**Form completeness:** ${completeness.percent}%`)
-    lines.push(`**Needs:** ${needs.score}/100 — ${needs.critical.length > 0 ? `${needs.critical.length} critical` : 'Stable'}${needs.warnings.length > 0 ? `, ${needs.warnings.length} pending` : ''}`)
-    lines.push(`**Finances:** ${finances.score}/100 — ${finances.isDeficit ? 'Monthly deficit' : 'Balanced'}${finances.hasDebt ? `, ${finances.debts.length} debt(s)` : ''}`)
-    lines.push(`**Goals:** ${goals.score}/100 — ${goals.totalGoals} goal(s) defined`)
-    lines.push('')
-    const suggestions = []
-    if (finances.needsEmergencyFund) suggestions.push('Build emergency fund (cover 3-6 months of expenses)')
-    if (finances.isDeficit) suggestions.push('Reduce expenses or increase income to eliminate the deficit')
-    if (goals.score < 50) suggestions.push('Add specific steps and deadlines to your goals')
-    if (completeness.missing.includes('commitmentStatement')) suggestions.push('Complete your commitment statement')
-    if (suggestions.length > 0) {
-      lines.push('**Suggestions to improve:**')
-      for (const s of suggestions) lines.push(`- ${s}`)
-      lines.push('')
-    }
-    lines.push('Would you like me to generate an improved plan or help with a specific aspect?')
   }
+
+  lines.push(lang === 'es'
+    ? '¿Requieres generación de plan mejorado o intervención en algún aspecto específico?'
+    : 'Do you require improved plan generation or intervention in a specific aspect?'
+  )
+
   return lines.join('\n')
 }
 
@@ -215,24 +227,28 @@ function getFollowUpAdvice(analysis, formData, lang) {
   const needs = analysis.needsAnalysis
 
   if (completeness.percent < 30) {
-    return lang === 'es'
-      ? `📝 **Sigamos adelante.** Veo que aún no has completado el formulario de autosuficiencia. ¿Te gustaría que te guíe paso a paso? Podemos empezar con tu información personal.`
-      : `📝 **Let's keep going.** I see you haven't completed the self-sufficiency form yet. Would you like me to guide you through it step by step? We can start with your personal information.`
+    return nephiFrame(lang === 'es'
+      ? `**Estado:** Formulario incompleto (${completeness.percent}%)\n**Acción requerida:** Completar secciones restantes del formulario de autosuficiencia.\n**Prioridad:** Alta — sin datos completos no es posible generar un plan preciso.\n\n¿Deseas que guíe la recolección de datos paso a paso?`
+      : `**Status:** Incomplete form (${completeness.percent}%)\n**Required action:** Complete remaining self-sufficiency form sections.\n**Priority:** High — without complete data, a precise plan cannot be generated.\n\nShall I guide data collection step by step?`,
+      lang)
   }
   if (needs.critical.length > 0) {
-    return lang === 'es'
-      ? `🤗 **¿Cómo estás hoy?** Recuerda que las áreas críticas que identificamos son importantes. ¿Has podido avanzar en alguna de ellas? No importa si es un paso pequeño — cada paso cuenta.`
-      : `🤗 **How are you today?** Remember the critical areas we identified are important. Have you been able to make progress on any of them? It doesn't matter if it's a small step — every step counts.`
+    return nephiFrame(lang === 'es'
+      ? `**Estado:** ${needs.critical.length} área(s) crítica(s) detectadas\n**Acción requerida:** Abordar necesidades críticas antes de planificación avanzada.\n**Prioridad:** Inmediata.\n\n¿Has podido avanzar en alguna de estas áreas desde nuestra última intervención?`
+      : `**Status:** ${needs.critical.length} critical area(s) detected\n**Required action:** Address critical needs before advanced planning.\n**Priority:** Immediate.\n\nHave you made progress on any of these areas since our last intervention?`,
+      lang)
   }
   const goals = analysis.goalsAnalysis
   if (goals.totalGoals > 0 && goals.score < 50) {
-    return lang === 'es'
-      ? `🎯 **Revisemos tus metas.** Tienes ${goals.totalGoals} meta(s) definidas, pero algunas les faltan pasos o fechas. ¿Quieres que te ayude a detallar una?`
-      : `🎯 **Let's review your goals.** You have ${goals.totalGoals} goal(s) defined, but some are missing steps or deadlines. Would you like help detailing one?`
+    return nephiFrame(lang === 'es'
+      ? `**Estado:** ${goals.totalGoals} meta(s) definidas, puntaje SMART ${goals.score}/100\n**Acción requerida:** Agregar pasos específicos y fechas límite a las metas existentes.\n**Prioridad:** Media.\n\n¿Requieres asistencia para detallar alguna meta en particular?`
+      : `**Status:** ${goals.totalGoals} goal(s) defined, SMART score ${goals.score}/100\n**Required action:** Add specific steps and deadlines to existing goals.\n**Priority:** Medium.\n\nDo you require assistance detailing a specific goal?`,
+      lang)
   }
-  return lang === 'es'
-    ? `💪 **¡Sigue así!** Has avanzado bien. ¿Hay algo específico en lo que pueda ayudarte hoy para seguir progresando?`
-    : `💪 **Keep it up!** You've made good progress. Is there anything specific I can help you with today to keep moving forward?`
+  return nephiFrame(lang === 'es'
+    ? `**Estado:** Progreso estable\n**Acción:** No se detectan intervenciones urgentes.\n**Recomendación:** Continuar con el plan actual y programar revisión en 30 días.\n\n¿Hay algún aspecto específico que requiera análisis adicional?`
+    : `**Status:** Stable progress\n**Action:** No urgent interventions detected.\n**Recommendation:** Continue with current plan and schedule review in 30 days.\n\nIs there any specific aspect requiring additional analysis?`,
+    lang)
 }
 
 // ═══════════════════════════════════════════════════════════════
@@ -318,4 +334,87 @@ export function renderPlanInChat(plan, lang) {
     t('¿Quieres que detalle alguna sección o ajuste algo?', 'Would you like me to detail any section or adjust something?'),
   ]
   return lines.join('\n')
+}
+
+function buildEmotionalResponse(routing, userMessage, lang) {
+  const strategy = routing.responseStrategy
+  if (!strategy) return null
+
+  const template = strategy.templates
+    ? (strategy.templates[lang] || strategy.templates.en)
+    : null
+  if (!template || template.length === 0) return null
+
+  const selected = template[Math.floor(Math.random() * template.length)]
+
+  const modeLabel = lang === 'es'
+    ? (routing.mode === 'EMOTIONAL_SUPPORT_MODE' ? 'Modo apoyo emocional' : 'Modo reflexión')
+    : (routing.mode === 'EMOTIONAL_SUPPORT_MODE' ? 'Emotional Support Mode' : 'Reflection Mode')
+
+  const prefix = `⚡ **Nephi Dev Agent — ${modeLabel}**\n\n`
+
+  return prefix + selected
+}
+
+function _handleDevRequest(userMessage, lang) {
+  const registry = buildModuleRegistry()
+  const packageJson = buildPackageJson()
+  const result = routeDevRequest(userMessage, registry, packageJson)
+  const t = (es, en) => lang === 'es' ? es : en
+
+  const header = `⚡ **Nephi Dev Agent — ${t('Análisis de código', 'Code Analysis')}**\n`
+
+  switch (result.type) {
+    case 'inspect': {
+      if (result.error) {
+        return `${header}\n${t('Error', 'Error')}: ${result.error}\n\n${t('Módulos disponibles', 'Available modules')}: ${result.registry.join(', ')}`
+      }
+      if (result.target) {
+        return `${header}\n**${t('Módulo', 'Module')}:** ${result.target}\n${t('Exportaciones', 'Exports')}: ${(result.exports || []).join(', ') || t('Ninguna', 'None')}\n${t('Importaciones', 'Imports')}: ${(result.imports || []).join(', ') || t('Ninguna', 'None')}\n${t('Tamaño', 'Size')}: ${result.size} ${t('líneas', 'lines')}\n${t('Dependencias', 'Dependencies')}: ${(result.dependencies || []).join(', ') || t('Ninguna', 'None')}`
+      }
+      return `${header}\n${t('Registro de módulos', 'Module registry')}: ${result.count} ${t('módulos', 'modules')}\n${Object.keys(registry).join(', ')}`
+    }
+
+    case 'dependency': {
+      const lines = [header]
+      if (result.scan) {
+        lines.push(`\n**${t('Escaneo de dependencias', 'Dependency scan')}**`)
+        lines.push(`${t('Instaladas', 'Installed')}: ${result.scan.installedDependencies.length}`)
+        lines.push(`${t('Faltantes', 'Missing')}: ${result.scan.missingDependencies.length}`)
+      }
+      if (result.advice && result.advice.recommendations) {
+        lines.push(`\n**${t('Recomendaciones', 'Recommendations')}:**`)
+        for (const r of result.advice.recommendations) {
+          lines.push(`  \`${r.installCmd}\` ${r.viteCompatible ? '✅' : '⚠️'}`)
+        }
+      }
+      if (result.viteIssues && result.viteIssues.warnings) {
+        lines.push(`\n**${t('Advertencias Vite', 'Vite warnings')}:**`)
+        for (const w of result.viteIssues.warnings) {
+          lines.push(`  ⚠️ ${w.detail}`)
+        }
+      }
+      return lines.join('\n')
+    }
+
+    case 'patch': {
+      if (result.error) {
+        return `${header}\n**${t('Error de validación', 'Validation error')}:** ${result.error}`
+      }
+      return `${header}\n✅ ${t('Parche aprobado — listo para ejecución', 'Patch approved — ready for execution')}\n${t('Ejecutar', 'Run')}: \`npm install\` ${t('si hay dependencias pendientes', 'if dependencies are pending')}`
+    }
+
+    case 'validate': {
+      if (!result.validation) return `${header}\n${t('Sin resultados de validación', 'No validation results')}`
+      return `${header}\n✅ ${t('Seguro', 'Safe')}: ${result.validation.safe}\n${t('Errores', 'Errors')}: ${(result.validation.errors || []).join('; ') || t('Ninguno', 'None')}\n${t('Advertencias', 'Warnings')}: ${(result.validation.warnings || []).join('; ') || t('Ninguna', 'None')}`
+    }
+
+    case 'explain': {
+      if (result.error) return `${header}\n${t('Error', 'Error')}: ${result.error}`
+      return `${header}\n${result.details || result.message}`
+    }
+
+    default:
+      return `${header}\n${t('No se pudo determinar el tipo de solicitud de desarrollo.', 'Could not determine development request type.')}\n${t('Tipos soportados', 'Supported types')}: inspect, patch, dependency, validate, explain`
+  }
 }

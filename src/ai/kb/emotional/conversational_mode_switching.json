@@ -1,0 +1,97 @@
+{
+  "version": "1.0.0",
+  "modes": {
+    "DEV_MODE": {
+      "id": "DEV_MODE",
+      "label_en": "Development Mode",
+      "label_es": "Modo desarrollo",
+      "activators": ["technical_dev_request"],
+      "blocked_by": ["emotional_support_needed", "identity_confusion", "existential_questions", "overwhelm"],
+      "behavior": {
+        "response_style": "technical_and_precise",
+        "allows_patches": true,
+        "allows_dependency_scans": true,
+        "allows_code_inspection": true,
+        "allows_validation": true
+      },
+      "max_duration": "session"
+    },
+    "PLANNING_MODE": {
+      "id": "PLANNING_MODE",
+      "label_en": "Planning Mode",
+      "label_es": "Modo planificación",
+      "activators": ["planning_request", "financial_request", "goal_setting_request"],
+      "blocked_by": ["emotional_support_needed", "identity_confusion", "existential_questions"],
+      "behavior": {
+        "response_style": "structured_and_actionable",
+        "allows_plan_generation": true,
+        "allows_goal_setting": true,
+        "allows_budget_analysis": true,
+        "allows_financial_advice": true
+      },
+      "max_duration": "session"
+    },
+    "EMOTIONAL_SUPPORT_MODE": {
+      "id": "EMOTIONAL_SUPPORT_MODE",
+      "label_en": "Emotional Support Mode",
+      "label_es": "Modo apoyo emocional",
+      "activators": ["emotional_support_needed"],
+      "blocked_by": [],
+      "behavior": {
+        "response_style": "validating_and_gentle",
+        "allows_validation": true,
+        "allows_reflection": true,
+        "allows_gentle_guidance": true,
+        "blocks_technical": true,
+        "blocks_plan_force": true,
+        "blocks_dev_routing": true
+      },
+      "max_duration": "until_user_signals_readiness"
+    },
+    "REFLECTION_MODE": {
+      "id": "REFLECTION_MODE",
+      "label_en": "Reflection Mode",
+      "label_es": "Modo reflexión",
+      "activators": ["identity_confusion", "existential_questions", "unclear_default"],
+      "blocked_by": [],
+      "behavior": {
+        "response_style": "reflective_and_open",
+        "allows_exploration": true,
+        "allows_questioning": true,
+        "allows_gentle_guidance": true,
+        "blocks_technical": true,
+        "blocks_plan_force": true,
+        "blocks_dev_routing": true,
+        "blocks_premature_advice": true
+      },
+      "max_duration": "until_clarity_emerges"
+    }
+  },
+  "transition_rules": {
+    "emotional_to_planning": {
+      "allowed": false,
+      "condition": "Must have explicit user signal of readiness. Not automatic.",
+      "intermediary": "REFLECTION_MODE recommended as bridge"
+    },
+    "reflection_to_planning": {
+      "allowed": true,
+      "condition": "User expresses desire to take action after reflection",
+      "intermediary": "none"
+    },
+    "planning_to_dev": {
+      "allowed": true,
+      "condition": "User explicitly requests technical modification",
+      "intermediary": "none"
+    },
+    "emotional_to_dev": {
+      "allowed": false,
+      "condition": "NEVER route emotional to dev directly",
+      "block": "strict"
+    },
+    "reflection_to_dev": {
+      "allowed": false,
+      "condition": "NEVER route reflection to dev without explicit planning intermediary",
+      "block": "strict"
+    }
+  }
+}

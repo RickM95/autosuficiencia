@@ -162,7 +162,17 @@ export default class KbEngine {
     }
 
     const domain = domainName ? this.getDomain(domainName) : null
-    if (!domain) return result
+    if (!domain) {
+      const fallbackDomain = Object.values(this.domains)[0]
+      if (fallbackDomain) {
+        result.principles = fallbackDomain.principles || []
+        result.decisionTrees = fallbackDomain.decision_trees || []
+        result.metrics = fallbackDomain.metrics || {}
+        result.actions = fallbackDomain.actions || []
+        result._fallbackDomain = true
+      }
+      return result
+    }
 
     result.principles = domain.principles || []
     result.decisionTrees = domain.decision_trees || []
@@ -265,37 +275,48 @@ export default class KbEngine {
     const parts = []
 
     if (overrides.warnings.length > 0) {
-      parts.push(lang === 'es' ? '⚠️ **Nota del sistema:**' : '⚠️ **System note:**')
+      parts.push(lang === 'es' ? '⚡ **Intervención del sistema:**' : '⚡ **System intervention:**')
       for (const w of overrides.warnings) parts.push(`- ${w}`)
       parts.push('')
     }
 
-    if (principles.length > 0 && actions.length > 0) {
-      const usedPrincipe = principles[0]
-      parts.push(`📋 **${lang === 'es' ? 'Principio' : 'Principle'}:** ${lang === 'es' ? usedPrincipe.es : usedPrincipe.en}`)
-      parts.push('')
-    }
-
-    if (decisionPaths.length > 0) {
-      parts.push(`🔍 **${lang === 'es' ? 'Análisis' : 'Analysis'}**`)
+    if (principles.length > 0) {
+      const p = principles[0]
+      parts.push(`📐 **${lang === 'es' ? 'Principio rector' : 'Governing principle'}:** ${lang === 'es' ? p.es : p.en}`)
       parts.push('')
     }
 
     if (actions.length > 0) {
-      parts.push(lang === 'es' ? '**Pasos a seguir:**' : '**Steps to take:**')
-      for (let i = 0; i < Math.min(actions.length, 5); i++) {
-        const action = actions[i]
-        for (const step of action.steps.slice(0, 3)) {
-          parts.push(`${i + 1}. ${step}`)
+      parts.push(lang === 'es' ? '**Acciones precisas requeridas:**' : '**Required precision actions:**')
+      let stepNum = 0
+      for (const action of actions) {
+        if (!action.steps || action.steps.length === 0) continue
+        for (const step of action.steps) {
+          stepNum++
+          parts.push(`${stepNum}. ${step}`)
+          if (stepNum >= 6) break
         }
+        if (stepNum >= 6) break
       }
+      parts.push('')
+    }
+
+    if (decisionPaths.length > 0) {
+      parts.push(lang === 'es' ? '🔍 **Árbol de decisión aplicado:**' : '🔍 **Decision tree applied:**')
+      for (const d of decisionPaths) {
+        parts.push(`  - ${d.treeId}: ${d.action}`)
+      }
+      parts.push('')
     }
 
     if (parts.length === 0) {
       return null
     }
 
-    return parts.join('\n')
+    const prefix = lang === 'es'
+      ? `⚡ **Nephi Dev Agent — Diagnóstico**\n\n`
+      : `⚡ **Nephi Dev Agent — Diagnosis**\n\n`
+    return prefix + parts.join('\n').trim()
   }
 
   // ═══════════════════════════════════════════════════════════════

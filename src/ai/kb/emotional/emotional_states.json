@@ -1,0 +1,125 @@
+{
+  "version": "1.0.0",
+  "states": [
+    {
+      "state": "sadness",
+      "en": "Sadness",
+      "es": "Tristeza",
+      "indicators": ["sad", "unhappy", "depressed", "miserable", "heartbroken", "grief", "sorrow", "down", "blue"],
+      "intent_signals": ["i feel sad", "i am sad", "feeling down", "not happy", "life is hard", "everything hurts"],
+      "response_strategy": "validate_emotion_offer_support",
+      "do_not_trigger": ["dev_agent", "plan_modification", "technical_routing"]
+    },
+    {
+      "state": "confusion",
+      "en": "Confusion",
+      "es": "Confusión",
+      "indicators": ["confused", "don't understand", "not sure", "unclear", "lost", "unsure", "don't know how", "what does this mean"],
+      "intent_signals": ["i don't understand", "i'm confused", "what does this mean", "i don't get it", "this doesn't make sense", "i'm not following"],
+      "response_strategy": "clarify_and_guide",
+      "do_not_trigger": ["dev_agent", "technical_routing"]
+    },
+    {
+      "state": "existential_uncertainty",
+      "en": "Existential Uncertainty",
+      "es": "Incertidumbre existencial",
+      "indicators": ["purpose", "meaning", "direction", "why am i here", "what am i doing", "pointless", "existential", "life purpose"],
+      "intent_signals": [
+        "i don't know what to do with my life",
+        "what is my purpose",
+        "i feel lost in life",
+        "i don't know what i want",
+        "what am i doing with my life",
+        "i have no direction",
+        "i don't know where i'm going",
+        "what's the point"
+      ],
+      "response_strategy": "reflective_grounding",
+      "do_not_trigger": ["dev_agent", "plan_modification", "technical_routing", "goal_force"]
+    },
+    {
+      "state": "low_self_worth",
+      "en": "Low Self-Worth",
+      "es": "Baja autoestima",
+      "indicators": ["not good enough", "worthless", "failure", "i can't", "i'm not", "useless", "inadequate", "never succeed"],
+      "intent_signals": [
+        "i'm not good enough",
+        "i feel like a failure",
+        "i can't do anything right",
+        "i'm worthless",
+        "i don't know my strengths",
+        "i'm not good at anything",
+        "i'll never succeed"
+      ],
+      "response_strategy": "build_self_worth",
+      "do_not_trigger": ["dev_agent", "plan_modification", "technical_routing", "goal_force"]
+    },
+    {
+      "state": "overwhelm",
+      "en": "Overwhelm",
+      "es": "Ago bio",
+      "indicators": ["overwhelmed", "too much", "can't handle", "stressed", "anxious", "exhausted", "burned out", "drowning"],
+      "intent_signals": [
+        "i'm overwhelmed",
+        "this is too much",
+        "i can't handle it",
+        "i'm stressed out",
+        "i feel burnt out",
+        "everything is too much",
+        "i'm drowning in everything"
+      ],
+      "response_strategy": "reduce_and_prioritize",
+      "do_not_trigger": ["dev_agent", "plan_modification", "technical_routing", "goal_force"]
+    },
+    {
+      "state": "emotional_numbness",
+      "en": "Emotional Numbness",
+      "es": "Entumecimiento emocional",
+      "indicators": ["numb", "empty", "nothing", "don't feel", "detached", "disconnected", "hollow", "apathetic"],
+      "intent_signals": [
+        "i feel numb",
+        "i feel empty inside",
+        "i don't feel anything",
+        "i feel disconnected",
+        "nothing matters anymore",
+        "i feel hollow",
+        "i don't care anymore"
+      ],
+      "response_strategy": "gentle_reconnection",
+      "do_not_trigger": ["dev_agent", "plan_modification", "technical_routing", "goal_force"]
+    },
+    {
+      "state": "motivation_loss",
+      "en": "Motivation Loss",
+      "es": "Pérdida de motivación",
+      "indicators": ["no motivation", "don't want to", "can't start", "procrastinate", "no energy", "unmotivated", "lazy", "no drive"],
+      "intent_signals": [
+        "i have no motivation",
+        "i don't want to do anything",
+        "i can't get started",
+        "i keep procrastinating",
+        "i have no energy",
+        "i feel unmotivated",
+        "i don't have the drive anymore"
+      ],
+      "response_strategy": "small_steps_and_encouragement",
+      "do_not_trigger": ["dev_agent", "plan_modification", "technical_routing"]
+    },
+    {
+      "state": "identity_confusion",
+      "en": "Identity Confusion",
+      "es": "Confusión de identidad",
+      "indicators": ["who am i", "identity", "don't know myself", "self-discovery", "lost myself", "changed", "not myself anymore"],
+      "intent_signals": [
+        "i don't know who i am anymore",
+        "i've lost myself",
+        "who am i really",
+        "i don't recognize myself",
+        "i feel like a different person",
+        "i don't know my identity"
+      ],
+      "response_strategy": "identity_exploration",
+      "do_not_trigger": ["dev_agent", "plan_modification", "technical_routing", "goal_force"]
+    }
+  ]
+}

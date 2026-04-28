@@ -24,6 +24,26 @@ export {
   getTabAccessGuard, canAccessPlan,
 } from './SecurityGuard.js'
 
+export {
+  DevAgentCore, CodeInspector, PatchEngine, ValidationGate,
+  DependencyScanner, DependencyAdvisor, ViteDependencyChecker,
+  getDevAgent, isDevRequest, routeDevRequest, classifyAndRoute,
+  buildModuleRegistry, buildPackageJson,
+} from './devAgent/index.js'
+
+export {
+  NephiBootSystem, BOOT_STATUS, SYSTEM_STATE,
+  STAGES, getStageById,
+  bootLog, getLogSummary, setLogLevel,
+  BootRecovery, RECOVERY_ACTIONS,
+} from './bootstrap/index.js'
+
+export {
+  SearchTriggerEngine, PublicApiService, WebResultProcessor,
+  BilingualFormatter, KBEnrichmentModule,
+  WebLayerIntegration, getWebLayer, isWebRequest,
+} from './webLayer/index.js'
+
 export { generatePlan } from './PlanGenerator.js'
 
 export {

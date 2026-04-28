@@ -1,0 +1,57 @@
+{
+  "version": "1.0.0",
+  "description": "Pre-state machine routing layer. Evaluated BEFORE any state machine or dev agent routing.",
+  "evaluation_order": "priority_ascending",
+  "routing_rules": [
+    {
+      "id": "emotional_support_override",
+      "priority": 1,
+      "description": "If emotional distress signals detected, route to EMOTIONAL_SUPPORT_MODE — block all other routing",
+      "condition": "classified_intent == 'emotional_support_needed'",
+      "route_to": "EMOTIONAL_SUPPORT_MODE",
+      "block_triggers": ["dev_agent", "plan_system", "kb_edit"],
+      "enforce": "strict"
+    },
+    {
+      "id": "identity_reflection_override",
+      "priority": 2,
+      "description": "If identity confusion or existential questions, route to REFLECTION_MODE",
+      "condition": "classified_intent == 'identity_confusion' OR classified_intent == 'existential_questions'",
+      "route_to": "REFLECTION_MODE",
+      "block_triggers": ["dev_agent", "plan_modification"],
+      "enforce": "strict"
+    },
+    {
+      "id": "planning_routing",
+      "priority": 3,
+      "description": "If planning or financial requests, route to PLANNING_MODE",
+      "condition": "classified_intent == 'planning_request' OR classified_intent == 'financial_request' OR classified_intent == 'goal_setting_request'",
+      "route_to": "PLANNING_MODE",
+      "block_triggers": [],
+      "enforce": "conditional"
+    },
+    {
+      "id": "technical_dev_routing",
+      "priority": 4,
+      "description": "Only route to DEV_MODE if explicitly technical and NOT emotional/identity/existential",
+      "condition": "classified_intent == 'technical_dev_request' AND no_emotional_signals == true",
+      "route_to": "DEV_MODE",
+      "block_triggers": [],
+      "enforce": "strict_check"
+    },
+    {
+      "id": "unclear_default",
+      "priority": 5,
+      "description": "Default to REFLECTION_MODE if intent is unclear or contains mixed signals",
+      "condition": "classified_intent == 'unknown' OR confidence < 0.6",
+      "route_to": "REFLECTION_MODE",
+      "block_triggers": ["dev_agent"],
+      "enforce": "safe_default"
+    }
+  ],
+  "block_list": {
+    "dev_agent_triggers_blocked_by": ["emotional_support_needed", "identity_confusion", "existential_questions"],
+    "plan_modification_triggers_blocked_by": ["emotional_support_needed", "identity_confusion"],
+    "technical_routing_blocked_by": ["emotional_support_needed", "identity_confusion", "existential_questions", "overwhelm"]
+  }
+}

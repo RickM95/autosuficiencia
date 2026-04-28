@@ -891,6 +891,8 @@
   display: flex;
   gap: 0.5rem;
   flex-wrap: wrap;
+  -webkit-user-select: none;
+  user-select: none;
 }
 
 .scale-btn {
@@ -904,6 +906,8 @@
   color: var(--color-text-subdued);
   transition: all 0.2s;
   cursor: pointer;
+  -webkit-user-select: none;
+  user-select: none;
 }
 
 .scale-btn:hover {
@@ -937,6 +941,7 @@
   accent-color: var(--color-primary);
   flex-shrink: 0;
   cursor: pointer;
+  -webkit-appearance: checkbox;
 }
 
 .checkbox-item label {
@@ -944,6 +949,8 @@
   color: var(--color-text-subdued);
   cursor: pointer;
   line-height: 1.4;
+  -webkit-user-select: none;
+  user-select: none;
 }
 
 .radio-group {

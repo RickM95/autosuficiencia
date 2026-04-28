@@ -4,13 +4,14 @@ import {
   ReasoningEngine,
   assembleResponse, buildWelcomeMessage,
   detectLanguage,
+  NephiBootSystem,
 } from '../ai/index.js'
 import { validateChatMessage, sanitizeMessage, validateStoredMessages } from '../ai/SecurityGuard.js'
 import KnowledgeBasePanel from './KnowledgeBasePanel.jsx'
 
 let pySingleton = null
 let kbSingleton = null
-let initPromise = null
+let engineSingleton = null
 
 function getPyBridge() {
   if (!pySingleton) pySingleton = new PythonBridge()
@@ -22,12 +23,14 @@ function getKB() {
   return kbSingleton
 }
 
-function ensureInitialized() {
-  if (!initPromise) {
-    initPromise = Promise.all([getPyBridge().init(), getKB().init()])
+function getEngine(memory, debugMode) {
+  if (!engineSingleton) {
+    engineSingleton = new ReasoningEngine(memory, debugMode)
   }
-  return initPromise
+  return engineSingleton
 }
+
+const bootSystemRef = { current: null }
 
 function ChatMessage({ msg }) {
   const isUser = msg.role === 'user'
@@ -102,12 +105,12 @@ function TypingIndicator({ text, language }) {
 }
 
 const QUICK_PROMPTS = [
-  { es: '📊 Analiza mi situación', en: '📊 Analyze my situation' },
-  { es: '🎯 Ayúdame con mis metas', en: '🎯 Help me with my goals' },
-  { es: '💳 Estrategia de deudas', en: '💳 Debt strategy' },
-  { es: '📋 Genera mi plan', en: '📋 Generate my plan' },
-  { es: '🛡️ Fondo de emergencia', en: '🛡️ Emergency fund' },
-  { es: '🧠 Manejo del estrés', en: '🧠 Stress management' },
+  { es: '📊 Diagnosticar mi situación', en: '📊 Diagnose my situation' },
+  { es: '🎯 Estructurar mis metas', en: '🎯 Structure my goals' },
+  { es: '💳 Analizar deudas', en: '💳 Analyze debts' },
+  { es: '📋 Generar plan preciso', en: '📋 Generate precise plan' },
+  { es: '🛡️ Evaluar fondo de emergencia', en: '🛡️ Evaluate emergency fund' },
+  { es: '🧠 Intervención de estrés', en: '🧠 Stress intervention' },
 ]
 
 export default function AIAssistant({ userContext, budgetData, isOpen, onToggle }) {
@@ -141,56 +144,65 @@ export default function AIAssistant({ userContext, budgetData, isOpen, onToggle 
   const importerRef = useRef(null)
   const engineRef = useRef(null)
 
+  // ═══════════════════════════════════════════════════════════════
+  // EAGER BACKGROUND BOOT — runs on mount, not gated by isOpen
+  // ═══════════════════════════════════════════════════════════════
   useEffect(() => {
-    messagesEndRef.current?.scrollIntoView({ behavior: 'smooth' })
-  }, [messages, isLoading])
+    if (bootSystemRef.current) return
+    const debugMode = window.location.search.includes('debug=true')
+    const boot = new NephiBootSystem()
+    bootSystemRef.current = boot
 
-  useEffect(() => {
-    if (isOpen) setTimeout(() => inputRef.current?.focus(), 100)
-  }, [isOpen])
+    boot.setProgressCallback((progress) => {
+      setPyProgress(progress.overallPercent)
+      setLoadingText(debugMode ? `[${progress.stage}] ${progress.message}` : progress.message)
+    })
 
-  useEffect(() => {
-    try { localStorage.setItem('ai_messages', JSON.stringify(messages.slice(-50))) } catch { /* empty */ }
-  }, [messages])
-
-  useEffect(() => {
-    if (!isOpen) return
-
-    const py = getPyBridge()
-    const kb = getKB()
-    pyRef.current = py
-    kbRef.current = kb
-
-    if (!py.onProgress) {
-      py.onProgress = (pct, msg) => {
-        setPyProgress(pct)
-        if (pct < 100) setLoadingText(msg)
-        if (pct === 100) { setPyStatus('ready'); setLoadingText(''); setPyProgress(100) }
+    boot.boot(debugMode).then((result) => {
+      if (result.systemState === 'SYSTEM_READY') {
+        setPyStatus('ready')
+        setPyProgress(100)
+        setLoadingText('')
+      } else if (result.systemState === 'FAILED_SAFE_STATE') {
+        setPyStatus('error')
+        setLoadingText(`Boot failed at stage: ${(result.stages.find(s => s.status === 'FAILED') || {}).stage || 'unknown'}`)
+      } else {
+        setPyStatus('local')
+        setPyProgress(100)
+        setLoadingText('')
       }
-    }
 
-    ensureInitialized().then(async () => {
-      if (py.ready) setPyStatus('ready')
+      const py = getPyBridge()
+      const kb = getKB()
+      pyRef.current = py
+      kbRef.current = kb
 
       if (!importerRef.current) {
         const importer = new DocumentImporter(kb, py)
         importerRef.current = importer
-        await importer.getExtraResources()
+        importer.getExtraResources().catch(() => {})
       }
 
-      if (!engineRef.current) {
-        engineRef.current = new ReasoningEngine(memoryRef.current, window.location.search.includes('debug=true'))
-      }
+      const engine = getEngine(memoryRef.current, debugMode)
+      engineRef.current = engine
+      engine.init().catch(() => {})
 
-      const stats = await kb.getStats()
-      setKbStats(stats)
+      kb.getStats().then(stats => setKbStats(stats)).catch(() => {})
 
       if (memoryRef.current.interactionCount === 0) {
-        const lang = userContext?.name ? 'es' : 'es'
-        const welcome = assembleResponse('WELCOME', {}, userContext || {}, budgetData || [], memoryRef.current, '', lang)
+        const welcome = assembleResponse('WELCOME', {}, userContext || {}, budgetData || [], memoryRef.current, '', 'es')
         setMessages([{ role: 'assistant', content: welcome, id: Date.now() }])
       }
     })
+  }, []) // eslint-disable-line react-hooks/exhaustive-deps
+
+  // ═══════════════════════════════════════════════════════════════
+  // OPEN-ONLY: focus input + event listeners
+  // ═══════════════════════════════════════════════════════════════
+  useEffect(() => {
+    if (!isOpen) return
+
+    setTimeout(() => inputRef.current?.focus(), 100)
 
     const preventDefaults = e => { e.preventDefault(); e.stopPropagation() }
     const el = dropRef.current
@@ -207,6 +219,17 @@ export default function AIAssistant({ userContext, budgetData, isOpen, onToggle 
       }
     }
   }, [isOpen]) // eslint-disable-line react-hooks/exhaustive-deps
+
+  // ═══════════════════════════════════════════════════════════════
+  // SCROLL + PERSISTENCE effects (always active)
+  // ═══════════════════════════════════════════════════════════════
+  useEffect(() => {
+    messagesEndRef.current?.scrollIntoView({ behavior: 'smooth' })
+  }, [messages, isLoading])
+
+  useEffect(() => {
+    try { localStorage.setItem('ai_messages', JSON.stringify(messages.slice(-50))) } catch { /* empty */ }
+  }, [messages])
 
   async function handleDrop(e) {
     e.preventDefault()
@@ -321,10 +344,12 @@ export default function AIAssistant({ userContext, budgetData, isOpen, onToggle 
               position: 'absolute', inset: 0, borderRadius: '50%',
               background: 'var(--color-primary)', animation: 'pulseRing 2s ease-out infinite',
             }} />
-            <button onClick={onToggle} title="Asesor AS"
+            <button onClick={onToggle} title="Nephi Dev Agent"
               style={{
                 width: 60, height: 60, borderRadius: '50%',
-                background: 'linear-gradient(135deg, var(--color-primary-darker), var(--color-primary))',
+                background: pyStatus === 'initializing'
+                  ? 'conic-gradient(var(--color-primary) ' + pyProgress + '%, var(--color-border) ' + pyProgress + '%)'
+                  : 'linear-gradient(135deg, var(--color-primary-darker), var(--color-primary))',
                 border: '3px solid white', boxShadow: 'var(--shadow-lg)',
                 color: 'white', fontSize: '1.5rem', cursor: 'pointer',
                 display: 'flex', alignItems: 'center', justifyContent: 'center',
@@ -332,13 +357,31 @@ export default function AIAssistant({ userContext, budgetData, isOpen, onToggle 
               }}
               onMouseEnter={e => { e.currentTarget.style.transform = 'scale(1.1)' }}
               onMouseLeave={e => { e.currentTarget.style.transform = 'scale(1)' }}
-            >🤖</button>
+            >{pyStatus === 'initializing' ? pyProgress + '%' : '🤖'}</button>
             <div style={{
               position: 'absolute', bottom: '100%', right: 0, marginBottom: '0.5rem',
               background: 'var(--color-primary-darker)', color: 'white',
               padding: '0.375rem 0.75rem', borderRadius: 'var(--radius-sm)',
               fontSize: '0.75rem', fontWeight: 600, whiteSpace: 'nowrap', boxShadow: 'var(--shadow-sm)',
-            }}>💬 Asesor AS</div>
+            }}>
+              {pyStatus === 'initializing'
+                ? (language === 'es' ? `Inicializando ${pyProgress}%` : `Initializing ${pyProgress}%`)
+                : '⚡ Nephi Dev Agent'}
+            </div>
+
+            {/* Thin progress bar under the bubble */}
+            {pyStatus === 'initializing' && (
+              <div style={{
+                position: 'absolute', bottom: '-6px', left: '4px', right: '4px',
+                height: '4px', background: 'var(--color-border)', borderRadius: '2px', overflow: 'hidden',
+              }}>
+                <div style={{
+                  height: '100%', width: `${pyProgress}%`,
+                  background: 'var(--color-primary)', borderRadius: '2px',
+                  transition: 'width 0.3s ease',
+                }} />
+              </div>
+            )}
           </div>
         )}
       </div>
@@ -363,13 +406,15 @@ export default function AIAssistant({ userContext, budgetData, isOpen, onToggle 
                 display: 'flex', alignItems: 'center', justifyContent: 'center', fontSize: '1.25rem',
               }}>🤖</div>
               <div>
-                <div style={{ color: 'white', fontWeight: 700, fontSize: '0.9375rem', lineHeight: 1.2 }}>Asesor AS</div>
+                <div style={{ color: 'white', fontWeight: 700, fontSize: '0.9375rem', lineHeight: 1.2 }}>Nephi Dev Agent</div>
                 <div style={{ color: 'rgba(255,255,255,0.75)', fontSize: '0.7rem' }}>
                   {pyStatus === 'ready'
-                    ? `🟢 ${language === 'es' ? 'Python activo' : 'Python ready'}`
+                    ? `🟢 ${language === 'es' ? 'Motor de razonamiento activo' : 'Reasoning engine active'}`
                     : pyStatus === 'initializing'
-                      ? `🟡 ${language === 'es' ? `Cargando Python... ${pyProgress}%` : `Loading Python... ${pyProgress}%`}`
-                      : `🟠 ${language === 'es' ? 'Local' : 'Local'}`}
+                      ? `🟡 ${language === 'es' ? `Inicializando base de conocimiento... ${pyProgress}%` : `Initializing knowledge base... ${pyProgress}%`}`
+                      : pyStatus === 'error'
+                        ? `🔴 ${language === 'es' ? `Error: ${loadingText || 'inicialización fallida'}` : `Error: ${loadingText || 'initialization failed'}`}`
+                        : `🟠 ${language === 'es' ? 'Modo local' : 'Local mode'}`}
                   {kbStats.documentCount > 0 && ` · 📚 ${kbStats.documentCount}`}
                 </div>
               </div>
