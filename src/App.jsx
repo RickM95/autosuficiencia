@@ -5,6 +5,7 @@ import BudgetCalculator, { CATEGORIES } from './components/BudgetCalculator'
 import SelfSufficiencyForm from './components/SelfSufficiencyForm'
 import SelfSufficiencyPlan from './components/SelfSufficiencyPlan'
 import AIAssistant from './components/AIAssistant'
+import { canAccessPlan, canAccessSurvey, sanitizeFormData } from './ai/SecurityGuard.js'
 import './App.css'
 
 export default function App() {
@@ -13,8 +14,29 @@ export default function App() {
   const [formData, setFormData] = useState({})
   const [planGenerated, setPlanGenerated] = useState(false)
   const [chatOpen, setChatOpen] = useState(false)
+  const [tabError, setTabError] = useState('')
+
+  function handleSetActiveTab(tab) {
+    setTabError('')
+    const guard = tab === 'plan'
+      ? canAccessPlan(formData)
+      : tab === 'survey'
+        ? canAccessSurvey(formData)
+        : { allowed: true, reason: '' }
+    if (!guard.allowed) {
+      setTabError(guard.reason)
+      return
+    }
+    setActiveTab(tab)
+  }
 
   function handleGeneratePlan() {
+    if (!formData.name || !formData.name.trim()) {
+      setTabError('Name is required before generating the plan.')
+      return
+    }
+    const sanitized = sanitizeFormData(formData)
+    setFormData(sanitized)
     setPlanGenerated(true)
     setActiveTab('plan')
   }
@@ -24,10 +46,27 @@ export default function App() {
     setActiveTab('survey')
   }
 
+  function handleFormUpdate(update) {
+    const current = { ...formData, ...update }
+    setFormData(current)
+  }
+
   return (
     <CurrencyProvider>
       <div className="app-container">
-        <Header activeTab={activeTab} setActiveTab={setActiveTab} />
+        <Header activeTab={activeTab} setActiveTab={handleSetActiveTab} />
+
+        {tabError && (
+          <div style={{
+            background: '#fef2f2', border: '1px solid #f87171', color: '#dc2626',
+            padding: '0.75rem 1rem', margin: '0 1rem', borderRadius: 'var(--radius-sm)',
+            fontSize: '0.875rem', fontWeight: 600, display: 'flex', alignItems: 'center', gap: '0.5rem',
+          }}>
+            <span>⛔</span>
+            <span>{tabError}</span>
+            <button onClick={() => setTabError('')} style={{ marginLeft: 'auto', background: 'none', border: 'none', color: '#dc2626', cursor: 'pointer', fontWeight: 700 }}>✕</button>
+          </div>
+        )}
 
         {activeTab === 'budget' && (
           <BudgetCalculator budgetData={budgetData} setBudgetData={setBudgetData} />
@@ -36,7 +75,7 @@ export default function App() {
         {activeTab === 'survey' && !planGenerated && (
           <SelfSufficiencyForm
             formData={formData}
-            setFormData={setFormData}
+            setFormData={handleFormUpdate}
             onComplete={handleGeneratePlan}
             budgetData={budgetData}
           />
@@ -72,7 +111,7 @@ export default function App() {
                 Completa la evaluación de autosuficiencia para generar tu plan personalizado.<br />
                 <em>Complete the self-sufficiency assessment to generate your personalized plan.</em>
               </p>
-              <button className="btn btn-accent btn-lg" onClick={() => setActiveTab('survey')}>
+              <button className="btn btn-accent btn-lg" onClick={() => handleSetActiveTab('survey')}>
                 🎯 Comenzar Evaluación / Start Assessment
               </button>
             </div>

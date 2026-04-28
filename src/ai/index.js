@@ -18,6 +18,12 @@ export {
   generateHealthReport, getDiagnosticSummary,
 } from './kb/debugger.js'
 
+export {
+  sanitizeText, sanitizeMessage, validateStoredMessages,
+  validateChatMessage, sanitizeForDisplay, sanitizeFormData,
+  getTabAccessGuard, canAccessPlan,
+} from './SecurityGuard.js'
+
 export { generatePlan } from './PlanGenerator.js'
 
 export {

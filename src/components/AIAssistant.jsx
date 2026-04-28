@@ -5,6 +5,7 @@ import {
   assembleResponse, buildWelcomeMessage,
   detectLanguage,
 } from '../ai/index.js'
+import { validateChatMessage, sanitizeMessage, validateStoredMessages } from '../ai/SecurityGuard.js'
 import KnowledgeBasePanel from './KnowledgeBasePanel.jsx'
 
 let pySingleton = null
@@ -113,7 +114,11 @@ export default function AIAssistant({ userContext, budgetData, isOpen, onToggle 
   const [messages, setMessages] = useState(() => {
     try {
       const saved = localStorage.getItem('ai_messages')
-      if (saved) return JSON.parse(saved).slice(-50)
+      if (saved) {
+        const parsed = JSON.parse(saved)
+        const validated = validateStoredMessages(parsed)
+        return validated || []
+      }
     } catch { /* empty */ }
     return []
   })
@@ -230,8 +235,11 @@ export default function AIAssistant({ userContext, budgetData, isOpen, onToggle 
   }
 
   async function sendMessage(text) {
-    const userText = (text || input).trim()
+    const userText = sanitizeMessage((text || input).trim())
     if (!userText || isLoading) return
+
+    const validation = validateChatMessage(userText)
+    if (!validation.valid) return
 
     const detectedLang = detectLanguage(userText)
     setLanguage(detectedLang)
