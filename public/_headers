@@ -12,13 +12,7 @@
 /assets/*
   Cache-Control: public, max-age=31536000, immutable
 
-*.js
-*.css
-*.png
-*.jpg
-*.svg
-*.woff
-*.woff2
+/*.(js|css|png|jpg|jpeg|gif|ico|svg|woff|woff2|ttf|eot)
   Cache-Control: public, max-age=31536000, immutable
 
 /index.html
