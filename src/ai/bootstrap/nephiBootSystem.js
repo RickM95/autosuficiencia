@@ -257,8 +257,8 @@ export class NephiBootSystem {
     this._reportProgress('INDEX_BUILD', 20, 'Building indexes...')
     const kbFiles = loadKBFiles()
     const indexes = buildIndexes({ domains: kbFiles.domains, masterIndex: kbFiles.masterIndex, rules: kbFiles.rules })
-    this.kb = new KbEngine()
-    this.kb.ready = true
+     this.kb = new KbEngine()
+     await this.kb.init()
     this._reportProgress('INDEX_BUILD', 100, `${indexes.actionCount} actions indexed`)
     return { success: true, data: { actionCount: indexes.actionCount, triggerCount: indexes.triggerCount } }
   }

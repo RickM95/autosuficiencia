@@ -84,8 +84,9 @@ export default class ReasoningEngine {
       : dualReasoning.systemLayer
 
     // Update stage (now based on intents + emotional context)
-    const newStage = this._determineStageFromIntents(topIntents, analyses, emotionalContext)
+    const newStage = this._determineStageFromIntents(topIntents, analyses, emotionalContext, userMessage)
     this.memory.stage = newStage
+    this.memory.lastValidStage = newStage
 
     // Track interaction
     if (userMessage) {
@@ -133,20 +134,32 @@ export default class ReasoningEngine {
     }
   }
 
-  _determineStageFromIntents(topIntents, analyses, emotionalContext) {
+  _determineStageFromIntents(topIntents, analyses, emotionalContext, userMessage) {
+    // ✅ STICKY MODE PROTECTION - MOST IMPORTANT RULE
+    if (this.memory.isShortInput(userMessage) && this.memory.shouldPreserveMode()) {
+      // Short input while in active mode: STAY IN CURRENT MODE
+      this.memory.currentMode.lastUpdated = Date.now()
+      return this.memory.stage
+    }
+
     // Priority 1: Emotional crisis
     if (emotionalContext.interventionNeed === 'IMMEDIATE') {
+      this.memory.setActiveMode('EMOTIONAL_SUPPORT', 0.95)
+      this.memory.lastEmotionalState = emotionalContext
       return 'STRESS_INTERVENTION'
     }
 
     // Priority 2: Critical needs
     if (analyses.needs.critical && analyses.needs.critical.length > 0) {
+      this.memory.setActiveMode('EMOTIONAL_SUPPORT', 0.85)
       return 'NEEDS_CRITICAL'
     }
 
     // Priority 3: Top intent
     if (topIntents && topIntents.length > 0) {
       const primaryIntent = topIntents[0]
+      this.memory.lastUserIntent = primaryIntent.intent
+      
       const intentToStageMap = {
         'immediate_crisis': 'NEEDS_CRITICAL',
         'emotional_overwhelm': 'STRESS_INTERVENTION',
@@ -157,8 +170,20 @@ export default class ReasoningEngine {
         'learning_request': 'KNOWLEDGE_IMPORT',
         'general_conversation': 'TOPIC_ADVICE'
       }
+      
       const stage = intentToStageMap[primaryIntent.intent]
-      if (stage) return stage
+      if (stage) {
+        // Clear mode only if strong explicit intent to change topic
+        if (primaryIntent.confidence > 0.7) {
+          this.memory.clearActiveMode()
+        }
+        return stage
+      }
+    }
+
+    // ✅ NO RESET RULE: Never go back to WELCOME if we have active context
+    if (this.memory.interactionCount > 2 && this.memory.lastValidStage !== 'WELCOME') {
+      return this.memory.lastValidStage
     }
 
     // Fallback to analysis-based determination

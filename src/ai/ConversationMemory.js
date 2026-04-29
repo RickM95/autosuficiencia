@@ -18,6 +18,18 @@ export default class ConversationMemory {
     this.consecutiveOffTopic = 0
     this.language = 'es'
     
+    // ✅ STICKY MODE IMPLEMENTATION
+    this.currentMode = {
+      type: null,
+      confidence: 0,
+      lastUpdated: null
+    }
+    
+    // ✅ PERSISTENT CONTEXT
+    this.lastEmotionalState = null
+    this.lastUserIntent = null
+    this.lastValidStage = 'WELCOME'
+    
     // NEW: Enhanced reasoning tracking
     this.recordedTopics = []
     this.recordedIntents = []
@@ -162,13 +174,57 @@ export default class ConversationMemory {
     }
   }
 
+  /**
+   * ✅ STICKY MODE MANAGEMENT
+   * Prevents unwanted mode resets on short / vague inputs
+   */
+  setActiveMode(type, confidence = 0.8) {
+    this.currentMode = {
+      type,
+      confidence,
+      lastUpdated: Date.now()
+    }
+    this.lastValidStage = this.stage
+  }
+
+  clearActiveMode() {
+    this.currentMode = {
+      type: null,
+      confidence: 0,
+      lastUpdated: null
+    }
+  }
+
+  isInMode(modeType) {
+    if (!this.currentMode.type) return false
+    if (this.currentMode.type !== modeType) return false
+    
+    // Mode expires after 15 minutes of inactivity
+    const age = Date.now() - this.currentMode.lastUpdated
+    return age < 15 * 60 * 1000
+  }
+
+  isShortInput(text) {
+    if (!text) return true
+    const cleaned = text.trim().toLowerCase()
+    return cleaned.length < 12 || cleaned.split(' ').length < 3
+  }
+
+  shouldPreserveMode() {
+    return this.isInMode('EMOTIONAL_SUPPORT') || 
+           this.isInMode('PLANNING') ||
+           this.isInMode('REFLECTION')
+  }
+
   getContextForNextResponse() {
     return {
       recentIntents: this.recordedIntents.slice(-3),
       recentSubtexts: this.recordedSubtexts.slice(-3),
       recentModes: this.recordedResponseModes.slice(-3),
       sentiment: this.sentiment,
-      stage: this.stage
+      stage: this.stage,
+      currentMode: this.currentMode,
+      lastEmotionalState: this.lastEmotionalState
     }
   }
 }

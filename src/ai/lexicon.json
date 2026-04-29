@@ -1,0 +1,45 @@
+{
+  "difficult": {
+    "en": {
+      "empathetic": ["heavy", "a lot to carry", "tough", "hard"],
+      "neutral": ["challenging", "complex"]
+    },
+    "es": {
+      "empathetic": ["pesado", "duro", "mucho para cargar"],
+      "neutral": ["complicado", "difícil"]
+    }
+  },
+
+  "sad": {
+    "en": {
+      "empathetic": ["hurt", "heavy", "aching"],
+      "neutral": ["unhappy", "down"]
+    },
+    "es": {
+      "empathetic": ["triste", "dolorido", "cargado"],
+      "neutral": ["mal", "desanimado"]
+    }
+  },
+
+  "tired": {
+    "en": {
+      "empathetic": ["exhausted", "burnt out", "drained", "worn out"],
+      "neutral": ["tired", "low energy"]
+    },
+    "es": {
+      "empathetic": ["agotado", "quemado", "vacío"],
+      "neutral": ["cansado", "sin energía"]
+    }
+  },
+
+  "stuck": {
+    "en": {
+      "empathetic": ["lost", "going in circles", "trapped"],
+      "neutral": ["blocked", "uncertain"]
+    },
+    "es": {
+      "empathetic": ["perdido", "atrapado", "dando vueltas"],
+      "neutral": ["bloqueado", "sin dirección"]
+    }
+  }
+}
