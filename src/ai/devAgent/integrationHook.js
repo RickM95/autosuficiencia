@@ -27,13 +27,15 @@ export function isDevRequest(input) {
   }
 
   const devTriggers = [
-    /^(inspect|analyze|scan|show|list)\s+(module|code|file|function|system)/i,
-    /^(install|add|need)\s+(package|dependency|dep|library)/i,
-    /^(patch|modify|update|change|fix|edit)\s+(code|file|function|logic)/i,
-    /^(validate|verify|check)\s+(system|integrity|kb|dependenc)/i,
-    /^(explain|how does|what is)\s+(module|function|code|system)/i,
-    /^(implement|build|create)\s+(function|module|feature)/i,
-    /^(scan|check)\s+(for|dependenc)/i,
+    // Require both an action verb AND an explicit technical object
+    /^(inspect|scan)\s+(module|code|file|function|system|kb)/i,
+    /^(install|add)\s+(package|dependency|dep|library|npm)/i,
+    /^(patch|modify)\s+(code|file|function|logic|module)/i,
+    /^(validate|verify)\s+(system|integrity|kb|dependencies)/i,
+    /^(explain|describe)\s+(module|function|code|system)\s+\w/i,
+    /^(implement|build)\s+(function|module)\s+\w/i,
+    // Explicit dev shorthand with backtick module reference
+    /`[A-Za-z]+\.js`/,
   ]
   return devTriggers.some(p => p.test(input.trim()))
 }

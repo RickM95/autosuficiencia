@@ -184,8 +184,14 @@ export class DualLayerReasoner {
     }
 
     // Rule 2: If user is vague/unclear → ALWAYS human layer
-    const isVague = (context.userMessage || '').length < 20 || (context.userMessage || '').includes('?')
-    if (isVague && !context.userMessage?.includes('plan')) {
+    // Use word count + intent signals rather than raw char count
+    const msg = (context.userMessage || '').trim()
+    const wordCount = msg.split(/\s+/).filter(Boolean).length
+    const hasIntentSignal = /\b(budget|debt|deuda|plan|goal|meta|saving|ahorro|income|ingreso|stress|estrés|help|ayuda|emergency|emergencia|housing|vivienda|food|comida|work|trabajo)\b/i.test(msg)
+    const isVague = wordCount < 3 && !hasIntentSignal
+    // Plan bypass: only if user is clearly requesting a plan (action verb + 'plan' as standalone intent)
+    const isExplicitPlanRequest = /\b(generate|create|make|build|generar|crear|hacer)\b.*\bplan\b|\bplan\b.*(now|ahora|please|por favor)/i.test(msg)
+    if (isVague && !isExplicitPlanRequest) {
       return {
         layer: 'HUMAN',
         reason: 'User input is vague—clarification needed'

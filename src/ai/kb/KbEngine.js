@@ -314,8 +314,8 @@ export default class KbEngine {
     }
 
     const prefix = lang === 'es'
-      ? `⚡ **Nephi Dev Agent — Diagnóstico**\n\n`
-      : `⚡ **Nephi Dev Agent — Diagnosis**\n\n`
+      ? `**Nephi — Análisis**\n\n`
+      : `**Nephi — Analysis**\n\n`
     return prefix + parts.join('\n').trim()
   }
 

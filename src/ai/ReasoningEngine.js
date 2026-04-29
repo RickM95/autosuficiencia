@@ -5,7 +5,6 @@ import { IntentTree } from './IntentTree.js'
 import { DualLayerReasoner } from './DualLayerReasoner.js'
 import { EmotionalIntelligence } from './EmotionalIntelligence.js'
 import { SubtextDetector } from './SubtextDetector.js'
-import { ResponseGenerator } from './ResponseGenerator.js'
 
 export default class ReasoningEngine {
   constructor(memory, debugMode = false) {
@@ -97,11 +96,14 @@ export default class ReasoningEngine {
     }
     this.memory.extractFactsFromForm(formData)
 
+    // Surface memory context for next-turn continuity
+    const previousContext = this.memory.getContextForNextResponse()
+
     return {
       stage: this.memory.stage,
       pipeline,
       kbDrivenResponse: pipeline.responseText,
-      
+
       // NEW: Enhanced reasoning outputs
       intents: topIntents,
       emotionalContext,
@@ -111,7 +113,11 @@ export default class ReasoningEngine {
         responseMode: selectedReasoning.responseMode,
         rationale: dualReasoning.rationale
       },
-      
+
+      // Context continuity across turns
+      turnCount: this.memory.interactionCount,
+      previousContext,
+
       // EXISTING: Form analysis
       needsAnalysis: analyses.needs,
       financialAnalysis: analyses.finances,

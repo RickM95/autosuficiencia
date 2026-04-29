@@ -20,11 +20,12 @@ export class DevAgentCore {
     const lower = input.toLowerCase()
 
     const patterns = {
-      inspect: /inspect|analyze|scan|examine|show|list|what.*(?:in|at|does)|how.*work/i,
-      patch: /(?:add|change|update|modify|fix|edit)\s+(?:function|method|code|file|logic)|implement|patch/i,
-      dependency: /(?:install|add|need|missing|require|import)\s+(?:package|dependency|library|module|dep|npm)/i,
-      validate: /validate|verify|check|test\s+(?:integrity|safety|system)|is.*safe/i,
-      explain: /explain|how\s+(?:does|is)|what\s+(?:is|does)|why/i,
+      // Require explicit technical/system vocabulary to avoid false positives
+      inspect: /(?:inspect|scan|examine)\s+(?:module|code|file|function|system|kb)|(?:show|list)\s+(?:module|export|import|dependenc)/i,
+      patch: /(?:add|change|update|modify|fix|edit)\s+(?:function|method|code|file|logic)|implement\s+(?:function|module|feature)|^patch\b/i,
+      dependency: /(?:install|add|need|missing|require)\s+(?:package|dependency|library|module|dep|npm)|npm\s+install/i,
+      validate: /validate\s+(?:system|integrity|kb|dependencies)|verify\s+(?:system|integrity)|check\s+(?:system|kb|integrity)/i,
+      explain: /explain\s+(?:module|function|code|system|how\s+(?:module|function|code))/i,
     }
 
     let type = 'unknown'

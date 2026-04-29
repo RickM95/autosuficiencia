@@ -42,7 +42,8 @@ async function test1_multiIntent() {
   console.log(`✅ Found ${intents.length} intents\n`)
   console.log('Top 3 intents:')
   topIntents.forEach((i, idx) => {
-    console.log(`  ${idx+1}. ${i.intent.toUpperCase()} (${(i.confidence*100).toFixed(0)}%)`)
+    const id = i.id || i.intent || i.label || 'unknown'
+    console.log(`  ${idx+1}. ${String(id).toUpperCase()} (${(i.confidence*100).toFixed(0)}%)`)
   })
   
   const passed = topIntents.length >= 2
@@ -68,10 +69,11 @@ async function test2_emotionalRouting() {
   })
   
   console.log(`✅ Emotional Analysis:`)
-  console.log(`  Emotions: ${emotionalContext.detectedEmotions.map(e => e.emotion).join(', ')}`)
-  console.log(`  Intensity: ${emotionalContext.intensity}/10`)
-  console.log(`  Intervention: ${emotionalContext.interventionNeed}`)
-  console.log(`  Block dev agent: ${emotionalContext.shouldBlockDevAgent}`)
+  const detected = emotionalContext.detectedEmotions || []
+  console.log(`  Emotions: ${detected.map(e => e.emotion).join(', ') || 'none'}`)
+  console.log(`  Intensity: ${emotionalContext.intensity || 0}/10`)
+  console.log(`  Intervention: ${emotionalContext.interventionNeed || 'NONE'}`)
+  console.log(`  Block dev agent: ${emotionalContext.shouldBlockDevAgent === true}`)
   
   const passed = emotionalContext.interventionNeed === 'IMMEDIATE' && 
                  emotionalContext.shouldBlockDevAgent === true &&

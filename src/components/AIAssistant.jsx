@@ -32,6 +32,60 @@ function getEngine(memory, debugMode) {
 
 const bootSystemRef = { current: null }
 
+// Lightweight inline markdown renderer
+function inlineMd(text) {
+  if (!text) return null
+  const parts = []
+  const regex = /\*\*([^*]+)\*\*|\*([^*]+)\*|`([^`]+)`/g
+  let lastIndex = 0
+  let match
+  let k = 0
+  while ((match = regex.exec(text)) !== null) {
+    if (match.index > lastIndex) parts.push(<span key={k++}>{text.slice(lastIndex, match.index)}</span>)
+    if (match[1] !== undefined) parts.push(<strong key={k++} style={{ fontWeight: 700 }}>{match[1]}</strong>)
+    else if (match[2] !== undefined) parts.push(<em key={k++}>{match[2]}</em>)
+    else if (match[3] !== undefined) parts.push(<code key={k++} style={{ background: 'rgba(0,0,0,0.07)', padding: '0 3px', borderRadius: 3, fontFamily: 'monospace', fontSize: '0.85em' }}>{match[3]}</code>)
+    lastIndex = regex.lastIndex
+  }
+  if (lastIndex < text.length) parts.push(<span key={k++}>{text.slice(lastIndex)}</span>)
+  return parts.length > 0 ? parts : text
+}
+
+function renderMarkdown(text) {
+  if (!text) return []
+  const lines = text.split('\n')
+  const elements = []
+  let key = 0
+  for (const line of lines) {
+    if (line.trim() === '') { elements.push(<div key={key++} style={{ height: '0.35rem' }} />); continue }
+    if (/^#{1,3}\s/.test(line)) {
+      elements.push(<div key={key++} style={{ fontWeight: 700, fontSize: '0.9rem', marginTop: '0.2rem' }}>{inlineMd(line.replace(/^#{1,3}\s/, ''))}</div>)
+      continue
+    }
+    if (/^[-*]\s/.test(line)) {
+      elements.push(
+        <div key={key++} style={{ display: 'flex', gap: '0.35rem', marginLeft: '0.2rem', marginBottom: '0.1rem' }}>
+          <span style={{ color: 'var(--color-primary)', flexShrink: 0 }}>•</span>
+          <span>{inlineMd(line.slice(2))}</span>
+        </div>
+      )
+      continue
+    }
+    const numMatch = line.match(/^(\d+)[.)]\s(.*)/)
+    if (numMatch) {
+      elements.push(
+        <div key={key++} style={{ display: 'flex', gap: '0.35rem', marginLeft: '0.2rem', marginBottom: '0.1rem' }}>
+          <span style={{ color: 'var(--color-primary)', flexShrink: 0, fontWeight: 600, minWidth: '1.2rem' }}>{numMatch[1]}.</span>
+          <span>{inlineMd(numMatch[2])}</span>
+        </div>
+      )
+      continue
+    }
+    elements.push(<div key={key++} style={{ marginBottom: '0.05rem' }}>{inlineMd(line)}</div>)
+  }
+  return elements
+}
+
 function ChatMessage({ msg }) {
   const isUser = msg.role === 'user'
   const isPlan = msg.role === 'assistant' && msg.content.startsWith('╔')
@@ -46,7 +100,7 @@ function ChatMessage({ msg }) {
           background: 'linear-gradient(135deg, var(--color-primary-darker), var(--color-primary))',
           display: 'flex', alignItems: 'center', justifyContent: 'center',
           fontSize: '0.875rem', flexShrink: 0, color: 'white', fontWeight: 700,
-        }}>AS</div>
+        }}>N</div>
       )}
       <div style={{
         maxWidth: '80%', padding: '0.75rem 1rem',
@@ -54,10 +108,13 @@ function ChatMessage({ msg }) {
         background: isUser ? 'var(--color-primary)' : 'var(--color-white)',
         color: isUser ? 'white' : 'var(--color-text)',
         boxShadow: 'var(--shadow-sm)', fontSize: '0.875rem', lineHeight: 1.6,
-        border: isUser ? 'none' : '1px solid var(--color-border)', whiteSpace: 'pre-wrap',
+        border: isUser ? 'none' : '1px solid var(--color-border)',
         fontFamily: isPlan ? 'monospace' : 'inherit',
       }}>
-        {msg.content}
+        {isUser || isPlan
+          ? <span style={{ whiteSpace: 'pre-wrap' }}>{msg.content}</span>
+          : renderMarkdown(msg.content)
+        }
       </div>
       {isUser && (
         <div style={{
@@ -69,6 +126,7 @@ function ChatMessage({ msg }) {
     </div>
   )
 }
+
 
 function TypingIndicator({ text, language }) {
   const displayText = text && text.includes(' / ')
@@ -285,7 +343,7 @@ export default function AIAssistant({ userContext, budgetData, isOpen, onToggle 
       }
 
       await engine.init()
-      const analysis = engine.processMessage(userContext || {}, budgetData || [], userText)
+      const analysis = await engine.processMessage(userContext || {}, budgetData || [], userText)
       const lang = detectedLang
       const reply = assembleResponse(
         analysis.stage, analysis, userContext || {}, budgetData || [], memoryRef.current, userText, lang
@@ -340,7 +398,7 @@ export default function AIAssistant({ userContext, budgetData, isOpen, onToggle 
               position: 'absolute', inset: 0, borderRadius: '50%',
               background: 'var(--color-primary)', animation: 'pulseRing 2s ease-out infinite',
             }} />
-            <button onClick={onToggle} title="Nephi Dev Agent"
+            <button onClick={onToggle} title="Nephi — Asesor AS"
               style={{
                 width: 60, height: 60, borderRadius: '50%',
                 background: pyStatus === 'initializing'
@@ -362,7 +420,7 @@ export default function AIAssistant({ userContext, budgetData, isOpen, onToggle 
             }}>
               {pyStatus === 'initializing'
                 ? (language === 'es' ? `Inicializando ${pyProgress}%` : `Initializing ${pyProgress}%`)
-                : '⚡ Nephi Dev Agent'}
+                : (language === 'es' ? '🧠 Nephi — Asesor AS' : '🧠 Nephi — AS Advisor')}
             </div>
 
             {/* Thin progress bar under the bubble */}
@@ -400,9 +458,9 @@ export default function AIAssistant({ userContext, budgetData, isOpen, onToggle 
               <div style={{
                 width: 40, height: 40, borderRadius: '50%', background: 'rgba(255,255,255,0.2)',
                 display: 'flex', alignItems: 'center', justifyContent: 'center', fontSize: '1.25rem',
-              }}>🤖</div>
+              }}>🧠</div>
               <div>
-                <div style={{ color: 'white', fontWeight: 700, fontSize: '0.9375rem', lineHeight: 1.2 }}>Nephi Dev Agent</div>
+                <div style={{ color: 'white', fontWeight: 700, fontSize: '0.9375rem', lineHeight: 1.2 }}>Nephi — Asesor AS</div>
                 <div style={{ color: 'rgba(255,255,255,0.75)', fontSize: '0.7rem' }}>
                   {pyStatus === 'ready'
                     ? `🟢 ${language === 'es' ? 'Motor de razonamiento activo' : 'Reasoning engine active'}`

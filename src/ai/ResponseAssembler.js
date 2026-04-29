@@ -4,29 +4,26 @@ import { getGoalsAdvice } from './advice/goals.js'
 import { analyzeCompleteness } from './Analyzer.js'
 import { generatePlan } from './PlanGenerator.js'
 import { isDevRequest, routeDevRequest, buildModuleRegistry, buildPackageJson, classifyAndRoute } from './devAgent/index.js'
-import KbEngine from './kb/KbEngine.js'
 import { EmotionalIntelligence } from './EmotionalIntelligence.js'
 import { ResponseGenerator } from './ResponseGenerator.js'
 
-const kb = new KbEngine()
-
-const PRECISION_PREFIX = '⚡'
+const PRECISION_PREFIX = ''
 
 function nephiFrame(text, lang) {
   const prefix = lang === 'es'
-    ? `${PRECISION_PREFIX} **Nephi Dev Agent — Análisis**\n\n`
-    : `${PRECISION_PREFIX} **Nephi Dev Agent — Analysis**\n\n`
+    ? `**Nephi — Análisis**\n\n`
+    : `**Nephi — Analysis**\n\n`
   return prefix + text
 }
 
 const WELCOME_MESSAGES = {
   es: {
-    first: `${PRECISION_PREFIX} **Nephi Dev Agent** — Asesor AS\n\nSoy un motor de razonamiento determinístico basado en una base de conocimiento estructurada. No soy un chatbot genérico.\n\n**Capacidades:**\n- 📊 **Analizar situación** — evaluar necesidades y finanzas\n- 🎯 **Crear metas** — objetivos SMART con pasos precisos\n- 💰 **Gestión financiera** — presupuesto, deudas, ahorro\n- 📋 **Generar plan** — plan de autosuficiencia profesional\n- 📚 **Importar conocimiento** — PDFs, enlaces, documentos\n\n¿En qué área necesitas intervención precisa?`,
-    returning: `${PRECISION_PREFIX} **Nephi Dev Agent** — ¿Qué requieres analizar o modificar en tu plan de autosuficiencia?`,
+    first: `👋 **¡Hola! Soy Nephi, tu asesor de autosuficiencia.**\n\nEstoy aquí para ayudarte a analizar tu situación financiera, establecer metas claras y construir un plan que funcione para ti.\n\n**¿Qué puedo hacer por ti?**\n- 📊 **Analizar tu situación** — evaluar necesidades y finanzas\n- 🎯 **Crear metas** — objetivos con pasos prácticos\n- 💰 **Gestión financiera** — presupuesto, deudas, ahorro\n- 📋 **Generar plan** — plan de autosuficiencia\n\nCuéntame, ¿qué te gustaría trabajar hoy?`,
+    returning: `👋 **Bienvenido de nuevo.** ¿En qué puedo ayudarte hoy?`,
   },
   en: {
-    first: `${PRECISION_PREFIX} **Nephi Dev Agent** — Asesor AS\n\nI am a deterministic reasoning engine operating on a structured Knowledge Base. I am NOT a generic chatbot.\n\n**Capabilities:**\n- 📊 **Analyze situation** — assess needs and finances\n- 🎯 **Create goals** — SMART objectives with precise steps\n- 💰 **Manage money** — budget, debt, savings\n- 📋 **Generate plan** — professional self-sufficiency plan\n- 📚 **Import knowledge** — PDFs, links, documents\n\nWhat area requires precise intervention?`,
-    returning: `${PRECISION_PREFIX} **Nephi Dev Agent** — What requires analysis or modification in your self-sufficiency plan?`,
+    first: `👋 **Hello! I'm Nephi, your self-sufficiency advisor.**\n\nI'm here to help you analyze your financial situation, set clear goals, and build a plan that works for you.\n\n**What can I do for you?**\n- 📊 **Analyze your situation** — assess needs and finances\n- 🎯 **Create goals** — objectives with practical steps\n- 💰 **Manage money** — budget, debt, savings\n- 📋 **Generate plan** — self-sufficiency plan\n\nTell me, what would you like to work on today?`,
+    returning: `👋 **Welcome back.** How can I help you today?`,
   },
 }
 
@@ -38,30 +35,33 @@ export function buildWelcomeMessage(memory, formData, lang) {
 }
 
 // ═══════════════════════════════════════════════════════════════
-// PRIMARY ENTRY POINT — Validation-gated response assembly
+// PRIMARY ENTRY POINT — Context-aware response assembly
 // ═══════════════════════════════════════════════════════════════
 
 export function assembleResponse(stage, analysis, formData, budgetData, memory, userMessage, lang) {
-  if (analysis.structureError) {
-    return kb.kbStructureError + '\n\n' + (lang === 'es'
-      ? '⚠️ Error en la estructura de la base de conocimiento. Por favor contacta al administrador.'
-      : '⚠️ Knowledge base structure error. Please contact the administrator.')
+  const emotion = analysis.emotionalContext || { intensity: 0, interventionNeed: 'NORMAL' }
+  const subtexts = analysis.subtexts || []
+  const intents = analysis.intents || []
+  const dualReason = analysis.dualReasoning || {}
+  const selectedMode = dualReason.responseMode || 'NORMAL'
+  const turnCount = memory.interactionCount || 0
+
+  if (analysis.structureError && !analysis.stage) {
+    return lang === 'es'
+      ? '⚠️ Encontré un problema técnico. Por favor intenta de nuevo.'
+      : '⚠️ I encountered a technical issue. Please try again.'
   }
 
-  // NEW: Emotional intelligence check before routing dev request
-  if (userMessage && isDevRequest(userMessage)) {
-    // Detect emotional state
-    const emotionalContext = analysis.emotionalContext || EmotionalIntelligence.detect(userMessage, {
-      financialAnalysis: analysis.financialAnalysis,
-      needsAnalysis: analysis.needsAnalysis
-    })
+  // Priority 1: Crisis / immediate emotional intervention
+  if (emotion.interventionNeed === 'IMMEDIATE') {
+    return _buildHumanResponse('IMMEDIATE', emotion, subtexts, intents, analysis, formData, budgetData, memory, userMessage, lang, turnCount)
+  }
 
-    // Block dev agent if user is in crisis
-    if (emotionalContext.interventionNeed === 'IMMEDIATE' || emotionalContext.intensity > 7) {
-      const response = buildEmotionalSupportResponse(emotionalContext, userMessage, lang)
-      return response
-    }
+  // Priority 2: Dev Agent — only for explicit technical requests
+  const shouldBlockDev = emotion.interventionNeed === 'IMMEDIATE' || emotion.interventionNeed === 'IMPORTANT'
+  const isDev = !shouldBlockDev && userMessage && isDevRequest(userMessage)
 
+  if (isDev) {
     const routing = classifyAndRoute(userMessage)
     if (routing.shouldBlockDevTrigger) {
       const response = buildEmotionalResponse(routing, userMessage, lang)
@@ -70,118 +70,185 @@ export function assembleResponse(stage, analysis, formData, budgetData, memory, 
     return _handleDevRequest(userMessage, lang)
   }
 
-  if (analysis.kbDrivenResponse) {
-    return analysis.kbDrivenResponse
+  // Priority 3: Human layer modes (emotional/confusion/obstacle detected)
+  if (selectedMode === 'QUESTION_FIRST' || selectedMode === 'OBSTACLE_FIRST' || selectedMode === 'EMOTIONAL_FIRST') {
+    return _buildHumanResponse(selectedMode, emotion, subtexts, intents, analysis, formData, budgetData, memory, userMessage, lang, turnCount)
   }
 
-  if (analysis.kbGapDetected) {
-    const fallback = _buildFallbackResponse(stage, analysis, formData, budgetData, memory, userMessage, lang)
-    return kb.kbGapDetected + '\n\n' + fallback
-  }
-
+  // Priority 4: Welcome
   if (stage === 'WELCOME' && memory.interactionCount <= 1) {
     return buildWelcomeMessage(memory, formData, lang)
   }
 
-  const response = _buildFallbackResponse(stage, analysis, formData, budgetData, memory, userMessage, lang)
-  return response
+  // Priority 5: KB-driven response — ONLY used as a supplement after humanization check
+  // The KB response is used only when context is stable and no human-layer override is needed
+  // It is reformatted through the contextual builder, NOT returned raw.
+  // (Previously this was a hard early-exit that bypassed all humanization — now removed)
+
+  return _buildContextualResponse(stage, analysis, formData, budgetData, memory, userMessage, lang, turnCount)
 }
 
 // ═══════════════════════════════════════════════════════════════
-// FALLBACK RESPONSE BUILDER (when KB pipeline returns null)
+// HUMAN RESPONSE VARIATION POOLS
+// Prevents repetition across turns — selected by (turnCount % pool.length)
 // ═══════════════════════════════════════════════════════════════
 
-function _buildFallbackResponse(stage, analysis, formData, budgetData, memory, userMessage, lang) {
+const GUIDANCE_POOL = {
+  es: [
+    `Entiendo que no estás seguro por dónde empezar. Eso es completamente normal, y es el punto de partida más honesto.\n\n**¿Qué área te preocupa más en este momento?**\n\n- Finanzas y presupuesto\n- Metas y futuro\n- Necesidades inmediatas (vivienda, alimentación, salud)\n- Algo más\n\nCuéntame y lo trabajamos juntos, paso a paso.`,
+    `Estás en el lugar correcto. A veces el primer paso más difícil es simplemente no saber cuál dar.\n\n**¿Cuál de estas describe mejor lo que sientes ahora?**\n\n- Tengo demasiados problemas y no sé cuál atacar primero\n- Sé lo que necesito pero no sé cómo lograrlo\n- Necesito que alguien me ayude a ver mi situación con claridad\n\nDime y empezamos desde ahí.`,
+    `Eso que describes —no saber qué hacer— es más común de lo que crees. Y tiene solución.\n\n**Hablemos de lo más concreto:** ¿Hay algo que te quite el sueño en este momento? Una preocupación específica, aunque sea pequeña. Empieza por ahí.`,
+    `Bien que estés aquí. Antes de hacer cualquier análisis o plan, necesito entender mejor tu situación.\n\n**Una pregunta simple:** Si pudieras cambiar UNA cosa en tu vida financiera o personal ahora mismo, ¿qué sería?`,
+    `No tienes que tener todo claro para comenzar. De hecho, la claridad viene después del primer paso.\n\n**¿Qué te trajo aquí hoy?** Cuéntame con tus palabras —sin formatos, sin estructura. Solo dime qué está pasando.`
+  ],
+  en: [
+    `I understand you're not sure where to begin. That's completely normal, and honestly, it's the most honest starting point.\n\n**Which area concerns you most right now?**\n\n- Finances and budget\n- Goals and future\n- Immediate needs (housing, food, health)\n- Something else\n\nTell me and we'll work through it together, step by step.`,
+    `You're in the right place. Sometimes the hardest first step is simply not knowing which one to take.\n\n**Which of these best describes how you feel right now?**\n\n- I have too many problems and don't know which to tackle first\n- I know what I need but don't know how to get there\n- I need someone to help me see my situation clearly\n\nTell me and we'll start from there.`,
+    `What you're describing —not knowing what to do— is more common than you think. And it has a solution.\n\n**Let's get concrete:** Is there something keeping you up at night? A specific concern, even a small one. Start with that.`,
+    `Good that you're here. Before any analysis or planning, I need to better understand your situation.\n\n**One simple question:** If you could change ONE thing in your financial or personal life right now, what would it be?`,
+    `You don't need to have it all figured out to start. Clarity comes after the first step.\n\n**What brought you here today?** Tell me in your own words —no format, no structure. Just tell me what's going on.`
+  ]
+}
+
+const EMOTIONAL_POOL = {
+  es: [
+    `Escucho que estás en un momento difícil. Antes de hablar de planes o números, quiero que sepas que lo que sientes es válido.\n\n**Respira.** No tienes que resolver todo hoy.\n\n¿Qué es lo más urgente para ti en este momento? No lo que «debería» ser urgente —lo que tú sientes que lo es.`,
+    `Lo que describes suena pesado. Y tiene sentido que sea así.\n\nNo voy a empezar con cifras ni con listas. Primero: **¿qué necesitas ahora mismo?** ¿Hablar de cómo te sientes, o que te ayude con algo concreto?`,
+    `Entiendo. A veces la situación financiera y emocional se mezclan de una forma que parece imposible de separar.\n\nNo estás solo en esto. Muchas personas que han estado en situaciones similares encontraron una salida, aunque no la veían al principio.\n\n**¿Por dónde quieres empezar?** No hay respuesta incorrecta.`,
+    `Gracias por compartirlo. Eso que sientes —esa presión— es una señal de que te importa tu situación. Eso es una fortaleza, aunque no lo parezca.\n\n**Un paso a la vez.** ¿Cuál sería el más pequeño que podrías dar hoy?`,
+    `Lo que describes tiene solución, aunque desde donde estás no se vea. Conozco muchos casos similares.\n\nAntes de cualquier plan: **¿tienes a alguien con quien hablar de esto?** ¿Apoyo familiar o personas cercanas? Eso cambia mucho la estrategia.`
+  ],
+  en: [
+    `I hear that you're going through a hard time. Before talking plans or numbers, I want you to know what you're feeling is valid.\n\n**Breathe.** You don't have to solve everything today.\n\nWhat's most urgent for you right now? Not what «should» be urgent —what you feel is urgent.`,
+    `What you're describing sounds heavy. And it makes sense that it does.\n\nI'm not going to start with numbers or lists. First: **what do you need right now?** To talk about how you're feeling, or help with something concrete?`,
+    `I understand. Sometimes financial and emotional pressure mix in a way that feels impossible to untangle.\n\nYou're not alone in this. Many people who've been in similar situations found a way through, even when they couldn't see it at first.\n\n**Where do you want to start?** There's no wrong answer.`,
+    `Thank you for sharing that. What you're feeling —that pressure— is a sign that you care about your situation. That's a strength, even if it doesn't feel like one.\n\n**One step at a time.** What would be the smallest one you could take today?`,
+    `What you're describing has a solution, even if you can't see it from where you are. I've seen similar situations turn around.\n\nBefore any plan: **do you have someone to talk to about this?** Family support, close friends? That changes the strategy significantly.`
+  ]
+}
+
+function _buildHumanResponse(mode, emotion, subtexts, intents, analysis, formData, budgetData, memory, userMessage, lang, turnCount = 0) {
+  const isVague = !userMessage
+    || /^\s*$/.test(userMessage)
+    || /\b(don't know|no sé|what to do|qué hacer|confused|confundido|idk|not sure|no estoy seguro)\b/i.test(userMessage)
+  const isConfused = subtexts.some(s => s.subtext === 'USER_CONFUSION' || s.subtext === 'NEEDS_GUIDANCE')
+
+  if (isVague || isConfused || mode === 'QUESTION_FIRST') {
+    const pool = GUIDANCE_POOL[lang] || GUIDANCE_POOL.es
+    return pool[turnCount % pool.length]
+  }
+
+  if (mode === 'EMOTIONAL_FIRST' || mode === 'IMMEDIATE') {
+    const pool = EMOTIONAL_POOL[lang] || EMOTIONAL_POOL.es
+    return pool[turnCount % pool.length]
+  }
+
+  if (mode === 'OBSTACLE_FIRST') {
+    const barrier = subtexts.find(s => s.subtext === 'CAPABILITY_BARRIER')
+    return lang === 'es'
+      ? `Entiendo que hay algo que se siente como un obstáculo. Eso no significa que no tenga solución.\n\n**Cuéntame más:** ¿Cuál es la situación específica que sientes que te bloquea? A veces hay caminos que no son obvios al principio.`
+      : `I understand something feels like an obstacle. That doesn't mean it has no solution.\n\n**Tell me more:** What's the specific situation that feels like it's blocking you? Sometimes there are paths that aren't obvious at first.`
+  }
+
+  return _buildContextualResponse(memory.stage, analysis, formData, budgetData, memory, userMessage, lang, turnCount)
+}
+
+// ═══════════════════════════════════════════════════════════════
+// CONTEXT-AWARE RESPONSE BUILDER
+// ═══════════════════════════════════════════════════════════════
+
+function _buildContextualResponse(stage, analysis, formData, budgetData, memory, userMessage, lang, turnCount = 0) {
   const topic = analysis.topic || 'general'
+  const needs = analysis.needsAnalysis || { critical: [], warnings: [], score: 0 }
+  const finances = analysis.financialAnalysis || { score: 0, hasDebt: false, isDeficit: false }
+  const goals = analysis.goalsAnalysis || { score: 0, totalGoals: 0 }
+  const completeness = analysis.completeness || { percent: 0 }
 
   if (stage === 'WELCOME' && memory.interactionCount <= 1) {
     return buildWelcomeMessage(memory, formData, lang)
   }
 
-  switch (stage) {
-    case 'NEEDS_CRITICAL':
-      return _ensureActionRef(getNeedsAdvice(analysis.needsAnalysis, formData, lang), 'critical_needs_response', lang)
+  if (needs.critical && needs.critical.length > 0) {
+    return getNeedsAdvice(needs, formData, lang)
+  }
 
-    case 'FINANCIAL_REVIEW': {
-      if (topic === 'debt' || (userMessage || '').toLowerCase().includes('debt') || (userMessage || '').toLowerCase().includes('deuda')) {
-        return _ensureActionRef(getDebtAdvice(analysis.financialAnalysis, formData, lang), 'debt_snowball', lang)
-      }
-      if (topic === 'emergency' || (userMessage || '').toLowerCase().includes('ahorr') || (userMessage || '').toLowerCase().includes('sav')) {
-        return _ensureActionRef(getSavingsAdvice(analysis.financialAnalysis, formData, lang), 'no_emergency_fund', lang)
-      }
-      if (topic === 'income' || (userMessage || '').toLowerCase().includes('ingreso') || (userMessage || '').toLowerCase().includes('income') || (userMessage || '').toLowerCase().includes('trabajo') || (userMessage || '').toLowerCase().includes('work')) {
-        return _ensureActionRef(getIncomeAdvice(analysis.financialAnalysis, formData, lang), 'income_diversification', lang)
-      }
-      if (analysis.financialAnalysis.hasDebt) {
-        return _ensureActionRef(getDebtAdvice(analysis.financialAnalysis, formData, lang), 'debt_snowball', lang)
-      }
-      return _ensureActionRef(getBudgetAdvice(analysis.financialAnalysis, formData, lang), 'deficit_response', lang)
+  if (stage === 'FINANCIAL_REVIEW' || topic === 'budget' || topic === 'debt' || topic === 'income' || topic === 'emergency') {
+    if (topic === 'debt' || (userMessage || '').toLowerCase().includes('debt') || (userMessage || '').toLowerCase().includes('deuda')) {
+      return getDebtAdvice(finances, formData, lang)
     }
+    if (topic === 'emergency' || (userMessage || '').toLowerCase().includes('ahorr') || (userMessage || '').toLowerCase().includes('sav')) {
+      return getSavingsAdvice(finances, formData, lang)
+    }
+    if (topic === 'income' || (userMessage || '').toLowerCase().includes('ingreso') || (userMessage || '').toLowerCase().includes('income')) {
+      return getIncomeAdvice(finances, formData, lang)
+    }
+    if (topic === 'budget' || finances.isDeficit) {
+      return getBudgetAdvice(finances, formData, lang)
+    }
+    if (finances.hasDebt) {
+      return getDebtAdvice(finances, formData, lang)
+    }
+  }
 
-    case 'GOALS_REVIEW':
-      return _ensureActionRef(getGoalsAdvice(analysis.goalsAnalysis, formData, lang), 'goal_introduction', lang)
+  if (stage === 'GOALS_REVIEW' || topic === 'goals') {
+    return getGoalsAdvice(goals, formData, lang)
+  }
 
-    case 'TOPIC_ADVICE': {
-      memory.recordAdvice(topic, userMessage)
-      switch (topic) {
-        case 'budget': return _ensureActionRef(getBudgetAdvice(analysis.financialAnalysis, formData, lang), 'deficit_response', lang)
-        case 'debt': return _ensureActionRef(getDebtAdvice(analysis.financialAnalysis, formData, lang), 'debt_snowball', lang)
-        case 'emergency': return _ensureActionRef(getSavingsAdvice(analysis.financialAnalysis, formData, lang), 'no_emergency_fund', lang)
-        case 'stress': return _ensureActionRef(getStressAdvice(lang), 'immediate_stress_relief', lang)
-        case 'income': return _ensureActionRef(getIncomeAdvice(analysis.financialAnalysis, formData, lang), 'income_diversification', lang)
-        case 'goals': return _ensureActionRef(getGoalsAdvice(analysis.goalsAnalysis, formData, lang), 'goal_introduction', lang)
-        case 'housing': case 'food': case 'health':
-          return _ensureActionRef(getNeedsAdvice(analysis.needsAnalysis, formData, lang), 'critical_needs_response', lang)
-        case 'resources': return _ensureActionRef(getResourcesAdvice(lang), 'resource_referral', lang)
-        case 'education': return _ensureActionRef(getIncomeAdvice(analysis.financialAnalysis, formData, lang), 'income_diversification', lang)
-        case 'plan': {
+  if (stage === 'TOPIC_ADVICE') {
+    memory.recordAdvice(topic, userMessage)
+    switch (topic) {
+      case 'stress': return getStressAdvice(lang)
+      case 'resources': return getResourcesAdvice(lang)
+      case 'housing': case 'food': case 'health': return getNeedsAdvice(needs, formData, lang)
+      case 'education': case 'plan': {
+        if (topic === 'plan' || completeness.percent >= 60) {
           const plan = generatePlan(formData, budgetData, lang)
           memory.stage = 'PLAN_REVIEW'
           return renderPlanInChat(plan, lang)
         }
-        default:
-          if (analysis.goalsAnalysis.totalGoals > 0) return _ensureActionRef(getGoalsAdvice(analysis.goalsAnalysis, formData, lang), 'goal_review', lang)
-          if (analysis.financialAnalysis.hasDebt) return _ensureActionRef(getDebtAdvice(analysis.financialAnalysis, formData, lang), 'debt_snowball', lang)
-          if (analysis.financialAnalysis.income > 0) return _ensureActionRef(getBudgetAdvice(analysis.financialAnalysis, formData, lang), 'deficit_response', lang)
-          return _ensureActionRef(getNeedsAdvice(analysis.needsAnalysis, formData, lang), 'critical_needs_response', lang)
+        return lang === 'es'
+          ? 'Para generar un plan completo, necesito más información. ¿Podemos llenar los datos faltantes primero?'
+          : 'To generate a complete plan, I need more information. Can we fill in the missing data first?'
       }
+      default: break
     }
-
-    case 'PLAN_BUILD': {
-      const plan = generatePlan(formData, budgetData, lang)
-      memory.stage = 'PLAN_REVIEW'
-      memory.updatePlanProgress('needs', 100)
-      memory.updatePlanProgress('finances', 100)
-      memory.updatePlanProgress('goals', analysis.goalsAnalysis.totalGoals > 0 ? 100 : 50)
-      return renderPlanInChat(plan, lang)
-    }
-
-    case 'PLAN_REVIEW':
-      return getReviewAdvice(analysis, formData, budgetData, lang)
-
-    case 'KNOWLEDGE_IMPORT':
-      return lang === 'es'
-        ? '📚 **Importar Conocimiento**\n\nPuedes arrastrar y soltar archivos aquí o pegar enlaces para que aprenda de ellos.\n\nFormatos aceptados: PDF, TXT, CSV, enlaces web.\n\n¿Qué te gustaría compartir conmigo?'
-        : '📚 **Import Knowledge**\n\nYou can drag and drop files here or paste links for me to learn from them.\n\nAccepted formats: PDF, TXT, CSV, web links.\n\nWhat would you like to share with me?'
-
-    case 'FOLLOW_UP':
-      return getFollowUpAdvice(analysis, formData, lang)
-
-    default:
-      return WELCOME_MESSAGES[lang || 'es'].returning
   }
+
+  if (stage === 'PLAN_BUILD' || (stage === 'TOPIC_ADVICE' && topic === 'plan')) {
+    const plan = generatePlan(formData, budgetData, lang)
+    memory.stage = 'PLAN_REVIEW'
+    memory.updatePlanProgress('needs', 100)
+    memory.updatePlanProgress('finances', 100)
+    memory.updatePlanProgress('goals', goals.totalGoals > 0 ? 100 : 50)
+    return renderPlanInChat(plan, lang)
+  }
+
+  if (stage === 'PLAN_REVIEW') {
+    return getReviewAdvice(analysis, formData, budgetData, lang)
+  }
+
+  if (stage === 'KNOWLEDGE_IMPORT') {
+    return lang === 'es'
+      ? '📚 **Importar Conocimiento**\n\nPuedes arrastrar y soltar archivos aquí o pegar enlaces para que aprenda de ellos.\n\nFormatos aceptados: PDF, TXT, CSV, enlaces web.\n\n¿Qué te gustaría compartir conmigo?'
+      : '📚 **Import Knowledge**\n\nYou can drag and drop files here or paste links for me to learn from them.\n\nAccepted formats: PDF, TXT, CSV, web links.\n\nWhat would you like to share with me?'
+  }
+
+  if (stage === 'FOLLOW_UP' || memory.interactionCount > 5) {
+    return getFollowUpAdvice(analysis, formData, lang)
+  }
+
+  if (completeness.percent > 0 && completeness.percent < 100) {
+    if (lang === 'es') {
+      return `He analizado tu información hasta ahora (${completeness.percent}% completa).\n\n**Observaciones:**\n- Necesidades: ${needs.score}/100\n- Finanzas: ${finances.score}/100\n- Metas: ${goals.score}/100\n\n¿Qué área te gustaría trabajar primero?`
+    }
+    return `I've analyzed your information so far (${completeness.percent}% complete).\n\n**Observations:**\n- Needs: ${needs.score}/100\n- Finances: ${finances.score}/100\n- Goals: ${goals.score}/100\n\nWhich area would you like to work on first?`
+  }
+
+  return WELCOME_MESSAGES[lang || 'es'].returning
 }
 
-// ═══════════════════════════════════════════════════════════════
-// ACTION REFERENCE ENFORCEMENT — ensures every response has an action ID
-// ═══════════════════════════════════════════════════════════════
-
 function _ensureActionRef(responseText, actionId, lang) {
-  if (!actionId) return responseText
-  const actionRefFootnote = lang === 'es'
-    ? `\n\n📐 **Acción de referencia Nephi:** ${actionId}`
-    : `\n\n📐 **Nephi reference action:** ${actionId}`
-  return responseText + actionRefFootnote
+  return responseText
 }
 
 // ═══════════════════════════════════════════════════════════════
@@ -195,8 +262,8 @@ function getReviewAdvice(analysis, formData, budgetData, lang) {
   const goals = analysis.goalsAnalysis
 
   const lines = [lang === 'es'
-    ? `⚡ **Nephi Dev Agent — Revisión de progreso**`
-    : `⚡ **Nephi Dev Agent — Progress review**`
+    ? `**Revisión de progreso**`
+    : `**Progress review**`
   ]
   lines.push('')
   lines.push(lang === 'es'
@@ -266,17 +333,17 @@ function getFollowUpAdvice(analysis, formData, lang) {
     lang)
 }
 
-// NEW: Emotional support response when user in crisis
+// Emotional support response when user is struggling
 function buildEmotionalSupportResponse(emotionalContext, userMessage, lang) {
   if (emotionalContext.intensity > 8) {
     return lang === 'es'
-      ? `❤️ **Veo que estás en un momento muy difícil.**\n\nLa codificación y técnica pueden esperar. Tu bienestar es lo más importante ahora.\n\n**Aquí hay recursos de apoyo inmediato:**\n- 📞 Línea de crisis: Habla con alguien entrenado\n- 💭 Respira profundo: 5 respiraciones lentas\n- 📋 Escribe lo que sientes: A veces eso ayuda\n\nCuando te sientas más estable, podemos abordar tu situación financiera con un plan claro. ¿Hay algo urgente que necesites primero?`
-      : `❤️ **I can see you're going through a very difficult time right now.**\n\nCoding and technical matters can wait. Your wellbeing is what matters most.\n\n**Here are immediate support resources:**\n- 📞 Crisis line: Talk to someone trained\n- 💭 Breathe deeply: 5 slow breaths\n- 📋 Write what you're feeling: Sometimes that helps\n\nWhen you feel more stable, we can address your financial situation with a clear plan. Is there something urgent you need first?`
+      ? `❤️ **Veo que estás pasando por un momento muy difícil.**\n\nTu bienestar es lo más importante. No necesitas preocuparte por planes o números ahora.\n\n**Respira profundo.** Tómate el tiempo que necesites. Cuando estés listo, puedo ayudarte a pensar en lo que sigue, paso a paso.\n\n¿Hay algo concreto en lo que pueda apoyarte ahora mismo?`
+      : `❤️ **I can see you're going through a very difficult time right now.**\n\nYour wellbeing is what matters most. You don't need to worry about plans or numbers right now.\n\n**Take a deep breath.** Take all the time you need. When you're ready, I can help you think about what's next, step by step.\n\nIs there something specific I can help you with right now?`
   }
 
   return lang === 'es'
-    ? `❤️ **Entiendo que algo te preocupa ahora.**\n\nAunque tu pregunta es técnica, percibo que podrías necesitar apoyo primero.\n\nTomemos un paso atrás: ¿Qué es lo más importante que necesitas resolver en este momento?\n\n**Opciones:**\n- 💰 Hablar sobre dinero y presupuesto\n- 😟 Hablar sobre estrés o preocupaciones\n- 🎯 Crear un plan de acción\n\n¿Cuál es tu prioridad ahora?`
-    : `❤️ **I sense something's weighing on you right now.**\n\nAlthough your question is technical, I perceive you might need support first.\n\nLet's take a step back: What's the most important thing you need to resolve right now?\n\n**Options:**\n- 💰 Talk about money and budgeting\n- 😟 Talk about stress or concerns\n- 🎯 Create an action plan\n\nWhat's your priority now?`
+    ? `❤️ **Siento que algo te está pesando.** Y está bien.\n\nA veces lo mejor es dar un paso atrás. ¿Qué es lo más importante para ti en este momento?\n\nPodemos hablar de lo que necesites: tus finanzas, tus metas, o simplemente desahogarte. Tú eliges.`
+    : `❤️ **I sense something is weighing on you.** And that's okay.\n\nSometimes the best thing is to take a step back. What's most important to you right now?\n\nWe can talk about whatever you need: your finances, your goals, or just vent. You choose.`
 }
 
 // ═══════════════════════════════════════════════════════════════
@@ -287,51 +354,7 @@ export function renderPlanInChat(plan, lang) {
   const t = (es, en) => lang === 'es' ? es : en
   const scoreColor = s => s >= 70 ? '✅' : s >= 40 ? '⚠️' : '🔴'
 
-  const template = kb.getPlanTemplate()
-  if (template && template.sections) {
-    const output = []
-    for (const section of template.sections) {
-      if (section.type === 'static') {
-        output.push(t(section.content_es || section.es, section.content_en || section.en))
-        continue
-      }
-      if (section.type === 'dynamic' || section.type === 'array' || section.type === 'numbered_array') {
-        const source = section.data_source.replace('plan.', '')
-        const data = plan[source]
-        if (!data) continue
-        if (Array.isArray(data)) {
-          const items = data.map((item, i) => {
-            let itemText = t(section.item_template_es || section.item_template || '', section.item_template_en || section.item_template || '')
-            for (const [k, v] of Object.entries(item)) {
-              itemText = itemText.replace(`{${k}}`, String(v))
-            }
-            return itemText.replace('{i}', String(i + 1))
-          }).join('\n')
-          const header = t(section.header_es || section.template_es || '', section.header_en || section.template_en || '')
-          output.push(header.replace('{items}', '\n' + items))
-        } else {
-          let text = t(section.template_es || section.content_es || '', section.template_en || section.content_en || '')
-          if (section.fields) {
-            for (const [fname, fconfig] of Object.entries(section.fields)) {
-              const fsource = fconfig.source.replace('plan.', '')
-              const fval = fsource.split('.').reduce((o, k) => (o || {})[k], plan)
-              text = text.replace(`{${fname}}`, String(fval !== undefined ? fval : ''))
-            }
-          }
-          text = text.replace('{scoreColor}', scoreColor(plan.overallScore))
-          text = text.replace('{score}', String(plan.overallScore))
-          if (plan.scores) {
-            text = text.replace('{needs}', String(plan.scores.needs))
-              .replace('{finances}', String(plan.scores.finances))
-              .replace('{goals}', String(plan.scores.goals))
-          }
-          output.push(text)
-        }
-      }
-    }
-    return output.join('\n')
-  }
-
+  // Inline renderer — no external 'kb' reference needed (safe for all contexts)
   const lines = [
     `╔═══════════════════════════════════════════════════╗`,
     `║      ${t('PLAN DE AUTOSUFICIENCIA', 'SELF-SUFFICIENCY PLAN').padEnd(42)}║`,
@@ -375,11 +398,7 @@ function buildEmotionalResponse(routing, userMessage, lang) {
 
   const selected = template[Math.floor(Math.random() * template.length)]
 
-  const modeLabel = lang === 'es'
-    ? (routing.mode === 'EMOTIONAL_SUPPORT_MODE' ? 'Modo apoyo emocional' : 'Modo reflexión')
-    : (routing.mode === 'EMOTIONAL_SUPPORT_MODE' ? 'Emotional Support Mode' : 'Reflection Mode')
-
-  const prefix = `⚡ **Nephi Dev Agent — ${modeLabel}**\n\n`
+  const prefix = ''
 
   return prefix + selected
 }
@@ -390,7 +409,7 @@ function _handleDevRequest(userMessage, lang) {
   const result = routeDevRequest(userMessage, registry, packageJson)
   const t = (es, en) => lang === 'es' ? es : en
 
-  const header = `⚡ **Nephi Dev Agent — ${t('Análisis de código', 'Code Analysis')}**\n`
+  const header = `**Nephi — ${t('Análisis', 'Analysis')}**\n`
 
   switch (result.type) {
     case 'inspect': {

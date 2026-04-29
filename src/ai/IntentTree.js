@@ -125,7 +125,8 @@ export class IntentTree {
    * Evaluate intent tree against context
    * Returns: array of matched intents, sorted by relevance score
    */
-  evaluate(userMessage, formData, analysis, memory) {
+  static evaluate(userMessage, formData, analysis, memory) {
+    const tree = IntentTree.buildIntentTree()
     const context = {
       message: userMessage,
       formData,
@@ -137,7 +138,7 @@ export class IntentTree {
     const matches = []
 
     // Walk tree and evaluate all triggers
-    this.tree.root.branches.forEach(branch => {
+    tree.root.branches.forEach(branch => {
       let branchScore = 0
       const triggersMatched = []
 
@@ -173,7 +174,7 @@ export class IntentTree {
   /**
    * Get top N intents, with weighting for multi-intent scenarios
    */
-  getTopIntents(matches, count = 3) {
+  static getTopIntents(matches, count = 3) {
     if (matches.length === 0) {
       // Fallback intent (should rarely happen)
       return [{
@@ -193,14 +194,14 @@ export class IntentTree {
    * Determine PRIMARY intent for routing
    * (Uses top intent for initial routing decision)
    */
-  getPrimaryIntent(matches) {
+  static getPrimaryIntent(matches) {
     return matches.length > 0 ? matches[0] : null
   }
 
   /**
    * Get intent explanation (for transparency in UI)
    */
-  explainIntent(intent) {
+  static explainIntent(intent) {
     return {
       label: intent.label,
       why: intent.triggersMatched,
