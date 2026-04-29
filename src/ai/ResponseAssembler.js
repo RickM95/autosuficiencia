@@ -5,6 +5,8 @@ import { analyzeCompleteness } from './Analyzer.js'
 import { generatePlan } from './PlanGenerator.js'
 import { isDevRequest, routeDevRequest, buildModuleRegistry, buildPackageJson, classifyAndRoute } from './devAgent/index.js'
 import KbEngine from './kb/KbEngine.js'
+import { EmotionalIntelligence } from './EmotionalIntelligence.js'
+import { ResponseGenerator } from './ResponseGenerator.js'
 
 const kb = new KbEngine()
 
@@ -46,7 +48,20 @@ export function assembleResponse(stage, analysis, formData, budgetData, memory, 
       : '⚠️ Knowledge base structure error. Please contact the administrator.')
   }
 
+  // NEW: Emotional intelligence check before routing dev request
   if (userMessage && isDevRequest(userMessage)) {
+    // Detect emotional state
+    const emotionalContext = analysis.emotionalContext || EmotionalIntelligence.detect(userMessage, {
+      financialAnalysis: analysis.financialAnalysis,
+      needsAnalysis: analysis.needsAnalysis
+    })
+
+    // Block dev agent if user is in crisis
+    if (emotionalContext.interventionNeed === 'IMMEDIATE' || emotionalContext.intensity > 7) {
+      const response = buildEmotionalSupportResponse(emotionalContext, userMessage, lang)
+      return response
+    }
+
     const routing = classifyAndRoute(userMessage)
     if (routing.shouldBlockDevTrigger) {
       const response = buildEmotionalResponse(routing, userMessage, lang)
@@ -249,6 +264,19 @@ function getFollowUpAdvice(analysis, formData, lang) {
     ? `**Estado:** Progreso estable\n**Acción:** No se detectan intervenciones urgentes.\n**Recomendación:** Continuar con el plan actual y programar revisión en 30 días.\n\n¿Hay algún aspecto específico que requiera análisis adicional?`
     : `**Status:** Stable progress\n**Action:** No urgent interventions detected.\n**Recommendation:** Continue with current plan and schedule review in 30 days.\n\nIs there any specific aspect requiring additional analysis?`,
     lang)
+}
+
+// NEW: Emotional support response when user in crisis
+function buildEmotionalSupportResponse(emotionalContext, userMessage, lang) {
+  if (emotionalContext.intensity > 8) {
+    return lang === 'es'
+      ? `❤️ **Veo que estás en un momento muy difícil.**\n\nLa codificación y técnica pueden esperar. Tu bienestar es lo más importante ahora.\n\n**Aquí hay recursos de apoyo inmediato:**\n- 📞 Línea de crisis: Habla con alguien entrenado\n- 💭 Respira profundo: 5 respiraciones lentas\n- 📋 Escribe lo que sientes: A veces eso ayuda\n\nCuando te sientas más estable, podemos abordar tu situación financiera con un plan claro. ¿Hay algo urgente que necesites primero?`
+      : `❤️ **I can see you're going through a very difficult time right now.**\n\nCoding and technical matters can wait. Your wellbeing is what matters most.\n\n**Here are immediate support resources:**\n- 📞 Crisis line: Talk to someone trained\n- 💭 Breathe deeply: 5 slow breaths\n- 📋 Write what you're feeling: Sometimes that helps\n\nWhen you feel more stable, we can address your financial situation with a clear plan. Is there something urgent you need first?`
+  }
+
+  return lang === 'es'
+    ? `❤️ **Entiendo que algo te preocupa ahora.**\n\nAunque tu pregunta es técnica, percibo que podrías necesitar apoyo primero.\n\nTomemos un paso atrás: ¿Qué es lo más importante que necesitas resolver en este momento?\n\n**Opciones:**\n- 💰 Hablar sobre dinero y presupuesto\n- 😟 Hablar sobre estrés o preocupaciones\n- 🎯 Crear un plan de acción\n\n¿Cuál es tu prioridad ahora?`
+    : `❤️ **I sense something's weighing on you right now.**\n\nAlthough your question is technical, I perceive you might need support first.\n\nLet's take a step back: What's the most important thing you need to resolve right now?\n\n**Options:**\n- 💰 Talk about money and budgeting\n- 😟 Talk about stress or concerns\n- 🎯 Create an action plan\n\nWhat's your priority now?`
 }
 
 // ═══════════════════════════════════════════════════════════════

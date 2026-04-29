@@ -4,91 +4,91 @@
   "triggers": {
     "budget": {
       "domain": "finances",
-      "action": "budget_advice",
+      "action": "deficit_response",
       "weight": 1.0,
       "keywords": ["presupuesto", "budget", "gasto", "expense", "gastar", "spend", "dinero", "money", "costo"],
       "stage": "FINANCIAL_REVIEW"
     },
     "debt": {
       "domain": "finances",
-      "action": "debt_advice",
+      "action": "debt_snowball",
       "weight": 1.0,
       "keywords": ["deuda", "debt", "préstamo", "loan", "tarjeta", "credit", "interés", "interest"],
       "stage": "FINANCIAL_REVIEW"
     },
     "savings": {
       "domain": "finances",
-      "action": "savings_advice",
+      "action": "no_emergency_fund",
       "weight": 1.0,
       "keywords": ["emergencia", "emergency", "ahorro", "saving", "fondo", "fund", "ahorrar", "save"],
       "stage": "FINANCIAL_REVIEW"
     },
     "income": {
       "domain": "finances",
-      "action": "income_advice",
+      "action": "income_diversification",
       "weight": 1.0,
       "keywords": ["trabajo", "work", "empleo", "job", "ganar", "earn", "negocio", "business", "ingreso", "income"],
       "stage": "FINANCIAL_REVIEW"
     },
     "stress": {
       "domain": "wellbeing",
-      "action": "stress_advice",
+      "action": "immediate_stress_relief",
       "weight": 1.0,
       "keywords": ["estrés", "stress", "ansiedad", "anxiety", "deprim", "triste", "overwhelm", "agobiado"],
       "stage": "TOPIC_ADVICE"
     },
     "goals": {
       "domain": "goals",
-      "action": "goals_advice",
+      "action": "goal_introduction",
       "weight": 1.0,
       "keywords": ["meta", "goal", "objetivo", "plan", "futuro", "future", "sueño", "dream"],
       "stage": "GOALS_REVIEW"
     },
     "housing": {
       "domain": "wellbeing",
-      "action": "needs_advice",
+      "action": "critical_needs_response",
       "weight": 0.8,
       "keywords": ["vivienda", "housing", "casa", "house", "alquiler", "rent", "hogar", "home"],
       "stage": "NEEDS_CRITICAL"
     },
     "food": {
       "domain": "wellbeing",
-      "action": "needs_advice",
+      "action": "critical_needs_response",
       "weight": 0.8,
       "keywords": ["comida", "food", "alimentación", "nutrición", "cocina", "cooking", "huerto", "garden"],
       "stage": "NEEDS_CRITICAL"
     },
     "education": {
       "domain": "finances",
-      "action": "income_advice",
+      "action": "income_diversification",
       "weight": 0.7,
       "keywords": ["educación", "education", "estudio", "study", "curso", "course", "capacitación", "training"],
       "stage": "TOPIC_ADVICE"
     },
     "resources": {
       "domain": "wellbeing",
-      "action": "resources_advice",
+      "action": "resource_referral",
       "weight": 0.7,
       "keywords": ["recurso", "resource", "ayuda", "help", "programa", "program", "gobierno", "government", "ong", "ngo"],
       "stage": "TOPIC_ADVICE"
     },
     "health": {
       "domain": "wellbeing",
-      "action": "needs_advice",
+      "action": "critical_needs_response",
       "weight": 0.8,
       "keywords": ["salud", "health", "médico", "medical", "medicina", "medicine", "doctor", "enfermedad", "illness"],
       "stage": "NEEDS_CRITICAL"
     },
     "plan": {
-      "domain": "plan",
-      "action": "generate_plan",
+      "domain": "finances",
+      "action": "goal_review",
       "weight": 1.0,
       "keywords": ["plan", "generate", "generar", "crear", "create", "hacer", "make", "documento", "document", "print"],
       "stage": "PLAN_BUILD"
     },
     "import": {
-      "domain": "knowledge",
-      "action": "import_document",
+      "domain": "wellbeing",
+      "action": "resource_referral",
       "weight": 1.0,
       "keywords": ["import", "upload", "cargar", "subir", "pdf", "document", "documento", "file", "archivo", "leer", "read"],
       "stage": "KNOWLEDGE_IMPORT"

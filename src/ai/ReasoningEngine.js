@@ -1,6 +1,11 @@
 import { analyzeNeeds, analyzeFinances, analyzeGoals, analyzeResources, analyzeCompleteness, identifyRisks, analyzeMessage } from './Analyzer.js'
 import KbEngine from './kb/KbEngine.js'
 import { generateHealthReport, getDiagnosticSummary } from './kb/debugger.js'
+import { IntentTree } from './IntentTree.js'
+import { DualLayerReasoner } from './DualLayerReasoner.js'
+import { EmotionalIntelligence } from './EmotionalIntelligence.js'
+import { SubtextDetector } from './SubtextDetector.js'
+import { ResponseGenerator } from './ResponseGenerator.js'
 
 export default class ReasoningEngine {
   constructor(memory, debugMode = false) {
@@ -34,22 +39,61 @@ export default class ReasoningEngine {
       }
     }
     const previousStage = this.memory.stage
+
+    // NEW: Run enhanced reasoning layers
+    const analyses = {
+      needs: analyzeNeeds(formData),
+      finances: analyzeFinances(formData),
+      goals: analyzeGoals(formData),
+      resources: analyzeResources(formData),
+      completeness: analyzeCompleteness(formData),
+      risks: identifyRisks(formData),
+      message: analyzeMessage(userMessage || '')
+    }
+
+    // NEW: Detect emotional state and subtexts
+    const emotionalContext = EmotionalIntelligence.detect(userMessage, {
+      financialAnalysis: analyses.finances,
+      needsAnalysis: analyses.needs
+    })
+
+    const subtexts = SubtextDetector.detect(userMessage, {
+      previousTopics: this.memory.recordedTopics || [],
+      currentTopic: analyses.message,
+      lang: 'en'
+    })
+
+    // NEW: Determine intents using weighted matching
+    const intents = IntentTree.evaluate(userMessage, formData, analyses, this.memory)
+    const topIntents = IntentTree.getTopIntents(intents, 2)
+
+    // NEW: Use dual-layer reasoning
+    const dualReasoning = await DualLayerReasoner.reason(userMessage, formData, {
+      intents: topIntents,
+      emotionalIntelligence: emotionalContext,
+      subtexts,
+      stage: previousStage,
+      userMessage
+    })
+
+    // EXISTING: KB pipeline (supplementary now, not primary)
     const pipeline = this.kb.executePipeline(userMessage, formData, this.memory, null)
 
-    if (pipeline.kbGapDetected && !pipeline.responseText) {
-      return this._fallbackWithGap(formData, budgetData, userMessage, previousStage, pipeline)
-    }
+    // NEW: Select which reasoning layer to use
+    const selectedReasoning = dualReasoning.decision.layer === 'HUMAN' 
+      ? dualReasoning.humanLayer 
+      : dualReasoning.systemLayer
 
-    if (pipeline.structureError) {
-      return this._structureErrorResult(previousStage)
-    }
-
-    const newStage = pipeline.overrides.stage || this._determineStageFromAnalysis(formData, userMessage)
+    // Update stage (now based on intents + emotional context)
+    const newStage = this._determineStageFromIntents(topIntents, analyses, emotionalContext)
     this.memory.stage = newStage
 
+    // Track interaction
     if (userMessage) {
-      const topic = analyzeMessage(userMessage)
-      this.memory.recordInteraction('user', userMessage, topic)
+      this.memory.recordInteraction('user', userMessage, analyses.message)
+      this.memory.recordIntents?.(topIntents)
+      this.memory.recordSubtexts?.(subtexts)
+      this.memory.recordResponseMode?.(selectedReasoning.responseMode)
     }
     this.memory.extractFactsFromForm(formData)
 
@@ -57,13 +101,25 @@ export default class ReasoningEngine {
       stage: this.memory.stage,
       pipeline,
       kbDrivenResponse: pipeline.responseText,
-      needsAnalysis: analyzeNeeds(formData),
-      financialAnalysis: analyzeFinances(formData),
-      goalsAnalysis: analyzeGoals(formData),
-      resourcesAnalysis: analyzeResources(formData),
-      completeness: analyzeCompleteness(formData),
-      risks: identifyRisks(formData),
-      topic: pipeline.context.intent || analyzeMessage(userMessage || ''),
+      
+      // NEW: Enhanced reasoning outputs
+      intents: topIntents,
+      emotionalContext,
+      subtexts: SubtextDetector.prioritizeSubtexts(subtexts),
+      dualReasoning: {
+        selectedLayer: dualReasoning.decision.layer,
+        responseMode: selectedReasoning.responseMode,
+        rationale: dualReasoning.rationale
+      },
+      
+      // EXISTING: Form analysis
+      needsAnalysis: analyses.needs,
+      financialAnalysis: analyses.finances,
+      goalsAnalysis: analyses.goals,
+      resourcesAnalysis: analyses.resources,
+      completeness: analyses.completeness,
+      risks: analyses.risks,
+      topic: analyses.message,
       conversationStageChanged: previousStage !== this.memory.stage,
       activeRules: pipeline.activeRules,
       validation: pipeline.validation,
@@ -71,9 +127,45 @@ export default class ReasoningEngine {
     }
   }
 
-  _determineStageFromAnalysis(formData, userMessage) {
-    const needs = analyzeNeeds(formData)
-    if (needs.critical.length > 0) return 'NEEDS_CRITICAL'
+  _determineStageFromIntents(topIntents, analyses, emotionalContext) {
+    // Priority 1: Emotional crisis
+    if (emotionalContext.interventionNeed === 'IMMEDIATE') {
+      return 'STRESS_INTERVENTION'
+    }
+
+    // Priority 2: Critical needs
+    if (analyses.needs.critical && analyses.needs.critical.length > 0) {
+      return 'NEEDS_CRITICAL'
+    }
+
+    // Priority 3: Top intent
+    if (topIntents && topIntents.length > 0) {
+      const primaryIntent = topIntents[0]
+      const intentToStageMap = {
+        'immediate_crisis': 'NEEDS_CRITICAL',
+        'emotional_overwhelm': 'STRESS_INTERVENTION',
+        'financial_crisis': 'FINANCIAL_REVIEW',
+        'stressed_and_struggling': 'STRESS_INTERVENTION',
+        'financial_planning': 'PLAN_BUILD',
+        'goal_setting': 'GOALS_REVIEW',
+        'learning_request': 'KNOWLEDGE_IMPORT',
+        'general_conversation': 'TOPIC_ADVICE'
+      }
+      const stage = intentToStageMap[primaryIntent.intent]
+      if (stage) return stage
+    }
+
+    // Fallback to analysis-based determination
+    return this._determineStageFromAnalysis(null, null, analyses)
+  }
+
+  _determineStageFromAnalysis(formData, userMessage, analyses = null) {
+    // Use passed analyses if available, otherwise compute
+    const needs = analyses?.needs || analyzeNeeds(formData || {})
+    const finances = analyses?.finances || analyzeFinances(formData || {})
+    const completeness = analyses?.completeness || analyzeCompleteness(formData || {})
+
+    if (needs.critical && needs.critical.length > 0) return 'NEEDS_CRITICAL'
 
     if (userMessage) {
       if (this._isImportRequest(userMessage)) return 'KNOWLEDGE_IMPORT'
@@ -83,12 +175,10 @@ export default class ReasoningEngine {
       if (topic !== 'general') return 'TOPIC_ADVICE'
     }
 
-    const finances = analyzeFinances(formData)
-    const completeness = analyzeCompleteness(formData)
-    if (completeness.percent >= 60 && !userMessage) return 'PLAN_BUILD'
-    if (finances.income > 0 || finances.expenses > 0) return 'FINANCIAL_REVIEW'
-    if (completeness.percent > 20) return 'GOALS_REVIEW'
-    if (this.memory.interactionCount > 5) return 'FOLLOW_UP'
+    if (completeness?.percent >= 60 && !userMessage) return 'PLAN_BUILD'
+    if (finances?.income > 0 || finances?.expenses > 0) return 'FINANCIAL_REVIEW'
+    if (completeness?.percent > 20) return 'GOALS_REVIEW'
+    if (this.memory?.interactionCount > 5) return 'FOLLOW_UP'
     return 'WELCOME'
   }
 

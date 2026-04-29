@@ -216,6 +216,81 @@ export function analyzeMessage(message) {
 }
 
 export function detectLanguage(message) {
-  const spanishWords = /\b(el|la|los|las|un|una|que|de|en|y|es|por|con|para|como|qué|cómo|tengo|quiero|necesito|ayuda|dinero|familia|más|pero|este|esta|puedo|hacer|soy|eres|estoy|está|son|han|he|has|me|te|se|lo|su|mis|tus|sus|nos|le|les|del|al|del|muy|bien|mal|ahora|siempre|nunca|también|entonces|porque|cuando|donde|quien|todo|cada|otro|mismo|así|solo|aunque|sin|entre|durante|después|antes|hasta|contra|mediante|según|salvo|excepto)\b/i
-  return spanishWords.test(message) ? 'es' : 'en'
+  if (!message || typeof message !== 'string') return 'es'
+  const text = message.trim()
+  if (!text) return 'es'
+
+  const distinctiveSpanish = [
+    /\b(hola|gracias|por favor|buenos días|buenas|adiós|señor|señora|señores)\b/i,
+    /\b(necesito|necesitas|necesita|necesitamos|necesitan|necesario)\b/i,
+    /\b(quiero|quieres|quiere|queremos|quieren|quisiera|quisieras)\b/i,
+    /\b(puedo|puedes|puede|podemos|pueden|pude|pudiste|pudo|pudimos|pudieron)\b/i,
+    /\b(tengo|tienes|tiene|tenemos|tienen|tuve|tuviste|tuvo|tuvimos|tuvieron|tenía|tenías)\b/i,
+    /\b(hago|haces|hace|hacemos|hacen|hice|hiciste|hizo|hicimos|hicieron)\b/i,
+    /\b(estoy|estás|está|estamos|están|estuve|estuviste|estuvo|estuvimos|estuvieron)\b/i,
+    /\b(soy|eres|somos|sois|sea|seas|seamos|seáis|sean|era|eras|éramos|eran|será|serán)\b/i,
+    /\b(he|has|ha|hemos|habéis|han|había|habías|habíamos|habían|habrá|habrán)\b/i,
+    /\b(dinero|presupuesto|deuda|trabajo|familia|casa|vida|tiempo|día|año|mes|semana|hora|momento)\b/i,
+    /\b(gente|mundo|problema|situación|solución|ayuda|apoyo|cambio|mejora|oportunidad|futuro|meta|meta)\b/i,
+    /\b(gracias|ayuda|favor|disculpa|perdón|permiso|claro|seguro|listo|bueno|malo|peor|mejor|mayor|menor)\b/i,
+    /\b(entonces|también|tampoco|siempre|nunca|jamás|todavía|aún|ya|ahora|luego|después|antes|durante|mientras)\b/i,
+    /\b(mucho|mucha|muchos|muchas|poco|poca|pocos|pocas|bastante|demasiado|suficiente|varios|variadas)\b/i,
+    /\b(porque|por qué|cuándo|dónde|quién|cómo|cuál|cuáles|cuánto|cuántos|cuánta|cuántas|qué|quien|quienes)\b/i,
+    /\b(mismo|misma|mismos|mismas|otro|otra|otros|otras|cada|todo|toda|todos|todas|ningún|ninguna|ningunos)\b/i,
+    /\b(entre|durante|después|antes|hasta|desde|hacia|contra|mediante|según|salvo|excepto|sin|sobre|tras|ante|bajo)\b/i,
+    /\b(cuando|donde|mientras|apenas|casi|quizá|quizás|acaso|ojalá|tal vez|a lo mejor)\b/i,
+    /\b(además|asimismo|igualmente|asimismo|incluso|hasta|tampoco|también|menos|más)\b/i,
+    /\b(ser|estar|tener|haber|hacer|poder|decir|poner|creer|pensar|sentir|vivir|hablar|trabajar|comer|beber|dormir|leer|escribir|viajar|estudiar|aprender|entender|seguir|salir|volver|entrar|dejar|llamar|encontrar)\b/i,
+  ]
+
+  const distinctiveEnglish = [
+    /\b(hello|hi|hey|thanks|thank you|please|welcome|goodbye|bye)\b/i,
+    /\b(the|a|an|this|that|these|those)\b/i,
+    /\b(i|you|he|she|it|we|they|me|him|her|us|them)\b/i,
+    /\b(i'm|you're|he's|she's|it's|we're|they're|i've|you've|we've|they've|i'll|you'll|he'll|she'll|we'll|they'll)\b/i,
+    /\b(is|are|was|were|be|been|being|have|has|had|do|does|did|doing)\b/i,
+    /\b(will|would|shall|should|can|could|may|might|must|need|dare|ought|used)\b/i,
+    /\b(don't|doesn't|didn't|won't|wouldn't|can't|couldn't|shouldn't|haven't|hasn't|hadn't|isn't|aren't|wasn't|weren't)\b/i,
+    /\b(and|or|but|so|because|if|when|while|although|since|unless|until|after|before)\b/i,
+    /\b(my|your|his|her|its|our|their|mine|yours|hers|ours|theirs)\b/i,
+    /\b(need|want|like|think|believe|know|understand|feel|hope|wish|try|help|make|take|get|give|find)\b/i,
+    /\b(more|less|very|really|quite|too|enough|almost|just|only|also|even|still|already|always|never|sometimes|often)\b/i,
+    /\b(yes|no|maybe|perhaps|probably|definitely|absolutely|sure|okay|alright|fine|good|great|excellent|amazing)\b/i,
+    /\b(one|two|three|four|five|six|seven|eight|nine|ten|first|second|third|last|next|previous|final)\b/i,
+    /\b(about|above|across|after|against|along|among|around|at|before|behind|below|beneath|beside|between|beyond|by|down|during|except|for|from|in|inside|into|near|of|off|on|out|outside|over|through|to|toward|under|up|upon|with|within|without)\b/i,
+    /\b(because|therefore|however|moreover|furthermore|nevertheless|nonetheless|consequently|accordingly)\b/i,
+    /\b(would|could|should|might|must|shall|will|can|may)\b/i,
+    /\b(tell|ask|work|live|stay|move|change|keep|start|stop|continue|begin|end|finish|try|wait|follow|remember|forget|call|come|go|leave|arrive|return|enter|exit|pass|turn|run|walk|sit|stand|lie|lay|put|set|let|allow|permit|require|order|ask|answer|reply|respond|speak|talk|say|tell|ask|explain|describe|mention|note|observe|notice|see|watch|look|hear|listen|smell|feel|touch)\b/i,
+  ]
+
+  let spanishScore = 0
+  let englishScore = 0
+
+  for (const pattern of distinctiveSpanish) {
+    const matches = text.match(pattern)
+    if (matches) {
+      spanishScore += matches.length * 2
+    }
+  }
+
+  for (const pattern of distinctiveEnglish) {
+    const matches = text.match(pattern)
+    if (matches) {
+      englishScore += matches.length * 2
+    }
+  }
+
+  if (spanishScore === 0 && englishScore === 0) {
+    return 'es'
+  }
+
+  return spanishScore >= englishScore ? 'es' : 'en'
+}
+
+export function getBrowserLanguage() {
+  if (typeof navigator === 'undefined') return 'es'
+  const lang = navigator.language || navigator.userLanguage || 'es'
+  if (lang.startsWith('es')) return 'es'
+  if (lang.startsWith('en')) return 'en'
+  return 'es'
 }

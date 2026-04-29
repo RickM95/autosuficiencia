@@ -1,5 +1,5 @@
 const REQUIRED_DOMAIN_KEYS = ['domain', 'principles', 'decision_trees', 'actions', 'metrics']
-const REQUIRED_ACTION_KEYS = ['id', 'triggers', 'steps_en', 'steps_es', 'priority']
+const REQUIRED_ACTION_KEYS = ['id', 'triggers']
 
 export function validateKBStructure(domains) {
   const errors = []
@@ -90,11 +90,22 @@ export function validateActions(domains) {
         warnings.push(`NO_TRIGGERS: Action "${a.id}" has no triggers — will never be selected by trigger matching`)
       }
 
-      if (a.steps_en !== undefined && !Array.isArray(a.steps_en)) {
+      const hasStepsEn = a.steps_en !== undefined
+      const hasStepsEs = a.steps_es !== undefined
+      const hasSteps = a.steps !== undefined
+
+      if (hasStepsEn && !Array.isArray(a.steps_en)) {
         errors.push(`INVALID_STEPS_EN: Action "${a.id}" steps_en must be an array`)
       }
-      if (a.steps_es !== undefined && !Array.isArray(a.steps_es)) {
+      if (hasStepsEs && !Array.isArray(a.steps_es)) {
         errors.push(`INVALID_STEPS_ES: Action "${a.id}" steps_es must be an array`)
+      }
+      if (hasSteps && !Array.isArray(a.steps)) {
+        errors.push(`INVALID_STEPS: Action "${a.id}" steps must be an array`)
+      }
+
+      if (!hasStepsEn && !hasStepsEs && !hasSteps) {
+        warnings.push(`NO_STEPS: Action "${a.id}" has no steps, steps_en, or steps_es — minimal guidance provided`)
       }
 
       if (a.priority === undefined || a.priority === null) {

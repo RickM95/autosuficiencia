@@ -17,6 +17,12 @@ export default class ConversationMemory {
     this.lastTopic = null
     this.consecutiveOffTopic = 0
     this.language = 'es'
+    
+    // NEW: Enhanced reasoning tracking
+    this.recordedTopics = []
+    this.recordedIntents = []
+    this.recordedSubtexts = []
+    this.recordedResponseModes = []
   }
 
   setLanguage(lang) {
@@ -123,5 +129,46 @@ export default class ConversationMemory {
       FOLLOW_UP: 'Check progress and offer encouragement',
     }
     return suggestions[this.stage] || ''
+  }
+
+  // NEW: Enhanced reasoning tracking
+  recordIntents(intents) {
+    this.recordedIntents.push({
+      intents,
+      timestamp: Date.now()
+    })
+    if (this.recordedIntents.length > 20) {
+      this.recordedIntents.shift()
+    }
+  }
+
+  recordSubtexts(subtexts) {
+    this.recordedSubtexts.push({
+      subtexts,
+      timestamp: Date.now()
+    })
+    if (this.recordedSubtexts.length > 20) {
+      this.recordedSubtexts.shift()
+    }
+  }
+
+  recordResponseMode(responseMode) {
+    this.recordedResponseModes.push({
+      mode: responseMode,
+      timestamp: Date.now()
+    })
+    if (this.recordedResponseModes.length > 20) {
+      this.recordedResponseModes.shift()
+    }
+  }
+
+  getContextForNextResponse() {
+    return {
+      recentIntents: this.recordedIntents.slice(-3),
+      recentSubtexts: this.recordedSubtexts.slice(-3),
+      recentModes: this.recordedResponseModes.slice(-3),
+      sentiment: this.sentiment,
+      stage: this.stage
+    }
   }
 }

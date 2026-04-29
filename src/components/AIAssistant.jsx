@@ -3,7 +3,7 @@ import {
   ConversationMemory, PythonBridge, KnowledgeBase, DocumentImporter,
   ReasoningEngine,
   assembleResponse, buildWelcomeMessage,
-  detectLanguage,
+  detectLanguage, getBrowserLanguage,
   NephiBootSystem,
 } from '../ai/index.js'
 import { validateChatMessage, sanitizeMessage, validateStoredMessages } from '../ai/SecurityGuard.js'
@@ -190,35 +190,20 @@ export default function AIAssistant({ userContext, budgetData, isOpen, onToggle 
       kb.getStats().then(stats => setKbStats(stats)).catch(() => {})
 
       if (memoryRef.current.interactionCount === 0) {
-        const welcome = assembleResponse('WELCOME', {}, userContext || {}, budgetData || [], memoryRef.current, '', 'es')
+        const lang = getBrowserLanguage()
+        const welcome = assembleResponse('WELCOME', {}, userContext || {}, budgetData || [], memoryRef.current, '', lang)
         setMessages([{ role: 'assistant', content: welcome, id: Date.now() }])
       }
     })
   }, []) // eslint-disable-line react-hooks/exhaustive-deps
 
   // ═══════════════════════════════════════════════════════════════
-  // OPEN-ONLY: focus input + event listeners
+  // OPEN-ONLY: focus input
   // ═══════════════════════════════════════════════════════════════
   useEffect(() => {
     if (!isOpen) return
-
     setTimeout(() => inputRef.current?.focus(), 100)
-
-    const preventDefaults = e => { e.preventDefault(); e.stopPropagation() }
-    const el = dropRef.current
-    if (el) {
-      el.addEventListener('dragover', preventDefaults)
-      el.addEventListener('dragenter', preventDefaults)
-      el.addEventListener('drop', handleDrop)
-    }
-    return () => {
-      if (el) {
-        el.removeEventListener('dragover', preventDefaults)
-        el.removeEventListener('dragenter', preventDefaults)
-        el.removeEventListener('drop', handleDrop)
-      }
-    }
-  }, [isOpen]) // eslint-disable-line react-hooks/exhaustive-deps
+  }, [isOpen])
 
   // ═══════════════════════════════════════════════════════════════
   // SCROLL + PERSISTENCE effects (always active)
@@ -235,7 +220,18 @@ export default function AIAssistant({ userContext, budgetData, isOpen, onToggle 
     e.preventDefault()
     e.stopPropagation()
     const files = e.dataTransfer?.files
-    if (!files || files.length === 0 || !importerRef.current) return
+    if (!files || files.length === 0) return
+
+    if (!importerRef.current) {
+      const lang = language
+      setMessages(prev => [...prev, {
+        role: 'assistant', content: lang === 'es'
+          ? '⏳ El sistema se está inicializando. Espera un momento y vuelve a intentar.'
+          : '⏳ System is initializing. Please wait a moment and try again.',
+        id: Date.now(),
+      }])
+      return
+    }
 
     setIsLoading(true)
     for (const file of files) {

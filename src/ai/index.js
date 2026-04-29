@@ -61,6 +61,7 @@ export {
   identifyRisks,
   analyzeMessage,
   detectLanguage,
+  getBrowserLanguage,
 } from './Analyzer.js'
 
 export {

@@ -63,9 +63,15 @@ export default class KnowledgeBase {
   }
 
   _getStore(storeName, mode = 'readonly') {
-    if (this._useLocalStorage) return null
-    const transaction = this.db.transaction(storeName, mode)
-    return transaction.objectStore(storeName)
+    if (this._useLocalStorage || !this.db) return null
+    try {
+      const transaction = this.db.transaction(storeName, mode)
+      return transaction.objectStore(storeName)
+    } catch (e) {
+      console.warn('KB storage error:', e.message)
+      this._useLocalStorage = true
+      return null
+    }
   }
 
   _lsKey(store) {
