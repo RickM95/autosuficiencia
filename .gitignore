@@ -38,3 +38,6 @@ NEPHI_*.md
 .env.local
 .env.production
 .env.*.local
+
+.vercel
+.env*.local
