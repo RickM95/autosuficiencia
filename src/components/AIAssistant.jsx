@@ -7,6 +7,7 @@ import {
   NephiBootSystem,
 } from '../ai/index.js'
 import { validateChatMessage, sanitizeMessage, validateStoredMessages } from '../ai/SecurityGuard.js'
+import { extractFormDataFromMemory, formatFormUpdateMessage } from '../ai/formFiller.js'
 import KnowledgeBasePanel from './KnowledgeBasePanel.jsx'
 
 let pySingleton = null
@@ -171,7 +172,7 @@ const QUICK_PROMPTS = [
   { es: '🧠 Intervención de estrés', en: '🧠 Stress intervention' },
 ]
 
-export default function AIAssistant({ userContext, budgetData, isOpen, onToggle }) {
+export default function AIAssistant({ userContext, budgetData, isOpen, onToggle, setFormData }) {
   const [messages, setMessages] = useState(() => {
     try {
       const saved = localStorage.getItem('ai_messages')
@@ -256,12 +257,33 @@ export default function AIAssistant({ userContext, budgetData, isOpen, onToggle 
   }, []) // eslint-disable-line react-hooks/exhaustive-deps
 
   // ═══════════════════════════════════════════════════════════════
-  // OPEN-ONLY: focus input
+  // FOCUS MANAGEMENT
   // ═══════════════════════════════════════════════════════════════
+
+  // Auto-focus on mount
+  useEffect(() => {
+    inputRef.current?.focus()
+  }, [])
+
+  // Focus when chat opens
   useEffect(() => {
     if (!isOpen) return
     setTimeout(() => inputRef.current?.focus(), 100)
   }, [isOpen])
+
+  // Re-focus after loading completes (each message send)
+  useEffect(() => {
+    if (!isLoading) {
+      inputRef.current?.focus()
+    }
+  }, [isLoading])
+
+  // Keep focus after new messages appear
+  useEffect(() => {
+    if (messages.length > 0) {
+      inputRef.current?.focus()
+    }
+  }, [messages.length])
 
   // ═══════════════════════════════════════════════════════════════
   // SCROLL + PERSISTENCE effects (always active)
@@ -351,7 +373,19 @@ export default function AIAssistant({ userContext, budgetData, isOpen, onToggle 
 
       memoryRef.current.recordInteraction('assistant', reply, analysis.stage)
 
-      setMessages(prev => [...prev, { role: 'assistant', content: reply, id: performance.now() }])
+      const assistantMsg = { role: 'assistant', content: reply, id: performance.now() }
+      setMessages(prev => [...prev, assistantMsg])
+
+      const formUpdates = extractFormDataFromMemory(memoryRef.current, userContext || {})
+      if (setFormData && Object.keys(formUpdates).length > 0) {
+        setFormData(prev => ({ ...prev, ...formUpdates }))
+        const updateMsg = formatFormUpdateMessage(formUpdates, lang)
+        if (updateMsg) {
+          setMessages(prev => [...prev, {
+            role: 'assistant', content: updateMsg, id: performance.now() + 1, isFillNotice: true,
+          }])
+        }
+      }
 
       if (analysis.stage === 'PLAN_BUILD' || analysis.stage === 'PLAN_REVIEW') {
         memoryRef.current.updatePlanProgress('needs', 100)
@@ -367,6 +401,7 @@ export default function AIAssistant({ userContext, budgetData, isOpen, onToggle 
     } finally {
       setIsLoading(false)
       setLoadingText('')
+      requestAnimationFrame(() => inputRef.current?.focus())
     }
   }
 
@@ -531,7 +566,7 @@ export default function AIAssistant({ userContext, budgetData, isOpen, onToggle 
               background: 'var(--color-white)',
             }}>
               {QUICK_PROMPTS.map((p, i) => (
-                <button key={i} onClick={() => sendMessage(p[language] || p.es)}
+                <button key={i} onClick={() => { sendMessage(p[language] || p.es); requestAnimationFrame(() => inputRef.current?.focus()) }}
                   style={{
                     padding: '0.3rem 0.625rem', border: '1px solid var(--color-border-dark)',
                     borderRadius: '999px', background: 'var(--color-white)',

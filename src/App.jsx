@@ -123,7 +123,7 @@ export default function App() {
         )}
 
         <AIAssistant
-          userContext={Object.keys(formData).length > 0 ? formData : null}
+          userContext={formData}
           budgetData={budgetData}
           setFormData={setFormData}
           isOpen={chatOpen}

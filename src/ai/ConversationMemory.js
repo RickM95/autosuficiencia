@@ -17,24 +17,24 @@ export default class ConversationMemory {
     this.lastTopic = null
     this.consecutiveOffTopic = 0
     this.language = 'es'
-    
-    // ✅ STICKY MODE IMPLEMENTATION
+    this.lastAction = null
+    this.lastResponses = []
+
     this.currentMode = {
       type: null,
       confidence: 0,
-      lastUpdated: null
+      lastUpdated: null,
     }
-    
-    // ✅ PERSISTENT CONTEXT
+
     this.lastEmotionalState = null
     this.lastUserIntent = null
     this.lastValidStage = 'WELCOME'
-    
-    // NEW: Enhanced reasoning tracking
+
     this.recordedTopics = []
     this.recordedIntents = []
     this.recordedSubtexts = []
     this.recordedResponseModes = []
+    this.userInputs = []
   }
 
   setLanguage(lang) {
@@ -44,6 +44,14 @@ export default class ConversationMemory {
   recordInteraction(role, content, topic) {
     this.interactionCount++
     if (role === 'user') {
+      this.userInputs.push({
+        content,
+        topic,
+        timestamp: Date.now(),
+      })
+      if (this.userInputs.length > 50) {
+        this.userInputs.shift()
+      }
       if (topic) {
         this.discussedTopics.add(topic)
         if (this.discussedTopics.size > this.MAX_TOPICS) {
@@ -53,6 +61,37 @@ export default class ConversationMemory {
       }
       this.lastTopic = topic
       this._updateSentiment(content)
+    } else if (role === 'assistant') {
+      this.lastResponses.push(content)
+      if (this.lastResponses.length > 20) {
+        this.lastResponses.shift()
+      }
+    }
+  }
+
+  getRecentHistory(count = 5) {
+    const recent = []
+    for (let i = this.userInputs.length - 1, j = 0; i >= 0 && j < count; i--, j++) {
+      recent.push(this.userInputs[i])
+    }
+    return recent
+  }
+
+  getUserContextSummary() {
+    if (this.userInputs.length === 0) return {}
+    return {
+      totalInputs: this.userInputs.length,
+      recentTopics: Array.from(this.discussedTopics).slice(-3),
+      sentiment: this.sentiment,
+      hasFinancialData: this.userInputs.some(u =>
+        /(debt|deuda|money|dinero|income|ingreso|expense|gasto|budget|presupuesto|financial|financier)/i.test(u.content)
+      ),
+      hasGoalsData: this.userInputs.some(u =>
+        /(goal|meta|future|futuro|dream|sueño|quiero|want)/i.test(u.content)
+      ),
+      hasEmotionalData: this.userInputs.some(u =>
+        /(stress|stressed|anxious|ansiedad|abrumado|overwhelmed|depressed|triste|sad|worried|miedo|crisis|estres)/i.test(u.content)
+      ),
     }
   }
 
@@ -143,11 +182,10 @@ export default class ConversationMemory {
     return suggestions[this.stage] || ''
   }
 
-  // NEW: Enhanced reasoning tracking
   recordIntents(intents) {
     this.recordedIntents.push({
       intents,
-      timestamp: Date.now()
+      timestamp: Date.now(),
     })
     if (this.recordedIntents.length > 20) {
       this.recordedIntents.shift()
@@ -157,7 +195,7 @@ export default class ConversationMemory {
   recordSubtexts(subtexts) {
     this.recordedSubtexts.push({
       subtexts,
-      timestamp: Date.now()
+      timestamp: Date.now(),
     })
     if (this.recordedSubtexts.length > 20) {
       this.recordedSubtexts.shift()
@@ -167,22 +205,18 @@ export default class ConversationMemory {
   recordResponseMode(responseMode) {
     this.recordedResponseModes.push({
       mode: responseMode,
-      timestamp: Date.now()
+      timestamp: Date.now(),
     })
     if (this.recordedResponseModes.length > 20) {
       this.recordedResponseModes.shift()
     }
   }
 
-  /**
-   * ✅ STICKY MODE MANAGEMENT
-   * Prevents unwanted mode resets on short / vague inputs
-   */
   setActiveMode(type, confidence = 0.8) {
     this.currentMode = {
       type,
       confidence,
-      lastUpdated: Date.now()
+      lastUpdated: Date.now(),
     }
     this.lastValidStage = this.stage
   }
@@ -191,15 +225,13 @@ export default class ConversationMemory {
     this.currentMode = {
       type: null,
       confidence: 0,
-      lastUpdated: null
+      lastUpdated: null,
     }
   }
 
   isInMode(modeType) {
     if (!this.currentMode.type) return false
     if (this.currentMode.type !== modeType) return false
-    
-    // Mode expires after 15 minutes of inactivity
     const age = Date.now() - this.currentMode.lastUpdated
     return age < 15 * 60 * 1000
   }
@@ -211,7 +243,7 @@ export default class ConversationMemory {
   }
 
   shouldPreserveMode() {
-    return this.isInMode('EMOTIONAL_SUPPORT') || 
+    return this.isInMode('EMOTIONAL_SUPPORT') ||
            this.isInMode('PLANNING') ||
            this.isInMode('REFLECTION')
   }
@@ -224,7 +256,8 @@ export default class ConversationMemory {
       sentiment: this.sentiment,
       stage: this.stage,
       currentMode: this.currentMode,
-      lastEmotionalState: this.lastEmotionalState
+      lastEmotionalState: this.lastEmotionalState,
+      userContextSummary: this.getUserContextSummary(),
     }
   }
 }

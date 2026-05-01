@@ -80,3 +80,41 @@ export {
 export {
   getGoalsAdvice,
 } from './advice/goals.js'
+
+export {
+  detectIntent,
+} from './intentDetector.js'
+
+export {
+  decideNextAction,
+  generateOrchestratorResponse,
+  getResponseStrategy,
+} from './autonomousOrchestrator.js'
+
+export {
+  isRepeatingResponse,
+  getVariantResponse,
+} from './loopGuard.js'
+
+export {
+  extractFormDataFromMemory,
+  formatFormUpdateMessage,
+} from './formFiller.js'
+
+export {
+  generateAdaptivePlan,
+  getPlannerResponse,
+  PLAN_STAGES,
+} from './autonomousPlanner.js'
+
+export {
+  generateIncomeOptions,
+  generateIncomeResponse,
+} from './incomeEngine.js'
+
+export {
+  selectBestAction,
+  advanceExecution,
+  getExecutionStep,
+  generateDecisionResponse,
+} from './decisionEngine.js'

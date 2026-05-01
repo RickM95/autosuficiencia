@@ -1,4 +1,4 @@
-import emotionalStates from './emotional_states.json'
+import emotionalStates from './emotional_states.json' with { type: 'json' }
 import intentClassifier from './intent_classifier.json'
 import preStateRouter from './pre_state_router.json'
 import responseStrategies from './response_strategy_kb.json'
