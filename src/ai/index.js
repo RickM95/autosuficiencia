@@ -118,3 +118,9 @@ export {
   getExecutionStep,
   generateDecisionResponse,
 } from './decisionEngine.js'
+
+export {
+  fuseDomains,
+  generateDeepResponse,
+  isShallowResponse,
+} from './domainFusionEngine.js'

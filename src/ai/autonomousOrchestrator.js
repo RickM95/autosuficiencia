@@ -2,6 +2,7 @@ import { detectIntent } from './intentDetector.js'
 import { isRepeatingResponse } from './loopGuard.js'
 import { getPlannerResponse } from './autonomousPlanner.js'
 import { generateDecisionResponse, advanceExecution, getExecutionStep } from './decisionEngine.js'
+import { fuseDomains, generateDeepResponse, isShallowResponse } from './domainFusionEngine.js'
 
 const ACTIONS = {
   EXPLAIN: 'explain',
@@ -55,6 +56,7 @@ function hasActiveEmotionalMode(memory) {
 
 export function decideNextAction(intent, memory, context = {}) {
   const detected = detectIntent(intent)
+  const fusion = fuseDomains(intent, memory)
   const recentTopics = getRecentTopics(memory)
   const firstInteraction = isFirstInteraction(memory)
   const inEmotionalMode = hasActiveEmotionalMode(memory)
@@ -180,6 +182,7 @@ export function decideNextAction(intent, memory, context = {}) {
       detected.intent === 'financial' ||
       detected.intent === 'plan_request' ||
       detected.intent === 'emotional',
+    fusion,
   }
 }
 
@@ -193,6 +196,7 @@ function buildExecuteDecision(action, reason, detected, lastDecision) {
     isContinuation: true,
     shouldAnswerFirst: true,
     executionDecision: lastDecision,
+    fusion: null,
   }
 }
 
@@ -228,7 +232,8 @@ function determineConversationalStage(detected, memory, context) {
 }
 
 export function generateOrchestratorResponse(decision, memory, context = {}) {
-  const { action, intent: detectedIntent, conversationalStage, isContinuation } = decision
+  const { action, intent: detectedIntent, conversationalStage, isContinuation, fusion } = decision
+  const rawInput = context.userMessage || ''
   const lang = memory.language || 'es'
   const t = (es, en) => lang === 'es' ? es : en
 
@@ -239,8 +244,8 @@ export function generateOrchestratorResponse(decision, memory, context = {}) {
   if (action === 'execute') {
     const lastDecision = memory.lastDecision
     const agreement = detectedIntent.intent === 'agreement' || detectedIntent.intent === 'gratitude'
-    const done = /\b(lo hice|done|listo|ready|completed|termin[eé]|complet[eé]|hice|ya|finished|acab[eé])\b/i.test(intent || '')
-    const failure = /\b(no funcion[óo]|didn't work|no pude|couldn't|fall[óo]|failed|no sirvi[óo]|nadie|no one|no me|no quisieron|they didn|no hay|no result[óo]|no funcionó)\b/i.test(intent || '')
+    const done = /\b(lo hice|done|listo|ready|completed|termin[eé]|complet[eé]|hice|ya|finished|acab[eé])\b/i.test(rawInput)
+    const failure = /\b(no funcion[óo]|didn't work|no pude|couldn't|fall[óo]|failed|no sirvi[óo]|nadie|no one|no me|no quisieron|they didn|no hay|no result[óo]|no funcionó)\b/i.test(rawInput)
 
     if (done || (agreement && lastDecision && lastDecision.status === 'in_progress')) {
       const result = advanceExecution(memory, 'success')
@@ -289,6 +294,9 @@ export function generateOrchestratorResponse(decision, memory, context = {}) {
   }
 
   if (action === 'support') {
+    if (fusion && fusion.priorityDomain) {
+      return generateDeepResponse(rawInput, fusion, memory)
+    }
     return t(
       `Escucho que estás pasando por un momento difícil. Antes de hablar de planes, dime—¿cómo estás ahora mismo?`,
       `I hear you're going through a hard time. Before talking about plans, tell me—how are you right now?`
@@ -296,13 +304,19 @@ export function generateOrchestratorResponse(decision, memory, context = {}) {
   }
 
   if (action === 'validate' && isContinuation) {
+    if (fusion && fusion.priorityDomain) {
+      return generateDeepResponse(rawInput, fusion, memory)
+    }
     return t(
-      `Entiendo. Cuéntame más cuando te sientas listo.`,
-      `I understand. Tell me more when you're ready.`
+      `Entiendo. Sigue cuando gustes.`,
+      `I understand. Go on whenever you like.`
     )
   }
 
   if (action === 'explore') {
+    if (fusion && fusion.priorityDomain) {
+      return generateDeepResponse(rawInput, fusion, memory)
+    }
     if (conversationalStage === 'getting_to_know') {
       return t(
         `Cuéntame sobre ti—¿cómo es tu día a día en este momento?`,
@@ -372,9 +386,12 @@ export function generateOrchestratorResponse(decision, memory, context = {}) {
   }
 
   if (action === 'acknowledge') {
+    if (fusion && fusion.priorityDomain) {
+      return generateDeepResponse(rawInput, fusion, memory)
+    }
     return t(
-      `Entiendo. Sigue cuando estés listo.`,
-      `I see. Go on whenever you're ready.`
+      `Entiendo. Sigue cuando gustes.`,
+      `I understand. Go on whenever you like.`
     )
   }
 
@@ -396,6 +413,10 @@ export function generateOrchestratorResponse(decision, memory, context = {}) {
       `¿Hay algo más que quieras compartir o en lo que pueda ayudarte?`,
       `Is there anything else you'd like to share or that I can help with?`
     )
+  }
+
+  if (fusion && fusion.priorityDomain) {
+    return generateDeepResponse(rawInput, fusion, memory)
   }
 
   return t(

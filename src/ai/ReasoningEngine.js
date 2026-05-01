@@ -58,6 +58,7 @@ export default class ReasoningEngine {
       if (this.memory.lastResponses.length > 0) {
         const generatedResponse = generateOrchestratorResponse(orchestratorDecision, this.memory, {
           hasFormData: !!(formData && Object.keys(formData).length > 2),
+          userMessage,
         })
 
         const repetition = isRepeatingResponse(generatedResponse, this.memory.lastResponses)
@@ -77,6 +78,7 @@ export default class ReasoningEngine {
       } else {
         responseText = generateOrchestratorResponse(orchestratorDecision, this.memory, {
           hasFormData: !!(formData && Object.keys(formData).length > 2),
+          userMessage,
         })
       }
     }

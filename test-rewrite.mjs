@@ -48,6 +48,7 @@ const { extractFormDataFromMemory, formatFormUpdateMessage } = await import('./s
 const { generateAdaptivePlan, getPlannerResponse, PLAN_STAGES } = await import('./src/ai/autonomousPlanner.js')
 const { generateIncomeOptions, generateIncomeResponse } = await import('./src/ai/incomeEngine.js')
 const { selectBestAction, advanceExecution, getExecutionStep, generateDecisionResponse } = await import('./src/ai/decisionEngine.js')
+const { fuseDomains, generateDeepResponse, isShallowResponse } = await import('./src/ai/domainFusionEngine.js')
 
 // ═══════════════════════════════════════════════════════════════
 // 1. INTENT DETECTION
@@ -1017,6 +1018,114 @@ assert(deEmptyResult.selectedAction === null, 'empty options returns null action
 assert(deEmptyResult.confidence === 0, 'empty options has 0 confidence')
 
 summary('Decision Engine')
+
+// ═══════════════════════════════════════════════════════════════
+// 13. DOMAIN FUSION ENGINE
+// ═══════════════════════════════════════════════════════════════
+section('DOMAIN FUSION ENGINE')
+
+// Empty input → returns empty fusion
+const dfEmpty = fuseDomains('', new ConversationMemory())
+assert(dfEmpty.priorityDomain === null, 'empty input → no priority domain')
+assert(dfEmpty.combinedInsight === '', 'empty input → empty insight')
+assert(dfEmpty.hasEmotionalWeight === false, 'empty input → no emotional weight')
+
+// Emotional domain detection
+const dfEmo = fuseDomains('estoy muy deprimido y solo', new ConversationMemory())
+assert(dfEmo.domains.emotional !== undefined, 'spanish emotional → emotional domain detected')
+assert(dfEmo.domains.social !== undefined, '"solo" also triggers social domain')
+assert(dfEmo.hasEmotionalWeight === true, 'emotional → hasEmotionalWeight')
+
+// Multi-domain detection
+const dfMulti = fuseDomains('Estoy frustrado porque no tengo trabajo y no sé qué hacer con mi vida', new ConversationMemory())
+assert(dfMulti.domains.emotional !== undefined, 'multi-input → emotional detected')
+assert(dfMulti.domains.lifeDirection !== undefined, 'multi-input → life direction detected')
+assert(dfMulti.domains.financial !== undefined, 'multi-input → financial detected')
+assert(Object.keys(dfMulti.domains).length >= 3, 'multi-input → at least 3 domains')
+
+// Financial domain
+const dfFin = fuseDomains('I have no money and I am in debt', new ConversationMemory())
+assert(dfFin.domains.financial !== undefined, 'financial input → financial domain')
+
+// Life direction
+const dfLife = fuseDomains('I don\'t know what to do with my life', new ConversationMemory())
+assert(dfLife.domains.lifeDirection !== undefined, 'life confusion → lifeDirection domain')
+
+// Social isolation
+const dfSoc = fuseDomains('Me siento solo y aislado', new ConversationMemory())
+assert(dfSoc.domains.social !== undefined, 'spanish isolation → social domain')
+assert(dfSoc.domains.emotional !== undefined, 'spanish isolation → emotional domain too')
+
+// Behavioral
+const dfBeh = fuseDomains('I keep procrastinating and can\'t start anything', new ConversationMemory())
+assert(dfBeh.domains.behavioral !== undefined, 'procrastination → behavioral domain')
+
+// Fusion stores in memory
+const dfMem = new ConversationMemory()
+fuseDomains('Estoy muy estresado y sin dinero', dfMem)
+assert(dfMem.lastFusion !== undefined, 'fusion stored in memory.lastFusion')
+assert(dfMem.lastFusion.priorityDomain !== undefined, 'memory.fusion has priorityDomain')
+
+// generateDeepResponse produces substantive response
+const dfDeepResp = generateDeepResponse(
+  'I am frustrated and don\'t know what to do',
+  fuseDomains('I am frustrated and don\'t know what to do', new ConversationMemory()),
+  new ConversationMemory()
+)
+assert(dfDeepResp.length > 50, 'deep response has substance')
+assert(dfDeepResp.includes('**') === false || dfDeepResp.includes('?'), 'deep response is conversational, not just markdown')
+
+// Deep response for emotional + life direction (multi-domain)
+const dfDeepMulti = generateDeepResponse(
+  'Estoy frustrado y no sé qué hacer con mi vida',
+  fuseDomains('Estoy frustrado y no sé qué hacer con mi vida', new ConversationMemory()),
+  new ConversationMemory(['es'])
+)
+assert(dfDeepMulti.length > 60, 'multi-domain deep response has substance')
+assert(!dfDeepMulti.includes('Cuéntame más cuando'), 'deep response avoids shallow patterns')
+
+// Deep response for financial crisis
+const dfDeepFin = generateDeepResponse(
+  'no tengo dinero y estoy desesperado',
+  fuseDomains('no tengo dinero y estoy desesperado', new ConversationMemory()),
+  new ConversationMemory(['es'])
+)
+assert(dfDeepFin.length > 50, 'financial crisis deep response has substance')
+
+// isShallowResponse catches shallow patterns
+assert(isShallowResponse('Tell me more about that') === true, 'detects "tell me more"')
+assert(isShallowResponse('Sigue cuando estés listo') === true, 'detects "sigue cuando estés listo"')
+assert(isShallowResponse('Cuéntame más') === true, 'detects "cuéntame más"')
+assert(isShallowResponse('I have a concrete question about my budget') === false, 'does not flag concrete text')
+assert(isShallowResponse('') === false, 'empty text not flagged')
+
+// Domain confidence sorting — highest weight domain is priority
+const dfHighConf = fuseDomains('I want to kill myself', new ConversationMemory())
+assert(dfHighConf.priorityDomain === 'emotional', 'crisis input → emotional priority')
+assert(dfHighConf.domains.emotional[0].confidence >= 0.9, 'suicide mention → high confidence')
+
+// Spanish deep response
+const dfEsMem = new ConversationMemory()
+dfEsMem.language = 'es'
+const dfEsDeep = generateDeepResponse(
+  'Estoy solo y triste',
+  fuseDomains('Estoy solo y triste', dfEsMem),
+  dfEsMem
+)
+assert(dfEsDeep.length > 40, 'spanish deep response has substance')
+assert(/[áéíóúñ¿¡]/i.test(dfEsDeep), 'spanish deep response has spanish text')
+
+// English deep response
+const dfEnMem = new ConversationMemory()
+dfEnMem.language = 'en'
+const dfEnDeep = generateDeepResponse(
+  'I feel lonely and sad',
+  fuseDomains('I feel lonely and sad', dfEnMem),
+  dfEnMem
+)
+assert(dfEnDeep.length > 40, 'english deep response has substance')
+
+summary('Domain Fusion Engine')
 
 // ═══════════════════════════════════════════════════════════════
 // SUMMARY
