@@ -30,10 +30,10 @@ export default defineConfig({
     chunkSizeWarningLimit: 2000,
     rollupOptions: {
       output: {
-        manualChunks: {
-          ai: ['./src/ai'],
-          memory: ['./src/ai/LongTermMemory.js'],
-          runtime: ['./src/ai/safeRuntime.js']
+        manualChunks(id) {
+          if (id.includes('LongTermMemory')) return 'memory'
+          if (id.includes('safeRuntime')) return 'runtime'
+          if (id.includes('/src/ai/')) return 'ai'
         }
       }
     },
