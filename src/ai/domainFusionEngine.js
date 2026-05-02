@@ -190,10 +190,14 @@ export function generateDeepResponse(input, fusion, memory) {
   const { domains, priorityDomain, hasEmotionalWeight, allSignals } = fusion
 
   if (!priorityDomain) {
-    return t(
-      `Cuéntame un poco más—¿qué está pasando en tu vida en este momento?`,
-      `Tell me a bit more—what's happening in your life right now?`
-    )
+    return {
+      insights: 'No specific domain detected',
+      suggestedAction: t(
+        `Cuéntame un poco más—¿qué está pasando en tu vida en este momento?`,
+        `Tell me a bit more—what's happening in your life right now?`
+      ),
+      priority: 0.3
+    }
   }
 
   const emotional = domains.emotional?.[0]
@@ -205,37 +209,69 @@ export function generateDeepResponse(input, fusion, memory) {
   const hasMultiDomain = Object.keys(domains).length >= 2
 
   if (emotional && emotional.confidence >= 0.8) {
-    return buildCrisisResponse(emotional, domains, memory, t)
+    return {
+      insights: `Crisis detected: ${emotional.signal}`,
+      suggestedAction: buildCrisisResponse(emotional, domains, memory, t),
+      priority: 1.0
+    }
   }
 
   if (priorityDomain === 'emotional' && hasMultiDomain) {
-    return buildEmotionalWithContextResponse(emotional, domains, memory, t)
+    return {
+      insights: `Emotional with context: ${emotional.signal}`,
+      suggestedAction: buildEmotionalWithContextResponse(emotional, domains, memory, t),
+      priority: 0.8
+    }
   }
 
   if (priorityDomain === 'emotional') {
-    return buildPureEmotionalResponse(emotional, domains, memory, t)
+    return {
+      insights: `Pure emotional: ${emotional.signal}`,
+      suggestedAction: buildPureEmotionalResponse(emotional, domains, memory, t),
+      priority: 0.7
+    }
   }
 
   if (priorityDomain === 'lifeDirection') {
-    return buildLifeDirectionResponse(lifeDir, domains, memory, t)
+    return {
+      insights: `Life direction: ${lifeDir.signal}`,
+      suggestedAction: buildLifeDirectionResponse(lifeDir, domains, memory, t),
+      priority: 0.6
+    }
   }
 
   if (priorityDomain === 'financial') {
-    return buildFinancialResponse(financial, domains, memory, t)
+    return {
+      insights: `Financial: ${financial.signal}`,
+      suggestedAction: buildFinancialResponse(financial, domains, memory, t),
+      priority: 0.9
+    }
   }
 
   if (priorityDomain === 'behavioral') {
-    return buildBehavioralResponse(behavioral, domains, memory, t)
+    return {
+      insights: `Behavioral: ${behavioral.signal}`,
+      suggestedAction: buildBehavioralResponse(behavioral, domains, memory, t),
+      priority: 0.5
+    }
   }
 
   if (priorityDomain === 'social') {
-    return buildSocialResponse(social, domains, memory, t)
+    return {
+      insights: `Social: ${social.signal}`,
+      suggestedAction: buildSocialResponse(social, domains, memory, t),
+      priority: 0.4
+    }
   }
 
-  return t(
-    `Entiendo. Vamos a explorar juntos—¿qué te gustaría abordar primero?`,
-    `I understand. Let's explore together—what would you like to address first?`
-  )
+  return {
+    insights: 'General domain fusion',
+    suggestedAction: t(
+      `Entiendo. Vamos a explorar juntos—¿qué te gustaría abordar primero?`,
+      `I understand. Let's explore together—what would you like to address first?`
+    ),
+    priority: 0.4
+  }
 }
 
 function buildCrisisResponse(emotional, domains, memory, t) {

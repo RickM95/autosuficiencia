@@ -349,10 +349,12 @@ export function generateDecisionResponse(memory, context = {}) {
     const step = decision.executionPlan[0]
 
     return {
-      text: t(
+      insights: `Decision proposed: ${title}`,
+      suggestedAction: t(
         `${decision.reasoning}\n\nVamos paso a paso.\n\n**Paso 1:** ${step.instruction}\n\nHaz esto y luego me cuentas cómo te fue.`,
         `${decision.reasoning}\n\nLet's go step by step.\n\n**Step 1:** ${step.instruction}\n\nDo this and then tell me how it went.`
       ),
+      priority: decision.confidence || 0.7,
       decision,
     }
   }
@@ -360,10 +362,12 @@ export function generateDecisionResponse(memory, context = {}) {
   const step = getExecutionStep(memory)
   if (step && step.type === 'step') {
     return {
-      text: t(
+      insights: `Decision step: ${step.currentStep}/${step.totalSteps}`,
+      suggestedAction: t(
         `**Paso ${step.currentStep} de ${step.totalSteps}:** ${step.step.instruction}\n\nAvísame cuando lo completes.`,
         `**Step ${step.currentStep} of ${step.totalSteps}:** ${step.step.instruction}\n\nLet me know when you complete it.`
       ),
+      priority: 0.8,
       decision,
     }
   }

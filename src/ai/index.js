@@ -86,10 +86,8 @@ export {
 } from './intentDetector.js'
 
 export {
-  decideNextAction,
-  generateOrchestratorResponse,
-  getResponseStrategy,
-} from './autonomousOrchestrator.js'
+  decideFinalResponse,
+} from './aiOrchestrator.js'
 
 export {
   isRepeatingResponse,

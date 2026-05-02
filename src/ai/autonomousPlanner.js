@@ -486,7 +486,9 @@ function buildReviewPlan(state, memory, lang, t) {
 export function getPlannerResponse(memory, context = {}) {
   const plan = generateAdaptivePlan(memory, context)
   return {
-    text: plan.nextAction,
+    insights: `Planner stage: ${plan.currentStage}`,
+    suggestedAction: plan.nextAction,
+    priority: plan.confidence || 0.6,
     plan,
   }
 }

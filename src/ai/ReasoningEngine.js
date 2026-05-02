@@ -1,5 +1,9 @@
 import { detectIntent } from './intentDetector.js'
-import { decideNextAction, generateOrchestratorResponse, getResponseStrategy } from './autonomousOrchestrator.js'
+import { decideFinalResponse } from './aiOrchestrator.js'
+import { getPlannerResponse } from './autonomousPlanner.js'
+import { generateDecisionResponse } from './decisionEngine.js'
+import { fuseDomains, generateDeepResponse } from './domainFusionEngine.js'
+import { EmotionalIntelligence } from './EmotionalIntelligence.js'
 import { isRepeatingResponse, getVariantResponse } from './loopGuard.js'
 import { analyzeNeeds, analyzeFinances, analyzeGoals, analyzeResources, analyzeCompleteness, identifyRisks, analyzeMessage } from './Analyzer.js'
 import KbEngine from './kb/KbEngine.js'
@@ -18,13 +22,6 @@ export default class ReasoningEngine {
     return this._initPromise
   }
 
-  getDebugInfo() {
-    if (!this.debugMode) return null
-    return {
-      kbReady: this.kb.ready,
-    }
-  }
-
   async processMessage(formData, budgetData, userMessage) {
     if (!this.kb.ready) {
       await this.init()
@@ -36,6 +33,7 @@ export default class ReasoningEngine {
     const previousStage = this.memory.stage
     const turnCount = this.memory.interactionCount || 0
 
+    // 1. Analyze Core Domains
     const analyses = {
       needs: analyzeNeeds(formData),
       finances: analyzeFinances(formData),
@@ -46,73 +44,55 @@ export default class ReasoningEngine {
       message: analyzeMessage(userMessage || ''),
     }
 
-    const orchestratorDecision = decideNextAction(userMessage, this.memory, {
-      formData,
-      analysis: analyses,
-    })
+    // 2. Gather Module Outputs (Structured Data ONLY)
+    const intent = detectIntent(userMessage)
+    const fusion = fuseDomains(userMessage, this.memory)
+    const planner = getPlannerResponse(this.memory, { formData, analysis: analyses })
+    const decision = generateDecisionResponse(this.memory, { formData })
+    const emotion = EmotionalIntelligence.detect(userMessage, { ...formData, ...analyses })
 
-    let responseText
-    const detectedIntent = orchestratorDecision.intent
-
-    contextLoopCheck: {
-      if (this.memory.lastResponses.length > 0) {
-        const generatedResponse = generateOrchestratorResponse(orchestratorDecision, this.memory, {
-          hasFormData: !!(formData && Object.keys(formData).length > 2),
-          userMessage,
-        })
-
-        const repetition = isRepeatingResponse(generatedResponse, this.memory.lastResponses)
-        if (repetition) {
-          const variant = getVariantResponse(
-            orchestratorDecision.action,
-            this.memory.language || 'es',
-            turnCount
-          )
-          if (variant) {
-            responseText = variant
-            break contextLoopCheck
-          }
-        }
-
-        responseText = generatedResponse
-      } else {
-        responseText = generateOrchestratorResponse(orchestratorDecision, this.memory, {
-          hasFormData: !!(formData && Object.keys(formData).length > 2),
-          userMessage,
-        })
-      }
+    const modulesOutput = {
+      intent,
+      fusion: {
+        ...fusion,
+        ...generateDeepResponse(userMessage, fusion, this.memory)
+      },
+      planner,
+      decision,
+      emotion
     }
 
-    this.memory.lastAction = orchestratorDecision.action
-    this.memory.stage = 'CONVERSATION'
-    this.memory.lastValidStage = 'CONVERSATION'
+    // 3. Centralized Authoritative Decision
+    const responseText = decideFinalResponse(userMessage, this.memory, modulesOutput)
+
+    // 4. Update Memory
+    this.memory.lastAction = modulesOutput.intent.intent
+    this.memory.stage = modulesOutput.planner.plan.currentStage || 'CONVERSATION'
+    this.memory.lastValidStage = this.memory.stage
 
     if (userMessage) {
       this.memory.recordInteraction('user', userMessage, analyses.message)
-      if (orchestratorDecision.intent) {
-        this.memory.recordIntents([{
-          intent: orchestratorDecision.intent.intent,
-          confidence: orchestratorDecision.intent.confidence,
-        }])
-      }
+      this.memory.recordIntents([{
+        intent: intent.intent,
+        confidence: intent.confidence,
+      }])
     }
 
     this.memory.extractFactsFromForm(formData)
-
     const previousContext = this.memory.getContextForNextResponse()
 
     return {
-      stage: orchestratorDecision.conversationalStage || 'CONVERSATION',
-      pipeline: { log: { steps: ['ORCHESTRATOR'] }, responseText },
+      stage: this.memory.stage,
+      pipeline: { log: { steps: ['ORCHESTRATOR_V2'] }, responseText },
       kbDrivenResponse: responseText,
-      decision: orchestratorDecision,
-      intents: [orchestratorDecision.intent],
-      emotionalContext: { intensity: 0, interventionNeed: 'NORMAL' },
+      decision: { action: intent.intent, reason: 'orchestrated decision' },
+      intents: [intent],
+      emotionalContext: emotion,
       subtexts: [],
       dualReasoning: {
-        selectedLayer: 'ORCHESTRATOR',
-        responseMode: getResponseStrategy(orchestratorDecision)?.mode || 'NORMAL',
-        rationale: orchestratorDecision.reason,
+        selectedLayer: 'AI_ORCHESTRATOR',
+        responseMode: 'NORMAL',
+        rationale: 'centralized pipeline',
       },
       turnCount,
       previousContext,

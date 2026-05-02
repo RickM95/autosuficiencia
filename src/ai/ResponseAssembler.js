@@ -4,7 +4,6 @@ import { getNeedsAdvice, getStressAdvice, getResourcesAdvice } from './advice/we
 import { getGoalsAdvice } from './advice/goals.js'
 import { generatePlan } from './PlanGenerator.js'
 import { detectIntent } from './intentDetector.js'
-import { decideNextAction, generateOrchestratorResponse } from './autonomousOrchestrator.js'
 import { isRepeatingResponse, getVariantResponse } from './loopGuard.js'
 
 export function buildWelcomeMessage(memory, formData, lang) {
@@ -21,57 +20,33 @@ export function buildWelcomeMessage(memory, formData, lang) {
 }
 
 export function assembleResponse(stage, analysis, formData, budgetData, memory, userMessage, lang) {
+  if (stage === 'WELCOME') {
+    return buildWelcomeMessage(memory, formData, lang)
+  }
+
   if (!analysis || analysis.structureError) {
     return lang === 'es'
       ? 'Encontré un problema técnico. Por favor intenta de nuevo.'
       : 'I encountered a technical issue. Please try again.'
   }
 
+  // Use the authoritative response from the orchestrator
   if (analysis.orchestratorResponse) {
     return analysis.orchestratorResponse
   }
 
+  // Handle Dev Requests as a special case if not handled by orchestrator
   if (userMessage) {
     try {
-      const devRouting = classifyAndRoute(userMessage)
-      if (devRouting && devRouting.shouldBlockDevTrigger && devRouting.responseStrategy) {
-        const emotionResponse = buildEmotionalResponse(devRouting, userMessage, lang)
-        if (emotionResponse) return emotionResponse
-      }
-
-      const isDev = userMessage && isDevRequest(userMessage)
+      const isDev = isDevRequest(userMessage)
       if (isDev) {
-        const routing = classifyAndRoute(userMessage)
-        if (routing && routing.shouldBlockDevTrigger) {
-          const response = buildEmotionalResponse(routing, userMessage, lang)
-          if (response) return response
-        }
         return _handleDevRequest(userMessage, lang)
       }
     } catch {
     }
   }
 
-  const orchestratorDecision = decideNextAction(userMessage, memory, {
-    formData,
-    analysis: {},
-  })
-
-  const responseText = generateOrchestratorResponse(orchestratorDecision, memory, {
-    hasFormData: !!(formData && Object.keys(formData).length > 2),
-  })
-
-  const repetition = isRepeatingResponse(responseText, memory.lastResponses)
-  if (repetition) {
-    const variant = getVariantResponse(
-      orchestratorDecision.action,
-      lang,
-      memory.interactionCount || 0
-    )
-    if (variant) return variant
-  }
-
-  return responseText
+  return analysis.kbDrivenResponse || (lang === 'es' ? 'Entiendo. ¿Quieres contarme más?' : 'I understand. Want to tell me more?')
 }
 
 function _handleDevRequest(userMessage, lang) {
