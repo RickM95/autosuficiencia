@@ -32,7 +32,6 @@ export default function Header({ activeTab, setActiveTab }) {
             ))}
           </nav>
         </div>
-      </header>
 
       {/* Currency Panel */}
       <div className="currency-panel no-print">
@@ -107,6 +106,7 @@ export default function Header({ activeTab, setActiveTab }) {
           </div>
         </div>
       </div>
+      </header>
     </>
   )
 }

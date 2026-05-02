@@ -1,4 +1,4 @@
-import { useState, useEffect } from 'react'
+import { useState, useEffect, useRef } from 'react'
 import { useCurrency } from './CurrencyContext'
 import { getIncomeTier, getAdjustedModel, getHumanizedFeedback } from './budgetModels'
 import { translations as t } from './translations'
@@ -218,7 +218,7 @@ function DonutChart({ data, total }) {
 }
 
 export default function BudgetCalculator({ budgetData, setBudgetData }) {
-  const { symbol, fmt, fmtDisplay, lang, setLang, displayMode, setDisplayMode } = useCurrency()
+  const { symbol, fmt, fmtDisplay, lang, setLang, displayMode, setDisplayMode, currency, activeRate } = useCurrency()
 
   const [location, setLocation] = useState('HN')
   const [householdSize, setHouseholdSize] = useState(1)
@@ -228,6 +228,23 @@ export default function BudgetCalculator({ budgetData, setBudgetData }) {
   const [notes, setNotes] = useState('')
   const [showIncomeSuggestions, setShowIncomeSuggestions] = useState(false)
   const [hasPersonalPlan, setHasPersonalPlan] = useState(false)
+
+  const prevCurrencyRef = useRef(currency)
+
+  useEffect(() => {
+    if (prevCurrencyRef.current !== currency) {
+      const factor = (prevCurrencyRef.current === 'HNL' && currency === 'USD') ? (1 / activeRate) : 
+                     (prevCurrencyRef.current === 'USD' && currency === 'HNL') ? activeRate : 1;
+      
+      if (factor !== 1) {
+        setIncomeSources(prev => prev.map(src => ({
+          ...src,
+          amount: src.amount ? (parseFloat(src.amount) * factor).toFixed(2) : ''
+        })))
+      }
+      prevCurrencyRef.current = currency
+    }
+  }, [currency, activeRate])
 
   const totalIncome = incomeSources.reduce((s, src) => s + (parseFloat(src.amount) || 0), 0)
   const tier = getIncomeTier(location, totalIncome)

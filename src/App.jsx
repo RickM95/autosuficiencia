@@ -1,5 +1,5 @@
-import { useState } from 'react'
-import { CurrencyProvider } from './components/CurrencyContext'
+import { useState, useEffect, useRef } from 'react'
+import { CurrencyProvider, useCurrency } from './components/CurrencyContext'
 import Header from './components/Header'
 import BudgetCalculator, { CATEGORIES } from './components/BudgetCalculator'
 import SelfSufficiencyForm from './components/SelfSufficiencyForm'
@@ -8,13 +8,34 @@ import AIAssistant from './components/AIAssistant'
 import { canAccessPlan, canAccessSurvey, sanitizeFormData } from './ai/SecurityGuard.js'
 import './App.css'
 
-export default function App() {
+function MainApp() {
   const [activeTab, setActiveTab] = useState('budget')
   const [budgetData, setBudgetData] = useState(CATEGORIES)
   const [formData, setFormData] = useState({})
   const [planGenerated, setPlanGenerated] = useState(false)
   const [chatOpen, setChatOpen] = useState(false)
   const [tabError, setTabError] = useState('')
+
+  const { currency, activeRate } = useCurrency()
+  const prevCurrencyRef = useRef(currency)
+
+  useEffect(() => {
+    if (prevCurrencyRef.current !== currency) {
+      const factor = (prevCurrencyRef.current === 'HNL' && currency === 'USD') ? (1 / activeRate) : 
+                     (prevCurrencyRef.current === 'USD' && currency === 'HNL') ? activeRate : 1;
+      
+      if (factor !== 1) {
+        setBudgetData(prev => prev.map(cat => ({
+          ...cat,
+          items: cat.items.map(item => ({
+            ...item,
+            amount: item.amount ? (parseFloat(item.amount) * factor).toFixed(2) : ''
+          }))
+        })))
+      }
+      prevCurrencyRef.current = currency
+    }
+  }, [currency, activeRate])
 
   function handleSetActiveTab(tab) {
     setTabError('')
@@ -52,7 +73,6 @@ export default function App() {
   }
 
   return (
-    <CurrencyProvider>
       <div className="app-container">
         <Header activeTab={activeTab} setActiveTab={handleSetActiveTab} />
 
@@ -130,6 +150,13 @@ export default function App() {
           onToggle={() => setChatOpen(o => !o)}
         />
       </div>
+  )
+}
+
+export default function App() {
+  return (
+    <CurrencyProvider>
+      <MainApp />
     </CurrencyProvider>
   )
 }
