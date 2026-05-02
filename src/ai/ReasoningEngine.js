@@ -1,4 +1,4 @@
-import { LanguageDetector } from './languageDetector.js'
+import { LanguageDetector } from './LanguageDetector.js'
 import { detectIntent } from './intentDetector.js'
 import { fuseDomains } from './domainFusionEngine.js'
 import { progressTracker } from './progressTracker.js'
