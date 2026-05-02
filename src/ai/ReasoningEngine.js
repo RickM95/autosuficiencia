@@ -1,12 +1,21 @@
+import { LanguageDetector } from './languageDetector.js'
 import { detectIntent } from './intentDetector.js'
+import { fuseDomains } from './domainFusionEngine.js'
+import { progressTracker } from './progressTracker.js'
 import { decideFinalResponse } from './aiOrchestrator.js'
-import { getPlannerResponse } from './autonomousPlanner.js'
-import { generateDecisionResponse } from './decisionEngine.js'
-import { fuseDomains, generateDeepResponse } from './domainFusionEngine.js'
-import { EmotionalIntelligence } from './EmotionalIntelligence.js'
 import { isRepeatingResponse, getVariantResponse } from './loopGuard.js'
 import { analyzeNeeds, analyzeFinances, analyzeGoals, analyzeResources, analyzeCompleteness, identifyRisks, analyzeMessage } from './Analyzer.js'
+import { EmotionalIntelligence } from './EmotionalIntelligence.js'
+import { getPlannerResponse } from './autonomousPlanner.js'
+import { generateDecisionResponse } from './decisionEngine.js'
+import { knowledgeFetcher } from './knowledgeFetcher.js'
+import { emotionOverride } from './emotionOverride.js'
 import KbEngine from './kb/KbEngine.js'
+
+/**
+ * ReasoningEngine.js (Complete Rewrite)
+ * Unified, context-aware reasoning flow for Nephi.
+ */
 
 export default class ReasoningEngine {
   constructor(memory, debugMode = false) {
@@ -25,117 +34,79 @@ export default class ReasoningEngine {
   async processMessage(formData, budgetData, userMessage) {
     if (!this.kb.ready) {
       await this.init()
-      if (!this.kb.ready) {
-        return this._basicResult()
-      }
     }
 
-    const previousStage = this.memory.stage
-    const turnCount = this.memory.interactionCount || 0
+    // 1. Language Detection
+    const lang = LanguageDetector.detect(userMessage, this.memory)
+    this.memory.language = lang
 
-    // 1. Analyze Core Domains
+    // 2. Intent Detection
+    const intent = detectIntent(userMessage)
+
+    // 3. Domain Fusion
+    const fusion = fuseDomains(userMessage, this.memory)
+
+    // 4. Progress Update
+    // Need basic analysis for progress update
     const analyses = {
-      needs: analyzeNeeds(formData),
       finances: analyzeFinances(formData),
-      goals: analyzeGoals(formData),
-      resources: analyzeResources(formData),
-      completeness: analyzeCompleteness(formData),
-      risks: identifyRisks(formData),
       message: analyzeMessage(userMessage || ''),
     }
+    const progressState = await progressTracker.updateState(fusion, intent.intent)
 
-    // 2. Gather Module Outputs (Structured Data ONLY)
-    const intent = detectIntent(userMessage)
-    const fusion = fuseDomains(userMessage, this.memory)
-    const planner = getPlannerResponse(this.memory, { formData, analysis: analyses })
-    const decision = generateDecisionResponse(this.memory, { formData })
-    const emotion = EmotionalIntelligence.detect(userMessage, { ...formData, ...analyses })
+    // 5. External Knowledge Fetching (Optional & Non-blocking)
+    let externalKnowledge = null
+    if (knowledgeFetcher.needsExternalKnowledge(userMessage, intent.intent, false)) {
+      // Use a timeout to avoid blocking too long
+      const fetchPromise = knowledgeFetcher.fetchKnowledge(userMessage, lang)
+      const timeoutPromise = new Promise(resolve => setTimeout(() => resolve(null), 1500))
+      externalKnowledge = await Promise.race([fetchPromise, timeoutPromise])
+    }
 
+    // 6. Gather all module outputs for Orchestrator
     const modulesOutput = {
+      lang,
       intent,
-      fusion: {
-        ...fusion,
-        ...generateDeepResponse(userMessage, fusion, this.memory)
-      },
-      planner,
-      decision,
-      emotion
+      fusion,
+      planner: getPlannerResponse(this.memory, { formData, analysis: analyses }),
+      decision: generateDecisionResponse(this.memory, { formData }),
+      emotion: EmotionalIntelligence.detect(userMessage, { ...formData, ...analyses }),
+      externalKnowledge
     }
 
-    // 3. Centralized Authoritative Decision
-    const responseText = decideFinalResponse(userMessage, this.memory, modulesOutput)
+    // 6. Orchestrator Decision (Single Response Authority)
+    let responseText = decideFinalResponse(userMessage, this.memory, modulesOutput, progressState)
 
-    // 4. Update Memory
-    this.memory.lastAction = modulesOutput.intent.intent
-    this.memory.stage = modulesOutput.planner.plan.currentStage || 'CONVERSATION'
-    this.memory.lastValidStage = this.memory.stage
-
-    if (userMessage) {
-      this.memory.recordInteraction('user', userMessage, analyses.message)
-      this.memory.recordIntents([{
-        intent: intent.intent,
-        confidence: intent.confidence,
-      }])
+    // 7. Loop Guard (Repetition Detection)
+    if (isRepeatingResponse(responseText, this.memory.lastResponses)) {
+      responseText = getVariantResponse(intent.intent, lang, this.memory.interactionCount || 0)
     }
 
-    this.memory.extractFactsFromForm(formData)
-    const previousContext = this.memory.getContextForNextResponse()
+    // 8. Update Memory & Context
+    this.memory.recordInteraction('user', userMessage, analyses.message)
+    this.memory.recordIntents([{
+      intent: intent.intent,
+      confidence: intent.confidence,
+    }])
+    this.memory.lastAction = intent.intent
+    this.memory.interactionCount = (this.memory.interactionCount || 0) + 1
 
-    return {
-      stage: this.memory.stage,
-      pipeline: { log: { steps: ['ORCHESTRATOR_V2'] }, responseText },
-      kbDrivenResponse: responseText,
-      decision: { action: intent.intent, reason: 'orchestrated decision' },
-      intents: [intent],
-      emotionalContext: emotion,
-      subtexts: [],
-      dualReasoning: {
-        selectedLayer: 'AI_ORCHESTRATOR',
-        responseMode: 'NORMAL',
-        rationale: 'centralized pipeline',
-      },
-      turnCount,
-      previousContext,
-      needsAnalysis: analyses.needs,
-      financialAnalysis: analyses.finances,
-      goalsAnalysis: analyses.goals,
-      resourcesAnalysis: analyses.resources,
-      completeness: analyses.completeness,
-      risks: analyses.risks,
-      topic: analyses.message,
-      conversationStageChanged: previousStage !== this.memory.stage,
-      activeRules: [],
-      validation: { valid: true, issues: [] },
-      kbGapDetected: false,
-      structureError: false,
-      orchestratorResponse: responseText,
-    }
-  }
-
-  _basicResult() {
     return {
       stage: 'CONVERSATION',
-      pipeline: { log: { steps: ['KB_NOT_INITIALIZED'] }, kbGapDetected: true },
-      kbDrivenResponse: null,
-      decision: { action: 'explore', reason: 'kb not ready' },
-      intents: [{ intent: 'general', confidence: 0.3 }],
-      emotionalContext: { intensity: 0, interventionNeed: 'NORMAL' },
-      subtexts: [],
-      dualReasoning: { selectedLayer: 'BASIC', responseMode: 'NORMAL', rationale: 'system not ready' },
-      turnCount: 0,
-      needsAnalysis: { critical: [], warnings: [], ok: [], score: 0 },
-      financialAnalysis: { score: 0, income: 0, expenses: 0, balance: 0 },
-      goalsAnalysis: { score: 0, short: [], medium: [], long: [], completeness: 0 },
-      resourcesAnalysis: { score: 0 },
-      completeness: { percent: 0, missing: [] },
-      risks: { criticalRisks: [], warnings: [], summary: '' },
-      topic: 'general',
-      conversationStageChanged: false,
-      activeRules: [],
-      validation: { valid: false, issues: ['KB_NOT_INITIALIZED'] },
-      kbGapDetected: true,
-      structureError: false,
-      orchestratorResponse: null,
+      pipeline: { 
+        log: { steps: ['REBUILD_V3'] }, 
+        responseText,
+        domains: fusion.domains 
+      },
+      kbDrivenResponse: responseText,
+      decision: { action: intent.intent, reason: 'unified autonomous flow' },
+      intents: [intent],
+      emotionalContext: modulesOutput.emotion,
+      emotionalDistress: emotionOverride.detectEmotionalPriority(userMessage, lang),
+      progressState,
+      orchestratorResponse: responseText,
+      domains: fusion.domains,
+      externalKnowledge: modulesOutput.externalKnowledge
     }
   }
 }

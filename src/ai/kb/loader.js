@@ -1,13 +1,13 @@
-import masterIndex from './index/master_index.json'
-import financesCore from './core/finances.json'
-import wellbeingCore from './core/wellbeing.json'
-import goalsCore from './core/goals.json'
-import primaryRules from './rules/rules.json'
-import secondaryRules from './rules/overrides.json'
-import planSchema from './schemas/plan.json'
-import planTemplateSingle from './templates/plan_template.json'
-import planTemplatesMulti from './templates/plan_templates.json'
-import ingestionRules from './ingestion/extraction_rules.json'
+import masterIndex from './index/master_index.json' with { type: 'json' }
+import financesCore from './core/finances.json' with { type: 'json' }
+import wellbeingCore from './core/wellbeing.json' with { type: 'json' }
+import goalsCore from './core/goals.json' with { type: 'json' }
+import primaryRules from './rules/rules.json' with { type: 'json' }
+import secondaryRules from './rules/overrides.json' with { type: 'json' }
+import planSchema from './schemas/plan.json' with { type: 'json' }
+import planTemplateSingle from './templates/plan_template.json' with { type: 'json' }
+import planTemplatesMulti from './templates/plan_templates.json' with { type: 'json' }
+import ingestionRules from './ingestion/extraction_rules.json' with { type: 'json' }
 
 import { validateAll } from './validator.js'
 import { buildIndexes } from './indexBuilder.js'

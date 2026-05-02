@@ -85,6 +85,16 @@ export class NephiBootSystem {
 
     for (let i = 0; i < STAGES.length; i++) {
       if (this.aborted) break
+      
+      // Yield to main thread before each stage to keep UI responsive
+      await new Promise(resolve => {
+        if (typeof requestIdleCallback !== 'undefined') {
+          requestIdleCallback(() => resolve(), { timeout: 100 })
+        } else {
+          setTimeout(resolve, 0)
+        }
+      })
+
       const stage = STAGES[i]
       this.currentStage = stage.id
       this.currentStageIndex = i

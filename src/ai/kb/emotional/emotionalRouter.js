@@ -1,8 +1,8 @@
 import emotionalStates from './emotional_states.json' with { type: 'json' }
-import intentClassifier from './intent_classifier.json'
-import preStateRouter from './pre_state_router.json'
-import responseStrategies from './response_strategy_kb.json'
-import modeSwitching from './conversational_mode_switching.json'
+import intentClassifier from './intent_classifier.json' with { type: 'json' }
+import preStateRouter from './pre_state_router.json' with { type: 'json' }
+import responseStrategies from './response_strategy_kb.json' with { type: 'json' }
+import modeSwitching from './conversational_mode_switching.json' with { type: 'json' }
 
 export class EmotionalRouter {
   constructor() {

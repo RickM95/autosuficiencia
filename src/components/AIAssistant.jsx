@@ -9,6 +9,7 @@ import {
 import { validateChatMessage, sanitizeMessage, validateStoredMessages } from '../ai/SecurityGuard.js'
 import { extractFormDataFromMemory, formatFormUpdateMessage } from '../ai/formFiller.js'
 import KnowledgeBasePanel from './KnowledgeBasePanel.jsx'
+import DebugPanel from './DebugPanel.jsx'
 
 let pySingleton = null
 let kbSingleton = null
@@ -192,6 +193,8 @@ export default function AIAssistant({ userContext, budgetData, isOpen, onToggle,
   const [pyStatus, setPyStatus] = useState('initializing')
   const [pyProgress, setPyProgress] = useState(0)
   const [kbStats, setKbStats] = useState({ documentCount: 0 })
+  const [debugMode, setDebugMode] = useState(false)
+  const [lastDebugData, setLastDebugData] = useState(null)
 
   const messagesEndRef = useRef(null)
   const inputRef = useRef(null)
@@ -217,43 +220,54 @@ export default function AIAssistant({ userContext, budgetData, isOpen, onToggle,
       setLoadingText(debugMode ? `[${progress.stage}] ${progress.message}` : progress.message)
     })
 
-    boot.boot(debugMode).then((result) => {
-      if (result.systemState === 'SYSTEM_READY') {
-        setPyStatus('ready')
-        setPyProgress(100)
-        setLoadingText('')
-      } else if (result.systemState === 'FAILED_SAFE_STATE') {
-        setPyStatus('error')
-        setLoadingText(`Boot failed at stage: ${(result.stages.find(s => s.status === 'FAILED') || {}).stage || 'unknown'}`)
-      } else {
-        setPyStatus('local')
-        setPyProgress(100)
-        setLoadingText('')
+    // Delay boot to allow main UI (Budget/Survey) to load and render first
+    setTimeout(() => {
+      boot.boot(debugMode).then((result) => {
+        if (result.systemState === 'SYSTEM_READY') {
+          setPyStatus('ready')
+          setPyProgress(100)
+          setLoadingText('')
+        } else if (result.systemState === 'FAILED_SAFE_STATE') {
+          setPyStatus('error')
+          setLoadingText(`Boot failed at stage: ${(result.stages.find(s => s.status === 'FAILED') || {}).stage || 'unknown'}`)
+        } else {
+          setPyStatus('local')
+          setPyProgress(100)
+          setLoadingText('')
+        }
+
+        const py = getPyBridge()
+        const kb = getKB()
+        pyRef.current = py
+        kbRef.current = kb
+
+        if (!importerRef.current) {
+          const importer = new DocumentImporter(kb, py)
+          importerRef.current = importer
+          importer.getExtraResources().catch(() => {})
+        }
+
+        const engine = getEngine(memoryRef.current, debugMode)
+        engineRef.current = engine
+        engine.init().catch(() => {})
+
+        kb.getStats().then(stats => setKbStats(stats)).catch(() => {})
+
+        if (memoryRef.current.interactionCount === 0) {
+          const lang = getBrowserLanguage()
+          const welcome = assembleResponse('WELCOME', {}, userContext || {}, budgetData || [], memoryRef.current, '', lang)
+          setMessages([{ role: 'assistant', content: welcome, id: Date.now() }])
+        }
+      })
+    }, 1200) // 1.2s delay for maximum background priority
+
+    const handleKeyPress = (e) => {
+      if (e.altKey && e.key === 'd') {
+        setDebugMode(prev => !prev)
       }
-
-      const py = getPyBridge()
-      const kb = getKB()
-      pyRef.current = py
-      kbRef.current = kb
-
-      if (!importerRef.current) {
-        const importer = new DocumentImporter(kb, py)
-        importerRef.current = importer
-        importer.getExtraResources().catch(() => {})
-      }
-
-      const engine = getEngine(memoryRef.current, debugMode)
-      engineRef.current = engine
-      engine.init().catch(() => {})
-
-      kb.getStats().then(stats => setKbStats(stats)).catch(() => {})
-
-      if (memoryRef.current.interactionCount === 0) {
-        const lang = getBrowserLanguage()
-        const welcome = assembleResponse('WELCOME', {}, userContext || {}, budgetData || [], memoryRef.current, '', lang)
-        setMessages([{ role: 'assistant', content: welcome, id: Date.now() }])
-      }
-    })
+    }
+    window.addEventListener('keydown', handleKeyPress)
+    return () => window.removeEventListener('keydown', handleKeyPress)
   }, []) // eslint-disable-line react-hooks/exhaustive-deps
 
   // ═══════════════════════════════════════════════════════════════
@@ -366,6 +380,22 @@ export default function AIAssistant({ userContext, budgetData, isOpen, onToggle,
 
       await engine.init()
       const analysis = await engine.processMessage(userContext || {}, budgetData || [], userText)
+      
+      // Capture debug data
+      setLastDebugData({
+        intent: analysis.intents?.[0],
+        domains: analysis.pipeline?.domains || analysis.domains || {},
+        progressState: analysis.progressState,
+        decision: analysis.decision,
+        orchestrator: { 
+          source: analysis.pipeline?.log?.steps?.[0] || 'orchestrator',
+          hasExternalKnowledge: !!analysis.externalKnowledge,
+          emotionalDistress: analysis.emotionalDistress
+        },
+        memory: { lastMessages: memoryRef.current.history },
+        lang: detectedLang
+      })
+
       const lang = detectedLang
       const reply = assembleResponse(
         analysis.stage, analysis, userContext || {}, budgetData || [], memoryRef.current, userText, lang
@@ -611,6 +641,7 @@ export default function AIAssistant({ userContext, budgetData, isOpen, onToggle,
           </div>
         </div>
       )}
+      {debugMode && <DebugPanel debugData={lastDebugData} />}
     </>
   )
 }

@@ -120,5 +120,4 @@ export {
 export {
   fuseDomains,
   generateDeepResponse,
-  isShallowResponse,
 } from './domainFusionEngine.js'

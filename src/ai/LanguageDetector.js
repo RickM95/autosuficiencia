@@ -1,45 +1,38 @@
+import { franc } from 'franc-min'
+
 /**
- * ✅ LANGUAGE DETECTOR
- * Automatic bilingual language detection and persistence
+ * languageDetector.js
+ * Detects and locks the conversation language.
  */
 
 export class LanguageDetector {
-
-  detect(text) {
-    const cleaned = text.toLowerCase().trim()
-
-    const spanishSignals = /(que|como|cuando|donde|por que|yo|tu|él|ella|nosotros|ellos|es|son|fue|ser|tener|hacer|ir|ver|decir|dar|saber|querer|poder|deber|bueno|mal|gracias|por favor|ayuda|dinero|casa|trabajo)/i
-    const englishSignals = /(what|how|when|where|why|i|you|he|she|we|they|is|are|was|be|have|do|go|see|say|give|know|want|can|should|good|bad|thank|please|help|money|home|work)/i
-
-    let esMatches = 0
-    let enMatches = 0
-
-    const words = cleaned.split(/\s+/)
-
-    for (const word of words) {
-      if (spanishSignals.test(word)) esMatches++
-      if (englishSignals.test(word)) enMatches++
+  static detect(text, memory) {
+    // If language is already locked in memory and it's not a very short input, keep it
+    if (memory.lockedLanguage && text.length < 20) {
+      return memory.lockedLanguage
     }
 
-    // Direct triggers
-    if (/[áéíóúñ¿¡]/.test(text)) return 'es'
+    const langCode = franc(text)
+    let detected = 'es' // Default to Spanish for this project context
 
-    if (esMatches > enMatches) return 'es'
-    if (enMatches > esMatches) return 'en'
-
-    // Ambiguous, default to memory language
-    return null
-  }
-
-  detectAndUpdate(memory, text) {
-    const detected = this.detect(text)
-    
-    if (detected) {
-      memory.language = detected
+    if (langCode === 'eng') {
+      detected = 'en'
+    } else if (langCode === 'spa') {
+      detected = 'es'
+    } else {
+      // Heuristics for common words if franc fails
+      const enPatterns = /\b(the|and|you|debt|income|work|job|help)\b/i
+      const esPatterns = /\b(el|la|y|tu|deuda|ingreso|trabajo|empleo|ayuda)\b/i
+      
+      if (enPatterns.test(text)) detected = 'en'
+      else if (esPatterns.test(text)) detected = 'es'
     }
 
-    return memory.language || 'es'
+    // Lock language if we have high confidence or it's a longer sentence
+    if (text.length > 30 || !memory.lockedLanguage) {
+      memory.lockedLanguage = detected
+    }
+
+    return detected
   }
 }
-
-export default LanguageDetector
