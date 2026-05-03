@@ -11,6 +11,7 @@ const INTENTS = [
   { id: 'employment', keywords: ['trabajo', 'empleo', 'unemployed', 'job', 'work', 'hiring', 'contratación', 'despedido', 'fired'] },
   { id: 'goals', keywords: ['metas', 'objetivos', 'sueños', 'goals', 'plans', 'future', 'futuro', 'lograr', 'achieve'] },
   { id: 'agreement', keywords: ['si', 'claro', 'ok', 'yes', 'sure', 'agree', 'vale', 'entendido'] },
+  { id: 'negative', keywords: ['no', 'no tengo', 'nada', 'none', 'nothing'] },
   { id: 'how_it_works', keywords: ['como funciona', 'que eres', 'quien eres', 'how it works', 'what are you', 'who are you'] },
   { id: 'farewell', keywords: ['adios', 'chao', 'bye', 'goodbye', 'nos vemos', 'see you'] }
 ]
@@ -43,6 +44,10 @@ export function detectIntent(text) {
   const lower = text.toLowerCase().trim()
   if (lower === 'si' || lower === 'sí' || lower === 'yes' || lower === 'ok') {
     return { intent: 'agreement', confidence: 0.9, isContinuation: true }
+  }
+  
+  if (lower === 'no' || lower === 'no tengo' || lower.includes('nada')) {
+    return { intent: 'negative', confidence: 0.9, isContinuation: true }
   }
 
   return { intent: 'general', confidence: 0.3 }

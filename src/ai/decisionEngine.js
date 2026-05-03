@@ -320,7 +320,7 @@ function buildFallbackResponse(memory, fallback) {
   const t = (es, en) => lang === 'es' ? es : en
   return {
     text: t(
-      `Eso no funcionó — pero es normal. No siempre sale a la primera.\n\n**Intentemos con otra opción: ${fallback.optionTitle}**\n\n**Paso 1:** ${fallback.steps[0].instruction}\n\nCuéntame cómo te va.`,
+      `Eso no funcionó — pero es normal. No siempre sale a la primera.\n\n**Intentemos con otra opción: ${fallback.optionTitle}**\n\n**Paso 1:** ${fallback.steps[0].instruction}\n\nAvísame cómo te va.`,
       `That didn't work — but that's normal. It doesn't always work on the first try.\n\n**Let's try another option: ${fallback.optionTitle}**\n\n**Step 1:** ${fallback.steps[0].instruction}\n\nLet me know how it goes.`
     ),
     type: 'fallback',

@@ -97,12 +97,12 @@ export default class PythonBridge {
       this.progress = 30
       this._reportProgress(30, 'Inicializando / Initializing...')
 
-      this.pyodide = await pyodideModule.loadPyodide()
+      this.pyodide = await pyodideModule.loadPyodide({ checkIntegrity: false })
       this.progress = 70
       this._reportProgress(70, 'Cargando paquetes / Loading packages...')
 
       try {
-        await this.pyodide.loadPackage(['micropip'])
+        await this.pyodide.loadPackage(['micropip'], { checkIntegrity: false })
         const micropip = this.pyodide.pyimport('micropip')
         await micropip.install('pdfminer.six')
       } catch (e) {

@@ -27,14 +27,14 @@ export function getVariantResponse(action, lang, turnCount) {
   const variants = {
     explore: {
       es: [
-        "Cuéntame un poco más sobre eso.",
-        "Entiendo. ¿Cómo afecta eso tu día a día?",
-        "Háblame más de esa situación."
+        "Entiendo.",
+        "Perfecto, avancemos.",
+        "Gracias por compartir."
       ],
       en: [
-        "Tell me a bit more about that.",
-        "I see. How does that affect your day-to-day?",
-        "Tell me more about that situation."
+        "I understand.",
+        "Perfect, let's move forward.",
+        "Thanks for sharing."
       ]
     },
     // Add more variants as needed

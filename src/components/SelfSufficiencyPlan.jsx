@@ -262,6 +262,34 @@ export default function SelfSufficiencyPlan({ formData, onEdit }) {
                   </ul>
                 ) : <p style={{ fontSize: '0.875rem', color: 'var(--color-text-muted)' }}>No especificado / Not specified</p>}
                 {d.otherSkills && <p style={{ fontSize: '0.875rem', color: 'var(--color-text-subdued)', marginTop: '0.5rem' }}>{d.otherSkills}</p>}
+                
+                {d.languages && (
+                  <div style={{ marginTop: '0.5rem' }}>
+                    <span style={{ fontWeight: 600, fontSize: '0.8rem' }}>Idiomas/Languages:</span> <span style={{ fontSize: '0.8rem' }}>{d.languages}</span>
+                  </div>
+                )}
+              </div>
+              <div>
+                <p style={{ fontWeight: 700, fontSize: '0.875rem', color: 'var(--color-primary)', marginBottom: '0.5rem' }}>Experiencia y Certificaciones</p>
+                {d.jobs && d.jobs.filter(j => j.title).length > 0 ? (
+                  <ul className="action-list" style={{ marginBottom: '0.5rem' }}>
+                    {d.jobs.filter(j => j.title).map(j => (
+                      <li key={j.id} style={{ fontSize: '0.8rem' }}>
+                        <strong>{j.title}</strong> en {j.company} <em>({j.years} años)</em>
+                      </li>
+                    ))}
+                  </ul>
+                ) : null}
+                
+                {d.certs && d.certs.filter(c => c.name).length > 0 ? (
+                  <ul className="action-list">
+                    {d.certs.filter(c => c.name).map(c => (
+                      <li key={c.id} style={{ fontSize: '0.8rem' }}>
+                        🎓 {c.name} <em>({c.year})</em>
+                      </li>
+                    ))}
+                  </ul>
+                ) : null}
               </div>
               <div>
                 <p style={{ fontWeight: 700, fontSize: '0.875rem', color: 'var(--color-primary)', marginBottom: '0.5rem' }}>Recursos comunitarios / Community resources</p>

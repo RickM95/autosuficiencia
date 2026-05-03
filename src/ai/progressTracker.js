@@ -60,6 +60,20 @@ export class ProgressTracker {
       changed = true
     }
 
+    if (intent === 'negative' && !this.state.hasDebt) {
+      this.state.hasDebt = true
+      this.state.capturedFields.push('debt')
+      changed = true
+    } else if (intent === 'negative' && !this.state.hasIncome) {
+      this.state.hasIncome = true
+      this.state.capturedFields.push('income')
+      changed = true
+    } else if (intent === 'negative' && !this.state.hasEmployment) {
+      this.state.hasEmployment = true
+      this.state.capturedFields.push('employment')
+      changed = true
+    }
+
     if (fusion.domains.financial.detected && !this.state.hasIncome) {
       // Logic for income detection
     }

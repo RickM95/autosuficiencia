@@ -12,7 +12,28 @@ function MainApp() {
   const [activeTab, setActiveTab] = useState('budget')
   const [budgetData, setBudgetData] = useState(CATEGORIES)
   const [formData, setFormData] = useState({})
-  const [planGenerated, setPlanGenerated] = useState(false)
+  const [lastSaved, setLastSaved] = useState(null)
+
+  useEffect(() => {
+    const saved = localStorage.getItem("evaluationData");
+    if (saved) {
+      try {
+        setFormData(JSON.parse(saved));
+      } catch (e) {
+        console.error("Error parsing saved evaluation data", e);
+      }
+    }
+  }, []);
+
+  useEffect(() => {
+    if (Object.keys(formData).length > 0) {
+      localStorage.setItem("evaluationData", JSON.stringify(formData));
+      setLastSaved(new Date());
+    }
+  }, [formData]);
+  const [planGenerated, setPlanGenerated] = useState(() => {
+    return localStorage.getItem("userPlan") !== null
+  })
   const [chatOpen, setChatOpen] = useState(false)
   const [tabError, setTabError] = useState('')
 
@@ -53,13 +74,16 @@ function MainApp() {
 
   function handleGeneratePlan() {
     if (!formData.name || !formData.name.trim()) {
-      setTabError('Name is required before generating the plan.')
+      setTabError('El nombre es requerido antes de generar el plan / Name is required before generating the plan.')
+      window.scrollTo({ top: 0, behavior: 'smooth' })
       return
     }
     const sanitized = sanitizeFormData(formData)
     setFormData(sanitized)
+    localStorage.setItem("userPlan", JSON.stringify(sanitized));
     setPlanGenerated(true)
     setActiveTab('plan')
+    window.scrollTo({ top: 0, behavior: 'smooth' })
   }
 
   function handleEditPlan() {
@@ -93,12 +117,19 @@ function MainApp() {
         )}
 
         {activeTab === 'survey' && !planGenerated && (
-          <SelfSufficiencyForm
-            formData={formData}
-            setFormData={handleFormUpdate}
-            onComplete={handleGeneratePlan}
-            budgetData={budgetData}
-          />
+          <div>
+            {lastSaved && (
+              <div style={{ textAlign: 'right', padding: '0.5rem 1rem', fontSize: '0.8rem', color: 'var(--color-text-muted)' }}>
+                ✅ Progreso guardado automáticamente / Progress auto-saved ({lastSaved.toLocaleTimeString()})
+              </div>
+            )}
+            <SelfSufficiencyForm
+              formData={formData}
+              setFormData={handleFormUpdate}
+              onComplete={handleGeneratePlan}
+              budgetData={budgetData}
+            />
+          </div>
         )}
 
         {activeTab === 'survey' && planGenerated && (

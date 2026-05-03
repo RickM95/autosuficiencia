@@ -196,6 +196,14 @@ const EXTRACTION_RULES = [
     },
   },
   {
+    field: 'debts',
+    patterns: [
+      /\b(?:no tengo deudas|no debts|no tengo ninguna deuda|without debt|0 debts|0 deudas|no tengo)\b/i,
+    ],
+    parse: () => [],
+    merge: () => [],
+  },
+  {
     field: 'emergencyFund',
     patterns: [
       /\b(?:emergency fund|fondo de emergencia|ahorros de emergencia|emergency savings)\s*(?:de|of|is|es)?\s*(?:L|HNL|\$|USD)?\s*(\d{3,}(?:[.,]\d+)?)\b/i,
