@@ -7,6 +7,7 @@ export default function Header({ activeTab, setActiveTab }) {
     { id: 'budget', label: 'Presupuesto', labelEn: 'Budget' },
     { id: 'survey', label: 'Evaluación', labelEn: 'Assessment' },
     { id: 'plan', label: 'Mi Plan', labelEn: 'My Plan' },
+    { id: 'resources', label: 'Recursos', labelEn: 'Resources' },
   ]
 
   return (

@@ -5,6 +5,8 @@ import BudgetCalculator, { CATEGORIES } from './components/BudgetCalculator'
 import SelfSufficiencyForm from './components/SelfSufficiencyForm'
 import SelfSufficiencyPlan from './components/SelfSufficiencyPlan'
 import AIAssistant from './components/AIAssistant'
+import AdditionalResources from './components/AdditionalResources'
+import { matchResources } from './components/resourceMatcher'
 import { canAccessPlan, canAccessSurvey, sanitizeFormData } from './ai/SecurityGuard.js'
 import './App.css'
 
@@ -60,6 +62,7 @@ function MainApp() {
 
   function handleSetActiveTab(tab) {
     setTabError('')
+    if (tab === 'resources') { setActiveTab(tab); return }
     const guard = tab === 'plan'
       ? canAccessPlan(formData)
       : tab === 'survey'
@@ -170,7 +173,52 @@ function MainApp() {
         )}
 
         {activeTab === 'plan' && planGenerated && (
-          <SelfSufficiencyPlan formData={formData} onEdit={handleEditPlan} />
+          <>
+            <SelfSufficiencyPlan formData={formData} onEdit={handleEditPlan} />
+            {/* Contextual resource CTA */}
+            {(() => {
+              const loc = formData.location === 'US' ? 'US' : 'HN'
+              const matched = matchResources({
+                location: loc,
+                surplus: 0,
+                tier: formData.tier || 'survival',
+                householdSize: parseInt(formData.householdSize) || 1,
+                categories: [],
+                evaluation: { hasDebt: !!formData.hasDebt, stressLevel: formData.stressLevel || 'low', employmentStatus: formData.employmentStatus || '' }
+              }, 'ES')
+              const top3 = matched.resources.slice(0, 3)
+              const CATICONS = { food:'🥗', income:'💼', education:'🎓', health:'🏥', financial:'💰', housing:'🏠', mental:'🧠', utilities:'⚡' }
+              return top3.length > 0 ? (
+                <div className="recommended-resources-widget" style={{ maxWidth: 860, margin: '0 auto 2rem', padding: '0 1.5rem' }}>
+                  <div className="recommended-widget-header"><span style={{fontSize:'1.25rem'}}>🎯</span><h3>Recursos Recomendados para Ti / Recommended for You</h3></div>
+                  <div className="recommended-priority-msg">{matched.priorityMessage}</div>
+                  <div className="recommended-cards">
+                    {top3.map(r => (
+                      <div key={r.id} className="recommended-card">
+                        <div className="recommended-card-icon">{CATICONS[r.category] || '📌'}</div>
+                        <div className="recommended-card-body">
+                          <div className="recommended-card-name">{r.name}</div>
+                          <div className="recommended-card-reason">{r.reason}</div>
+                          <div className="recommended-card-actions">
+                            {r.access?.website && <a href={r.access.website} target="_blank" rel="noopener noreferrer" className="recommended-card-link">🔗 Visitar / Visit</a>}
+                            {r.access?.phone && <span className="recommended-card-phone">📞 {r.access.phone}</span>}
+                          </div>
+                        </div>
+                        <span className="recommended-card-tag">{r.tag}</span>
+                      </div>
+                    ))}
+                  </div>
+                  <div style={{ padding: '0.875rem 1.25rem', borderTop: '1px solid var(--color-border)' }}>
+                    <button className="btn btn-ghost btn-sm" onClick={() => setActiveTab('resources')}>Ver todos los recursos / View all resources →</button>
+                  </div>
+                </div>
+              ) : null
+            })()}
+          </>
+        )}
+
+        {activeTab === 'resources' && (
+          <AdditionalResources lang="ES" userContext={formData} />
         )}
 
         <AIAssistant
