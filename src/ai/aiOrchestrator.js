@@ -19,6 +19,32 @@ export function decideFinalResponse(input, memory, modulesOutput, progressState)
     return emotionOverride.generateSupportResponse(emotionalDistress, lang);
   }
 
+  // 2. KNOWLEDGE / ADVICE OVERRIDE
+  if (['knowledge_query', 'advice', 'general_query'].includes(intent.intent)) {
+    let answer = "";
+    if (planner && planner.suggestedAction) answer = planner.suggestedAction;
+    else if (decision && decision.suggestedAction) answer = decision.suggestedAction;
+    else if (typeof planner === 'string' && planner) answer = planner;
+    else if (typeof decision === 'string' && decision) answer = decision;
+    else {
+      answer = lang === 'es' 
+        ? "Entiendo. Esa es una buena pregunta. Déjame revisar mis recursos para darte la mejor recomendación." 
+        : "I understand. That's a good question. Let me review my resources to give you the best recommendation.";
+    }
+
+    if (externalKnowledge) {
+      const bridge = lang === 'es' 
+        ? "\n\nPor cierto, encontré esto que podría ser útil:\n" 
+        : "\n\nBy the way, I found this which might be helpful:\n";
+      const summary = externalKnowledge.length > 200 
+        ? externalKnowledge.substring(0, 200) + "..." 
+        : externalKnowledge;
+      answer += bridge + summary;
+    }
+    
+    return answer;
+  }
+
   // Answer FIRST: Acknowledge what we just learned
   let acknowledgment = ""
   if (intent.intent === 'financial' && fusion.domains.financial.detected) {
@@ -69,20 +95,6 @@ export function decideFinalResponse(input, memory, modulesOutput, progressState)
   }
 
   let finalResponse = acknowledgment + guidance
-
-  // Append external knowledge if available
-  if (externalKnowledge) {
-    const bridge = lang === 'es' 
-      ? "\n\nPor cierto, encontré esto que podría ser útil: " 
-      : "\n\nBy the way, I found this which might be helpful: ";
-    
-    // Limit summary length for chat fluidity
-    const summary = externalKnowledge.length > 200 
-      ? externalKnowledge.substring(0, 200) + "..." 
-      : externalKnowledge;
-      
-    finalResponse += bridge + summary;
-  }
 
   return finalResponse
 }

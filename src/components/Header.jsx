@@ -1,13 +1,15 @@
 import { useCurrency } from './CurrencyContext'
 
-export default function Header({ activeTab, setActiveTab }) {
+export default function Header({ activeTab, setActiveTab, planCount, onNewSession }) {
   const { currency, setCurrency, buyRate, setBuyRate, sellRate, setSellRate, rateMode, setRateMode } = useCurrency()
 
   const tabs = [
-    { id: 'budget', label: 'Presupuesto', labelEn: 'Budget' },
-    { id: 'survey', label: 'Evaluación', labelEn: 'Assessment' },
-    { id: 'plan', label: 'Mi Plan', labelEn: 'My Plan' },
-    { id: 'resources', label: 'Recursos', labelEn: 'Resources' },
+    { id: 'budget', label: 'Presupuesto', labelEn: 'Budget', icon: '💰' },
+    { id: 'survey', label: 'Evaluación', labelEn: 'Assessment', icon: '📋' },
+    { id: 'plan', label: 'Mi Plan', labelEn: 'My Plan', icon: '📄' },
+    { id: 'food', label: 'Alimentación', labelEn: 'Food', icon: '🥗' },
+    { id: 'resources', label: 'Recursos', labelEn: 'Resources', icon: '🔗' },
+    { id: 'library', label: 'Planes', labelEn: 'All Plans', icon: '📚', badge: planCount },
   ]
 
   return (
@@ -27,10 +29,51 @@ export default function Header({ activeTab, setActiveTab }) {
                 key={tab.id}
                 className={`nav-btn${activeTab === tab.id ? ' active' : ''}`}
                 onClick={() => setActiveTab(tab.id)}
+                style={{ position: 'relative' }}
               >
-                {tab.label} <span style={{ opacity: 0.65, fontSize: '0.75em' }}>/ {tab.labelEn}</span>
+                <span className="nav-icon">{tab.icon}</span>
+                <span>{tab.label} <span style={{ opacity: 0.65, fontSize: '0.75em' }}>/ {tab.labelEn}</span></span>
+                {tab.badge > 0 && (
+                  <span style={{
+                    position: 'absolute', top: '-6px', right: '-6px',
+                    background: 'var(--color-accent)', color: 'var(--color-primary-darker)',
+                    borderRadius: '999px', fontSize: '0.65rem', fontWeight: 800,
+                    minWidth: '18px', height: '18px', display: 'flex',
+                    alignItems: 'center', justifyContent: 'center',
+                    padding: '0 4px', border: '2px solid white',
+                    boxShadow: '0 1px 4px rgba(0,0,0,0.18)'
+                  }}>
+                    {tab.badge}
+                  </span>
+                )}
               </button>
             ))}
+
+            {/* New Session Button */}
+            <button
+              className="nav-btn nav-btn-new-session"
+              onClick={onNewSession}
+              title="Nuevo usuario / New user session"
+              style={{
+                background: 'linear-gradient(135deg, #059669, #10b981)',
+                color: 'white',
+                border: 'none',
+                borderRadius: 'var(--radius-sm)',
+                display: 'flex',
+                alignItems: 'center',
+                gap: '0.35rem',
+                fontWeight: 700,
+                padding: '0.4rem 0.85rem',
+                cursor: 'pointer',
+                fontSize: '0.82rem',
+                transition: 'all 0.2s',
+                boxShadow: '0 2px 8px rgba(16,185,129,0.3)',
+              }}
+              onMouseEnter={e => { e.currentTarget.style.transform = 'scale(1.04)' }}
+              onMouseLeave={e => { e.currentTarget.style.transform = 'scale(1)' }}
+            >
+              🔄 <span>Nuevo / New</span>
+            </button>
           </nav>
         </div>
 

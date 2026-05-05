@@ -217,34 +217,13 @@ function DonutChart({ data, total }) {
   )
 }
 
-export default function BudgetCalculator({ budgetData, setBudgetData }) {
+export default function BudgetCalculator({ budgetData, setBudgetData, incomeSources, setIncomeSources, location, setLocation, householdSize, setHouseholdSize, notes, setNotes }) {
   const { symbol, fmt, fmtDisplay, lang, setLang, displayMode, setDisplayMode, currency, activeRate } = useCurrency()
 
-  const [location, setLocation] = useState('HN')
-  const [householdSize, setHouseholdSize] = useState(1)
-  const [incomeSources, setIncomeSources] = useState([
-    { id: 1, label: 'Trabajo principal / Main Job', amount: '' }
-  ])
-  const [notes, setNotes] = useState('')
   const [showIncomeSuggestions, setShowIncomeSuggestions] = useState(false)
   const [hasPersonalPlan, setHasPersonalPlan] = useState(false)
 
   const prevCurrencyRef = useRef(currency)
-
-  useEffect(() => {
-    if (prevCurrencyRef.current !== currency) {
-      const factor = (prevCurrencyRef.current === 'HNL' && currency === 'USD') ? (1 / activeRate) : 
-                     (prevCurrencyRef.current === 'USD' && currency === 'HNL') ? activeRate : 1;
-      
-      if (factor !== 1) {
-        setIncomeSources(prev => prev.map(src => ({
-          ...src,
-          amount: src.amount ? (parseFloat(src.amount) * factor).toFixed(2) : ''
-        })))
-      }
-      prevCurrencyRef.current = currency
-    }
-  }, [currency, activeRate])
 
   const totalIncome = incomeSources.reduce((s, src) => s + (parseFloat(src.amount) || 0), 0)
   const tier = getIncomeTier(location, totalIncome)
@@ -682,4 +661,4 @@ export default function BudgetCalculator({ budgetData, setBudgetData }) {
   )
 }
 
-export { CATEGORIES_BASE as CATEGORIES }
+export { CATEGORIES_BASE }

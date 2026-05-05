@@ -38,6 +38,17 @@ export function CurrencyProvider({ children }) {
     return formatValue(hnlValue, 'HNL')
   }
 
+  function fmtBoth(amount) {
+    const num = parseFloat(amount) || 0
+    const hnlValue = currency === 'HNL' ? num : num * activeRate
+    const usdValue = currency === 'USD' ? num : num / activeRate
+    
+    return {
+      primary: displayMode === 'USD' ? formatValue(usdValue, 'USD') : formatValue(hnlValue, 'HNL'),
+      secondary: displayMode === 'USD' ? formatValue(hnlValue, 'HNL') : formatValue(usdValue, 'USD')
+    }
+  }
+
   const symbol = currency === 'USD' ? '$' : 'L'
 
   return (
@@ -49,7 +60,7 @@ export function CurrencyProvider({ children }) {
       sellRate, setSellRate,
       rateMode, setRateMode,
       activeRate,
-      fmt, fmtDisplay,
+      fmt, fmtDisplay, fmtBoth,
       symbol
     }}>
       {children}

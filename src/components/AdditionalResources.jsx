@@ -1,4 +1,4 @@
-import { useState, useMemo } from "react"
+import { useState, useMemo, useEffect } from "react"
 import { CATEGORIES, resources } from "./resourcesData"
 
 const LOCATIONS = [
@@ -119,8 +119,15 @@ function CategorySection({ cat, items, lang, defaultOpen }) {
 export default function AdditionalResources({ lang = "ES", userContext = {} }) {
   const isEs = lang === "ES"
   const [search, setSearch] = useState("")
-  const [locFilter, setLocFilter] = useState("ALL")
+  
+  const defaultLoc = userContext.country === "HN" || userContext.country === "US" ? userContext.country : "ALL"
+  const [locFilter, setLocFilter] = useState(defaultLoc)
   const [catFilter, setCatFilter] = useState("ALL")
+
+  useEffect(() => {
+    const newLoc = userContext.country === "HN" || userContext.country === "US" ? userContext.country : "ALL"
+    setLocFilter(newLoc)
+  }, [userContext.country])
 
   const filtered = useMemo(() => {
     const q = search.trim().toLowerCase()

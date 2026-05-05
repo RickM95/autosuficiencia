@@ -279,10 +279,36 @@ function Step2({ data, onChange }) {
 }
 
 // ─── STEP 3 ──────────────────────────────────────────────────────────────────
-function Step3({ data, onChange }) {
-  const { symbol } = useCurrency()
+function Step3({ data, onChange, incomeSources }) {
+  const { symbol, fmt } = useCurrency()
   const f = (field, val) => onChange({ ...data, [field]: val })
   const [debts, setDebts] = useState(data.debts || [{ id: 1, type: '', creditor: '', balance: '', payment: '', rate: '' }])
+
+  const totalFromBudget = incomeSources ? incomeSources.reduce((sum, src) => sum + (parseFloat(src.amount) || 0), 0) : 0
+
+  function autofillFromBudget() {
+    if (!incomeSources) return;
+    const newData = { ...data };
+    let primary = 0;
+    let secondary = 0;
+    let business = 0;
+    let other = 0;
+    incomeSources.forEach(src => {
+      const amt = parseFloat(src.amount) || 0;
+      const n = (src.name || '').toLowerCase();
+      if (n.includes('principal') || n.includes('salario')) primary += amt;
+      else if (n.includes('secundari') || n.includes('conyug') || n.includes('espos')) secondary += amt;
+      else if (n.includes('negocio') || n.includes('venta')) business += amt;
+      else other += amt;
+    });
+    
+    if (primary > 0) newData.incSalary = primary.toFixed(2);
+    if (secondary > 0) newData.incSpouse = secondary.toFixed(2);
+    if (business > 0) newData.incBusiness = business.toFixed(2);
+    if (other > 0) newData.incOther = other.toFixed(2);
+    
+    onChange(newData);
+  }
 
   function updateDebt(id, field, val) {
     const updated = debts.map(d => d.id === id ? { ...d, [field]: val } : d)
@@ -300,6 +326,17 @@ function Step3({ data, onChange }) {
 
   return (
     <div>
+      <div className="info-box">
+        <p>📊 Si ya completaste la calculadora de presupuesto, tus ingresos se muestran abajo.<br /><em>If you already completed the budget calculator, your income is shown below.</em></p>
+      </div>
+      {totalFromBudget > 0 && (
+        <div style={{ background: '#eaf8ee', border: '1px solid var(--color-success)', borderRadius: 'var(--radius-sm)', padding: '0.875rem 1rem', marginBottom: '1.25rem', display: 'flex', justifyContent: 'space-between', alignItems: 'center', flexWrap: 'wrap', gap: '0.5rem' }}>
+          <p style={{ fontSize: '0.875rem', color: 'var(--color-success)', fontWeight: 600, margin: 0 }}>✅ Ingresos del presupuesto / Budget income: {fmt(totalFromBudget)}</p>
+          <button className="btn btn-secondary" style={{ padding: '0.25rem 0.75rem', fontSize: '0.8rem' }} onClick={autofillFromBudget}>
+            ⬇️ Autocompletar / Autofill
+          </button>
+        </div>
+      )}
       <p className="form-section-title">Ingresos Mensuales / Monthly Income</p>
       <div className="form-grid form-grid-2">
         {[['incSalary','Salario principal / Primary salary'],['incSpouse','Salario cónyuge / Spouse salary'],['incBusiness','Negocio propio / Own business'],['incRent','Alquiler de propiedades / Rental income'],['incRemittance','Remesas / Remittances'],['incGovAid','Ayuda del gobierno / Government aid'],['incFamily','Apoyo familiar / Family support'],['incOther','Otros ingresos / Other income']].map(([field, label]) => (
@@ -427,7 +464,7 @@ function Step4({ data, onChange, budgetData }) {
     "📱 Cambiar a un plan de celular/internet más barato / Switch to a cheaper phone/internet plan",
     "🚗 Usar más transporte público o compartir viajes / Carpool or use public transit more",
     "📅 Planificar el menú semanal antes de comprar / Plan weekly menu before shopping",
-    "☕ Preparar café en casa en lugar de comprarlo / Make coffee at home instead of buying it"
+    "🍵 Preparar té de hierbas en casa en lugar de comprarlo / Make herbal tea at home instead of buying it"
   ];
 
   function appendSuggestion(text) {
@@ -785,7 +822,7 @@ function Step6({ data, onChange }) {
   const long = makeGoalHandlers('longTermGoals')
 
   const shortSuggestions = [
-    { title: "Crear un fondo de emergencia de $100 / Create $100 emergency fund", steps: "1. Ahorrar $25 por semana.\n2. Guardar el dinero en una cuenta separada.\n3. Evitar gastos hormiga (café, snacks, sodas)." },
+    { title: "Crear un fondo de emergencia de $100 / Create $100 emergency fund", steps: "1. Ahorrar $25 por semana.\n2. Guardar el dinero en una cuenta separada.\n3. Evitar gastos innecesarios (snacks, sodas, etc.)." },
     { title: "Crear o actualizar mi currículum / Create or update my resume", steps: "1. Buscar una plantilla gratuita en internet.\n2. Escribir mi experiencia y habilidades.\n3. Pedirle a un amigo o líder que lo revise." },
     { title: "Reducir gastos en alimentos este mes / Reduce food expenses this month", steps: "1. Planificar el menú de toda la semana.\n2. Comprar solo lo que está en la lista.\n3. Llevar almuerzo al trabajo en vez de comprar." },
     { title: "Registrar todos mis gastos diarios / Track all daily expenses", steps: "1. Conseguir una libreta pequeña o descargar una app.\n2. Anotar CADA compra, por más pequeña que sea.\n3. Revisar el total al final de la semana." },
@@ -1044,7 +1081,7 @@ function Step7({ data, onChange }) {
 }
 
 // ─── MAIN ─────────────────────────────────────────────────────────────────────
-export default function SelfSufficiencyForm({ formData, setFormData, onComplete, budgetData }) {
+export default function SelfSufficiencyForm({ formData, setFormData, onComplete, budgetData, incomeSources }) {
   const [step, setStep] = useState(() => {
     try {
       const savedStep = localStorage.getItem('evaluationStep')
@@ -1064,7 +1101,7 @@ export default function SelfSufficiencyForm({ formData, setFormData, onComplete,
   const stepComponents = {
     1: <Step1 data={formData} onChange={updateStep} />,
     2: <Step2 data={formData} onChange={updateStep} />,
-    3: <Step3 data={formData} onChange={updateStep} />,
+    3: <Step3 data={formData} onChange={updateStep} incomeSources={incomeSources} />,
     4: <Step4 data={formData} onChange={updateStep} budgetData={budgetData} />,
     5: <Step5 data={formData} onChange={updateStep} />,
     6: <Step6 data={formData} onChange={updateStep} />,
