@@ -20,6 +20,10 @@ export default class ConversationMemory {
     this.lastAction = null
     this.lastResponses = []
 
+    this.activeMode = null
+    this.lastQuestionContext = null
+    this.modeStage = null
+
     this.currentMode = {
       type: null,
       confidence: 0,
@@ -29,6 +33,8 @@ export default class ConversationMemory {
     this.lastEmotionalState = null
     this.lastUserIntent = null
     this.lastValidStage = 'WELCOME'
+
+    this.lastTurn = null
 
     this.recordedTopics = []
     this.recordedIntents = []
@@ -229,7 +235,24 @@ export default class ConversationMemory {
     }
   }
 
+  enterMode(mode, context = {}) {
+    this.activeMode = mode
+    this.lastQuestionContext = context
+    this.modeStage = context.stage || null
+    this.setActiveMode(mode, 0.9)
+  }
+
+  exitMode() {
+    this.activeMode = null
+    this.lastQuestionContext = null
+    this.modeStage = null
+    this.clearActiveMode()
+  }
+
   isInMode(modeType) {
+    if (this.activeMode === modeType) {
+      return true
+    }
     if (!this.currentMode.type) return false
     if (this.currentMode.type !== modeType) return false
     const age = Date.now() - this.currentMode.lastUpdated
@@ -255,6 +278,9 @@ export default class ConversationMemory {
       recentModes: this.recordedResponseModes.slice(-3),
       sentiment: this.sentiment,
       stage: this.stage,
+      activeMode: this.activeMode,
+      modeStage: this.modeStage,
+      lastQuestionContext: this.lastQuestionContext,
       currentMode: this.currentMode,
       lastEmotionalState: this.lastEmotionalState,
       userContextSummary: this.getUserContextSummary(),

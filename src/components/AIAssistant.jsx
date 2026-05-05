@@ -1,40 +1,12 @@
 import { useState, useRef, useEffect } from 'react'
 import {
-  ConversationMemory, PythonBridge, KnowledgeBase, DocumentImporter,
-  ReasoningEngine,
-  assembleResponse, buildWelcomeMessage,
-  detectLanguage, getBrowserLanguage,
-  NephiBootSystem,
+  ConversationMemory, buildWelcomeMessage,
+  detectLanguage,
 } from '../ai/index.js'
 import { validateChatMessage, sanitizeMessage, validateStoredMessages } from '../ai/SecurityGuard.js'
 import { extractFormDataFromMemory, formatFormUpdateMessage } from '../ai/formFiller.js'
-import KnowledgeBasePanel from './KnowledgeBasePanel.jsx'
 import DebugPanel from './DebugPanel.jsx'
 
-let pySingleton = null
-let kbSingleton = null
-let engineSingleton = null
-
-function getPyBridge() {
-  if (!pySingleton) pySingleton = new PythonBridge()
-  return pySingleton
-}
-
-function getKB() {
-  if (!kbSingleton) kbSingleton = new KnowledgeBase()
-  return kbSingleton
-}
-
-function getEngine(memory, debugMode) {
-  if (!engineSingleton) {
-    engineSingleton = new ReasoningEngine(memory, debugMode)
-  }
-  return engineSingleton
-}
-
-const bootSystemRef = { current: null }
-
-// Lightweight inline markdown renderer
 function inlineMd(text) {
   if (!text) return null
   const parts = []
@@ -90,7 +62,7 @@ function renderMarkdown(text) {
 
 function ChatMessage({ msg }) {
   const isUser = msg.role === 'user'
-  const isPlan = msg.role === 'assistant' && msg.content.startsWith('╔')
+  const isPlan = msg.role === 'assistant' && msg.content && msg.content.startsWith('╔')
   return (
     <div style={{
       display: 'flex', justifyContent: isUser ? 'flex-end' : 'flex-start',
@@ -128,7 +100,6 @@ function ChatMessage({ msg }) {
     </div>
   )
 }
-
 
 function TypingIndicator({ text, language }) {
   const displayText = text && text.includes(' / ')
@@ -182,132 +153,187 @@ export default function AIAssistant({ userContext, budgetData, isOpen, onToggle,
         const validated = validateStoredMessages(parsed)
         return validated || []
       }
-    } catch { /* empty */ }
+    } catch { }
     return []
   })
   const [input, setInput] = useState('')
   const [isLoading, setIsLoading] = useState(false)
   const [loadingText, setLoadingText] = useState('')
   const [language, setLanguage] = useState('es')
-  const [showKb, setShowKb] = useState(false)
-  const [pyStatus, setPyStatus] = useState('initializing')
-  const [pyProgress, setPyProgress] = useState(0)
-  const [kbStats, setKbStats] = useState({ documentCount: 0 })
   const [debugMode, setDebugMode] = useState(false)
   const [lastDebugData, setLastDebugData] = useState(null)
 
   const messagesEndRef = useRef(null)
   const inputRef = useRef(null)
-  const dropRef = useRef(null)
 
   const memoryRef = useRef(new ConversationMemory())
-  const pyRef = useRef(null)
-  const kbRef = useRef(null)
-  const importerRef = useRef(null)
-  const engineRef = useRef(null)
+  const workerRef = useRef(null)
 
-  // ═══════════════════════════════════════════════════════════════
-  // EAGER BACKGROUND BOOT — runs on mount, not gated by isOpen
-  // ═══════════════════════════════════════════════════════════════
+  const languageRef = useRef(language)
+  const debugModeRef = useRef(debugMode)
+  const userContextRef = useRef(userContext)
+  const budgetDataRef = useRef(budgetData)
+  const setFormDataRef = useRef(setFormData)
+
+  useEffect(() => { languageRef.current = language }, [language])
+  useEffect(() => { debugModeRef.current = debugMode }, [debugMode])
+  useEffect(() => { userContextRef.current = userContext }, [userContext])
+  useEffect(() => { budgetDataRef.current = budgetData }, [budgetData])
+  useEffect(() => { setFormDataRef.current = setFormData }, [setFormData])
+
+  const dataVersionRef = useRef(Date.now())
+
   useEffect(() => {
-    if (bootSystemRef.current) return
-    const debugMode = window.location.search.includes('debug=true')
-    const boot = new NephiBootSystem()
-    bootSystemRef.current = boot
-
-    boot.setProgressCallback((progress) => {
-      setPyProgress(progress.overallPercent)
-      setLoadingText(debugMode ? `[${progress.stage}] ${progress.message}` : progress.message)
-    })
-
-    // Delay boot to allow main UI (Budget/Survey) to load and render first
-    setTimeout(() => {
-      boot.boot(debugMode).then((result) => {
-        if (result.systemState === 'SYSTEM_READY') {
-          setPyStatus('ready')
-          setPyProgress(100)
-          setLoadingText('')
-        } else if (result.systemState === 'FAILED_SAFE_STATE') {
-          setPyStatus('error')
-          setLoadingText(`Boot failed at stage: ${(result.stages.find(s => s.status === 'FAILED') || {}).stage || 'unknown'}`)
-        } else {
-          setPyStatus('local')
-          setPyProgress(100)
-          setLoadingText('')
-        }
-
-        const py = getPyBridge()
-        const kb = getKB()
-        pyRef.current = py
-        kbRef.current = kb
-
-        if (!importerRef.current) {
-          const importer = new DocumentImporter(kb, py)
-          importerRef.current = importer
-          importer.getExtraResources().catch(() => {})
-        }
-
-        const engine = getEngine(memoryRef.current, debugMode)
-        engineRef.current = engine
-        engine.init().catch(() => {})
-
-        kb.getStats().then(stats => setKbStats(stats)).catch(() => {})
-
-        if (memoryRef.current.interactionCount === 0) {
-          const lang = getBrowserLanguage()
-          const welcome = assembleResponse('WELCOME', {}, userContext || {}, budgetData || [], memoryRef.current, '', lang)
-          setMessages([{ role: 'assistant', content: welcome, id: Date.now() }])
+    dataVersionRef.current = Date.now()
+    const worker = workerRef.current
+    if (worker) {
+      worker.postMessage({
+        action: 'SYNC_STATE',
+        payload: {
+          formData: userContext || {},
+          budgetData: budgetData || [],
+          userContext: userContext || {},
+          version: dataVersionRef.current
         }
       })
-    }, 1200) // 1.2s delay for maximum background priority
+    }
+  }, [userContext, budgetData])
+
+  function restartWorker() {
+    const oldWorker = workerRef.current
+    if (oldWorker) oldWorker.terminate()
+
+    const worker = new Worker(
+      new URL('../ai/aiWorker.js', import.meta.url),
+      { type: 'module' }
+    )
+    workerRef.current = worker
+
+    worker.postMessage({
+      action: 'SYNC_STATE',
+      payload: {
+        formData: userContextRef.current || {},
+        budgetData: budgetDataRef.current || [],
+        userContext: userContextRef.current || {},
+        version: Date.now()
+      }
+    })
+    worker.postMessage({ action: 'INIT' })
+
+    worker.onmessage = (e) => {
+      const { type, payload } = e.data
+
+      switch (type) {
+        case 'onVersionedResponse': {
+          const reply = payload.response
+          memoryRef.current.recordInteraction('assistant', reply, 'CONVERSATION')
+          setMessages(prev => [...prev, { role: 'assistant', content: reply, id: performance.now() }])
+          setIsLoading(false)
+          setLoadingText('')
+
+          const currentUC = userContextRef.current || {}
+          const formUpdates = extractFormDataFromMemory(memoryRef.current, currentUC)
+          const currentSetFormData = setFormDataRef.current
+          if (currentSetFormData && Object.keys(formUpdates).length > 0) {
+            currentSetFormData(prev => ({ ...prev, ...formUpdates }))
+            const updateMsg = formatFormUpdateMessage(formUpdates, languageRef.current)
+            if (updateMsg) {
+              setMessages(prev => [...prev, { role: 'assistant', content: updateMsg, id: performance.now() + 1, isFillNotice: true }])
+            }
+          }
+          break
+        }
+        case 'onResponse':
+          setIsLoading(false)
+          setLoadingText('')
+          break
+        case 'onThinking':
+          setLoadingText(payload || 'Pensando...')
+          break
+        case 'onError':
+          setIsLoading(false)
+          setLoadingText('')
+          break
+        case 'onDataUpdate':
+          break
+        case 'onDebug':
+          if (debugModeRef.current) setLastDebugData(prev => ({ ...prev, worker: payload }))
+          break
+        case 'INIT_COMPLETE':
+          break
+        case 'MEMORY_CLEARED':
+          break
+        case 'DOCUMENT_IMPORTED':
+          setIsLoading(false)
+          setLoadingText('')
+          setMessages(prev => [...prev, {
+            role: 'assistant',
+            content: payload.success
+              ? (languageRef.current === 'es' ? `✅ **Documento importado:** "${payload.name}"` : `✅ **Document imported:** "${payload.name}"`)
+              : (languageRef.current === 'es' ? `⚠️ Error al importar: "${payload.name}"` : `⚠️ Error importing: "${payload.name}"`),
+            id: Date.now(),
+          }])
+          break
+      }
+    }
+
+    worker.onerror = (err) => {
+      setIsLoading(false)
+      setLoadingText('')
+      setMessages(prev => [...prev, {
+        role: 'assistant',
+        content: languageRef.current === 'es'
+          ? '⚠️ El worker se detuvo. Reintentando...'
+          : '⚠️ Worker stopped. Retrying...',
+        id: Date.now(),
+      }])
+      restartWorker()
+    }
+
+    return worker
+  }
+
+  useEffect(() => {
+    if (workerRef.current) return
+
+    const worker = restartWorker()
+
+    const debugModeActive = typeof window !== 'undefined' && window.location.search.includes('debug=true')
+    setDebugMode(debugModeActive)
 
     const handleKeyPress = (e) => {
       if (e.altKey && e.key === 'd') {
         setDebugMode(prev => !prev)
       }
     }
-    window.addEventListener('keydown', handleKeyPress)
-    return () => window.removeEventListener('keydown', handleKeyPress)
+    if (typeof window !== 'undefined') {
+      window.addEventListener('keydown', handleKeyPress)
+    }
+
+    return () => {
+      worker.terminate()
+      workerRef.current = null
+      if (typeof window !== 'undefined') {
+        window.removeEventListener('keydown', handleKeyPress)
+      }
+    }
   }, []) // eslint-disable-line react-hooks/exhaustive-deps
 
-  // ═══════════════════════════════════════════════════════════════
-  // FOCUS MANAGEMENT
-  // ═══════════════════════════════════════════════════════════════
-
-  // Auto-focus on mount
-  useEffect(() => {
-    inputRef.current?.focus()
-  }, [])
-
-  // Focus when chat opens
+  useEffect(() => { inputRef.current?.focus() }, [])
   useEffect(() => {
     if (!isOpen) return
     setTimeout(() => inputRef.current?.focus(), 100)
   }, [isOpen])
-
-  // Re-focus after loading completes (each message send)
   useEffect(() => {
-    if (!isLoading) {
-      inputRef.current?.focus()
-    }
+    if (!isLoading) inputRef.current?.focus()
   }, [isLoading])
 
-  // Keep focus after new messages appear
-  useEffect(() => {
-    if (messages.length > 0) {
-      inputRef.current?.focus()
-    }
-  }, [messages.length])
-
-  // ═══════════════════════════════════════════════════════════════
-  // SCROLL + PERSISTENCE effects (always active)
-  // ═══════════════════════════════════════════════════════════════
   useEffect(() => {
     messagesEndRef.current?.scrollIntoView({ behavior: 'smooth' })
   }, [messages, isLoading])
 
   useEffect(() => {
-    try { localStorage.setItem('ai_messages', JSON.stringify(messages.slice(-50))) } catch { /* empty */ }
+    try { localStorage.setItem('ai_messages', JSON.stringify(messages.slice(-50))) } catch { }
   }, [messages])
 
   async function handleDrop(e) {
@@ -316,11 +342,11 @@ export default function AIAssistant({ userContext, budgetData, isOpen, onToggle,
     const files = e.dataTransfer?.files
     if (!files || files.length === 0) return
 
-    if (!importerRef.current) {
-      const lang = language
+    const worker = workerRef.current
+    if (!worker) {
       setMessages(prev => [...prev, {
-        role: 'assistant', content: lang === 'es'
-          ? '⏳ El sistema se está inicializando. Espera un momento y vuelve a intentar.'
+        role: 'assistant', content: languageRef.current === 'es'
+          ? '⏳ El sistema se está iniciando. Espera un momento y vuelve a intentar.'
           : '⏳ System is initializing. Please wait a moment and try again.',
         id: Date.now(),
       }])
@@ -330,21 +356,8 @@ export default function AIAssistant({ userContext, budgetData, isOpen, onToggle,
     setIsLoading(true)
     for (const file of files) {
       setLoadingText(`Importando: ${file.name}...`)
-      await importerRef.current.importFromFile(file, (pct, msg) => {
-        setLoadingText(msg || `Procesando: ${pct}%`)
-      })
-      const lang = language
-      setMessages(prev => [...prev, {
-        role: 'assistant', content: lang === 'es'
-          ? `✅ **Documento importado:** "${file.name}" — el contenido ha sido agregado a mi base de conocimiento.`
-          : `✅ **Document imported:** "${file.name}" — content has been added to my knowledge base.`,
-        id: Date.now(),
-      }])
+      worker.postMessage({ action: 'IMPORT_DOCUMENT', payload: { file } })
     }
-    const stats = await kbRef.current.getStats()
-    setKbStats(stats)
-    setLoadingText('')
-    setIsLoading(false)
   }
 
   async function sendMessage(text) {
@@ -364,12 +377,13 @@ export default function AIAssistant({ userContext, budgetData, isOpen, onToggle,
     setIsLoading(true)
 
     try {
-      await new Promise(r => setTimeout(r, 400 + Math.random() * 400))
+      await new Promise(r => requestAnimationFrame(r))
 
-      const engine = engineRef.current
-      if (!engine) {
+      const worker = workerRef.current
+      if (!worker) {
         setMessages(prev => [...prev, {
-          role: 'assistant', content: detectedLang === 'es'
+          role: 'assistant',
+          content: detectedLang === 'es'
             ? '⏳ El sistema se está iniciando. Por favor espera un momento...'
             : '⏳ The system is starting up. Please wait a moment...',
           id: performance.now(),
@@ -378,60 +392,24 @@ export default function AIAssistant({ userContext, budgetData, isOpen, onToggle,
         return
       }
 
-      await engine.init()
-      const analysis = await engine.processMessage(userContext || {}, budgetData || [], userText)
-      
-      // Capture debug data
-      setLastDebugData({
-        intent: analysis.intents?.[0],
-        domains: analysis.pipeline?.domains || analysis.domains || {},
-        progressState: analysis.progressState,
-        decision: analysis.decision,
-        orchestrator: { 
-          source: analysis.pipeline?.log?.steps?.[0] || 'orchestrator',
-          hasExternalKnowledge: !!analysis.externalKnowledge,
-          emotionalDistress: analysis.emotionalDistress
-        },
-        memory: { lastMessages: memoryRef.current.history },
-        lang: detectedLang
-      })
-
-      const lang = detectedLang
-      const reply = assembleResponse(
-        analysis.stage, analysis, userContext || {}, budgetData || [], memoryRef.current, userText, lang
-      )
-
-      memoryRef.current.recordInteraction('assistant', reply, analysis.stage)
-
-      const assistantMsg = { role: 'assistant', content: reply, id: performance.now() }
-      setMessages(prev => [...prev, assistantMsg])
-
-      const formUpdates = extractFormDataFromMemory(memoryRef.current, userContext || {})
-      if (setFormData && Object.keys(formUpdates).length > 0) {
-        setFormData(prev => ({ ...prev, ...formUpdates }))
-        const updateMsg = formatFormUpdateMessage(formUpdates, lang)
-        if (updateMsg) {
-          setMessages(prev => [...prev, {
-            role: 'assistant', content: updateMsg, id: performance.now() + 1, isFillNotice: true,
-          }])
+      worker.postMessage({
+        action: 'PROCESS_MESSAGE',
+        payload: {
+          userMessage: userText,
+          formData: userContextRef.current || {},
+          budgetData: budgetDataRef.current || [],
+          userContext: userContextRef.current || {},
+          version: dataVersionRef.current
         }
-      }
-
-      if (analysis.stage === 'PLAN_BUILD' || analysis.stage === 'PLAN_REVIEW') {
-        memoryRef.current.updatePlanProgress('needs', 100)
-      }
+      })
     } catch (err) {
-      const lang = language
       setMessages(prev => [...prev, {
-        role: 'assistant', content: lang === 'es'
+        role: 'assistant',
+        content: languageRef.current === 'es'
           ? `⚠️ Ocurrió un error: ${err.message}`
           : `⚠️ An error occurred: ${err.message}`,
         id: performance.now(),
       }])
-    } finally {
-      setIsLoading(false)
-      setLoadingText('')
-      requestAnimationFrame(() => inputRef.current?.focus())
     }
   }
 
@@ -442,10 +420,13 @@ export default function AIAssistant({ userContext, budgetData, isOpen, onToggle,
   function clearChat() {
     memoryRef.current.reset()
     setMessages([])
-    try { localStorage.removeItem('ai_messages') } catch { /* empty */ }
-    const lang = language
-    const welcome = buildWelcomeMessage(memoryRef.current, userContext || {}, lang)
+    try { localStorage.removeItem('ai_messages') } catch { }
+    const lang = languageRef.current
+    const welcome = buildWelcomeMessage(memoryRef.current, userContextRef.current || {}, lang)
     setMessages([{ role: 'assistant', content: welcome, id: Date.now() }])
+
+    const worker = workerRef.current
+    if (worker) worker.postMessage({ action: 'CLEAR_MEMORY' })
   }
 
   return (
@@ -466,9 +447,7 @@ export default function AIAssistant({ userContext, budgetData, isOpen, onToggle,
             <button onClick={onToggle} title="Nephi — Asesor AS"
               style={{
                 width: 60, height: 60, borderRadius: '50%',
-                background: pyStatus === 'initializing'
-                  ? 'conic-gradient(var(--color-primary) ' + pyProgress + '%, var(--color-border) ' + pyProgress + '%)'
-                  : 'linear-gradient(135deg, var(--color-primary-darker), var(--color-primary))',
+                background: 'linear-gradient(135deg, var(--color-primary-darker), var(--color-primary))',
                 border: '3px solid white', boxShadow: 'var(--shadow-lg)',
                 color: 'white', fontSize: '1.5rem', cursor: 'pointer',
                 display: 'flex', alignItems: 'center', justifyContent: 'center',
@@ -476,31 +455,15 @@ export default function AIAssistant({ userContext, budgetData, isOpen, onToggle,
               }}
               onMouseEnter={e => { e.currentTarget.style.transform = 'scale(1.1)' }}
               onMouseLeave={e => { e.currentTarget.style.transform = 'scale(1)' }}
-            >{pyStatus === 'initializing' ? pyProgress + '%' : '🤖'}</button>
+            >🤖</button>
             <div style={{
               position: 'absolute', bottom: '100%', right: 0, marginBottom: '0.5rem',
               background: 'var(--color-primary-darker)', color: 'white',
               padding: '0.375rem 0.75rem', borderRadius: 'var(--radius-sm)',
               fontSize: '0.75rem', fontWeight: 600, whiteSpace: 'nowrap', boxShadow: 'var(--shadow-sm)',
             }}>
-              {pyStatus === 'initializing'
-                ? (language === 'es' ? `Inicializando ${pyProgress}%` : `Initializing ${pyProgress}%`)
-                : (language === 'es' ? '🧠 Nephi — Asesor AS' : '🧠 Nephi — AS Advisor')}
+              🧠 Nephi — Asesor AS
             </div>
-
-            {/* Thin progress bar under the bubble */}
-            {pyStatus === 'initializing' && (
-              <div style={{
-                position: 'absolute', bottom: '-6px', left: '4px', right: '4px',
-                height: '4px', background: 'var(--color-border)', borderRadius: '2px', overflow: 'hidden',
-              }}>
-                <div style={{
-                  height: '100%', width: `${pyProgress}%`,
-                  background: 'var(--color-primary)', borderRadius: '2px',
-                  transition: 'width 0.3s ease',
-                }} />
-              </div>
-            )}
           </div>
         )}
       </div>
@@ -513,7 +476,7 @@ export default function AIAssistant({ userContext, budgetData, isOpen, onToggle,
           boxShadow: 'var(--shadow-lg)', display: 'flex', flexDirection: 'column',
           zIndex: 1000, animation: 'slideUp 0.25s ease-out',
           border: '1px solid var(--color-border)', overflow: 'hidden',
-        }} ref={dropRef}>
+        }}>
           <div style={{
             background: 'linear-gradient(135deg, var(--color-primary-darker), var(--color-primary))',
             padding: '1rem 1.25rem', display: 'flex', alignItems: 'center',
@@ -527,20 +490,12 @@ export default function AIAssistant({ userContext, budgetData, isOpen, onToggle,
               <div>
                 <div style={{ color: 'white', fontWeight: 700, fontSize: '0.9375rem', lineHeight: 1.2 }}>Nephi — Asesor AS</div>
                 <div style={{ color: 'rgba(255,255,255,0.75)', fontSize: '0.7rem' }}>
-                  {pyStatus === 'ready'
-                    ? `🟢 ${language === 'es' ? 'Motor de razonamiento activo' : 'Reasoning engine active'}`
-                    : pyStatus === 'initializing'
-                      ? `🟡 ${language === 'es' ? `Inicializando base de conocimiento... ${pyProgress}%` : `Initializing knowledge base... ${pyProgress}%`}`
-                      : pyStatus === 'error'
-                        ? `🔴 ${language === 'es' ? `Error: ${loadingText || 'inicialización fallida'}` : `Error: ${loadingText || 'initialization failed'}`}`
-                        : `🟠 ${language === 'es' ? 'Modo local' : 'Local mode'}`}
-                  {kbStats.documentCount > 0 && ` · 📚 ${kbStats.documentCount}`}
+                  🟢 Worker activo
                 </div>
               </div>
             </div>
             <div style={{ display: 'flex', gap: '0.375rem' }}>
               {[
-                { icon: '📚', action: () => setShowKb(s => !s), title: 'Knowledge Base' },
                 { icon: '🔄', action: clearChat, title: 'New chat' },
                 { icon: '✕', action: onToggle, title: 'Close' },
               ].map(({ icon, action, title }) => (
@@ -554,30 +509,12 @@ export default function AIAssistant({ userContext, budgetData, isOpen, onToggle,
             </div>
           </div>
 
-          {userContext?.name && (
-            <div style={{
-              background: '#eaf8ee', borderBottom: '1px solid var(--color-border)',
-              padding: '0.4rem 1.25rem', flexShrink: 0,
-            }}>
-              <span style={{ fontSize: '0.68rem', color: 'var(--color-success)', fontWeight: 600 }}>
-                ✅ {userContext.name} — {userContext.location || 'Honduras'}
-                {engineRef.current && ` · ${memoryRef.current.overallPlanProgress}% plan`}
-              </span>
-            </div>
-          )}
-
-          {showKb && (
-            <KnowledgeBasePanel
-              kb={kbRef.current}
-              closePanel={() => setShowKb(false)}
-              language={language}
-            />
-          )}
-
-          <div style={{ flex: 1, overflowY: 'auto', padding: '1rem 1.25rem', display: 'flex', flexDirection: 'column' }}
-            onDragOver={e => { if (showKb) return; e.preventDefault(); e.currentTarget.style.background = 'var(--color-bg-light)' }}
+          <div style={{
+            flex: 1, overflowY: 'auto', padding: '1rem 1.25rem', display: 'flex', flexDirection: 'column'
+          }}
+            onDragOver={e => { e.preventDefault(); e.currentTarget.style.background = 'var(--color-bg-light)' }}
             onDragLeave={e => { e.currentTarget.style.background = '' }}
-            onDrop={e => { if (showKb) return; handleDrop(e); e.currentTarget.style.background = '' }}
+            onDrop={e => { handleDrop(e); e.currentTarget.style.background = '' }}
           >
             {messages.length === 0 ? (
               <div style={{ flex: 1, display: 'flex', flexDirection: 'column', alignItems: 'center', justifyContent: 'center', color: 'var(--color-text-muted)', fontSize: '0.875rem', textAlign: 'center', padding: '2rem' }}>
@@ -596,7 +533,7 @@ export default function AIAssistant({ userContext, budgetData, isOpen, onToggle,
               background: 'var(--color-white)',
             }}>
               {QUICK_PROMPTS.map((p, i) => (
-                <button key={i} onClick={() => { sendMessage(p[language] || p.es); requestAnimationFrame(() => inputRef.current?.focus()) }}
+                <button key={i} onClick={() => { sendMessage(p[language] || p.es) }}
                   style={{
                     padding: '0.3rem 0.625rem', border: '1px solid var(--color-border-dark)',
                     borderRadius: '999px', background: 'var(--color-white)',

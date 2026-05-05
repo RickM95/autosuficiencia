@@ -107,7 +107,7 @@ export function loadKBFiles() {
 
 async function storeKBInIndexedDB(kbData) {
   return new Promise((resolve) => {
-    if (!window.indexedDB) { resolve(); return }
+    if (typeof self === 'undefined' || !self.indexedDB) { resolve(); return }
 
     const request = indexedDB.open(INDEXEDDB_NAME, INDEXEDDB_VERSION)
 
@@ -154,7 +154,7 @@ export async function storeKB() {
 }
 
 export async function loadKBFromIndexedDB() {
-  if (!window.indexedDB) return null
+  if (typeof self === 'undefined' || !self.indexedDB) return null
   return new Promise((resolve) => {
     const request = indexedDB.open(INDEXEDDB_NAME, INDEXEDDB_VERSION)
     request.onsuccess = (event) => {

@@ -1,7 +1,9 @@
+import { useState } from 'react'
 import { useCurrency } from './CurrencyContext'
 
 export default function Header({ activeTab, setActiveTab, planCount, onNewSession }) {
   const { currency, setCurrency, buyRate, setBuyRate, sellRate, setSellRate, rateMode, setRateMode } = useCurrency()
+  const [isMobileMenuOpen, setIsMobileMenuOpen] = useState(false)
 
   const tabs = [
     { id: 'budget', label: 'Presupuesto', labelEn: 'Budget', icon: '💰' },
@@ -23,12 +25,21 @@ export default function Header({ activeTab, setActiveTab, planCount, onNewSessio
               <span className="header-logo-subtitle">Self-Sufficiency Plan</span>
             </div>
           </div>
-          <nav className="header-nav">
+          
+          <button 
+            className="mobile-menu-btn no-print"
+            onClick={() => setIsMobileMenuOpen(!isMobileMenuOpen)}
+            aria-label="Toggle Menu"
+          >
+            {isMobileMenuOpen ? '✖' : '☰'}
+          </button>
+
+          <nav className={`header-nav ${isMobileMenuOpen ? 'open' : ''}`}>
             {tabs.map(tab => (
               <button
                 key={tab.id}
                 className={`nav-btn${activeTab === tab.id ? ' active' : ''}`}
-                onClick={() => setActiveTab(tab.id)}
+                onClick={() => { setActiveTab(tab.id); setIsMobileMenuOpen(false); }}
                 style={{ position: 'relative' }}
               >
                 <span className="nav-icon">{tab.icon}</span>
@@ -52,7 +63,7 @@ export default function Header({ activeTab, setActiveTab, planCount, onNewSessio
             {/* New Session Button */}
             <button
               className="nav-btn nav-btn-new-session"
-              onClick={onNewSession}
+              onClick={() => { onNewSession(); setIsMobileMenuOpen(false); }}
               title="Nuevo usuario / New user session"
               style={{
                 background: 'linear-gradient(135deg, #059669, #10b981)',

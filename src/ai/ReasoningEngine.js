@@ -4,18 +4,12 @@ import { fuseDomains } from './domainFusionEngine.js'
 import { progressTracker } from './progressTracker.js'
 import { decideFinalResponse } from './aiOrchestrator.js'
 import { isRepeatingResponse, getVariantResponse } from './loopGuard.js'
-import { analyzeNeeds, analyzeFinances, analyzeGoals, analyzeResources, analyzeCompleteness, identifyRisks, analyzeMessage } from './Analyzer.js'
+import { analyzeFinances, analyzeMessage } from './Analyzer.js'
 import { EmotionalIntelligence } from './EmotionalIntelligence.js'
-import { getPlannerResponse } from './autonomousPlanner.js'
-import { generateDecisionResponse } from './decisionEngine.js'
 import { knowledgeFetcher } from './knowledgeFetcher.js'
 import { emotionOverride } from './emotionOverride.js'
 import KbEngine from './kb/KbEngine.js'
-
-/**
- * ReasoningEngine.js (Complete Rewrite)
- * Unified, context-aware reasoning flow for Nephi.
- */
+import { hasNegation } from './negationUtils.js'
 
 export default class ReasoningEngine {
   constructor(memory, debugMode = false) {
@@ -23,6 +17,7 @@ export default class ReasoningEngine {
     this.kb = new KbEngine()
     this._initPromise = null
     this.debugMode = debugMode
+    this._emotion = new EmotionalIntelligence()
   }
 
   async init() {
@@ -31,58 +26,97 @@ export default class ReasoningEngine {
     return this._initPromise
   }
 
+  _emitDebug(phase, data) {
+    if (!this.debugMode) return
+    try {
+      if (typeof self !== 'undefined' && typeof WorkerGlobalScope !== 'undefined' && self instanceof WorkerGlobalScope) {
+        self.postMessage({ type: 'onDebug', payload: { phase, ...data } })
+      }
+    } catch { }
+  }
+
   async processMessage(formData, budgetData, userMessage) {
     if (!this.kb.ready) {
       await this.init()
     }
 
-    // 1. Language Detection
+    const startTime = performance.now()
     const lang = LanguageDetector.detect(userMessage, this.memory)
     this.memory.language = lang
 
-    // 2. Intent Detection
-    const intent = detectIntent(userMessage)
+    let intent = detectIntent(userMessage)
 
-    // 3. Domain Fusion
+    const hasNegationLocal = hasNegation(userMessage)
+
+    this._emitDebug('intent_detection', { intent, hasNegation: hasNegationLocal, duration: performance.now() - startTime })
+
+    if (this.memory.activeMode && ['agreement', 'negative'].includes(intent.intent) && this.memory.lastQuestionContext) {
+      const originalIntent = intent.intent
+      const domain = this.memory.lastQuestionContext.domain || this.memory.activeMode.toLowerCase().replace('_review', '')
+      intent.originalIntent = originalIntent
+      intent.intent = domain
+      intent.confidence = 0.9
+      intent.isReinterpreted = true
+
+      this._emitDebug('mode_reinterpret', {
+        from: intent.originalIntent,
+        to: domain,
+        mode: this.memory.activeMode,
+        stage: this.memory.modeStage
+      })
+    }
+
     const fusion = fuseDomains(userMessage, this.memory)
 
-    // 4. Progress Update
-    // Need basic analysis for progress update
-    const analyses = {
-      finances: analyzeFinances(formData),
-      message: analyzeMessage(userMessage || ''),
+    const analyses = { message: analyzeMessage(userMessage || '') }
+
+    const isFinancialContext = this.memory.activeMode === 'FINANCIAL_REVIEW' ||
+                               this.memory.modeStage === 'FINANCIAL_REVIEW' ||
+                               this.memory.lastAction === 'financial' ||
+                               ['financial', 'planning', 'general', 'goals'].includes(intent.intent)
+    if (isFinancialContext) {
+      analyses.finances = analyzeFinances(formData)
     }
     const progressState = await progressTracker.updateState(fusion, intent.intent)
 
-    // 5. External Knowledge Fetching (Optional & Non-blocking)
     let externalKnowledge = null
-    if (knowledgeFetcher.needsExternalKnowledge(userMessage, intent.intent, false)) {
-      // Use a timeout to avoid blocking too long
+    const needsKnowledge = knowledgeFetcher.needsExternalKnowledge(userMessage, intent.intent, false)
+    if (needsKnowledge || intent.intent === 'knowledge_query' || intent.intent === 'advice') {
       const fetchPromise = knowledgeFetcher.fetchKnowledge(userMessage, lang)
-      const timeoutPromise = new Promise(resolve => setTimeout(() => resolve(null), 1500))
-      externalKnowledge = await Promise.race([fetchPromise, timeoutPromise])
+      const timeoutPromise = new Promise(resolve => setTimeout(() => resolve({ success: false, fallback: true }), 1500))
+      const knowledgeResult = await Promise.race([fetchPromise, timeoutPromise])
+      if (knowledgeResult && knowledgeResult.success) {
+        externalKnowledge = knowledgeResult.text
+      }
     }
 
-    // 6. Gather all module outputs for Orchestrator
+    this._emitDebug('knowledge_fetch', { needed: needsKnowledge, found: !!externalKnowledge })
+
     const modulesOutput = {
-      lang,
-      intent,
       fusion,
-      planner: getPlannerResponse(this.memory, { formData, analysis: analyses }),
-      decision: generateDecisionResponse(this.memory, { formData }),
-      emotion: EmotionalIntelligence.detect(userMessage, { ...formData, ...analyses }),
-      externalKnowledge
+      intent,
+      lang,
+      analyses,
+      progressState,
+      externalKnowledge,
+      activeMode: this.memory.activeMode,
+      modeStage: this.memory.modeStage,
+      hasNegation: hasNegationLocal
     }
 
-    // 6. Orchestrator Decision (Single Response Authority)
-    let responseText = decideFinalResponse(userMessage, this.memory, modulesOutput, progressState)
+    const finalResponse = decideFinalResponse(userMessage, this.memory, modulesOutput, progressState)
 
-    // 7. Loop Guard (Repetition Detection)
+    this.memory.lastTurn = {
+      intent: intent.intent,
+      mode: this.memory.activeMode,
+      question: finalResponse
+    }
+
+    let responseText = finalResponse
     if (isRepeatingResponse(responseText, this.memory.lastResponses)) {
       responseText = getVariantResponse(intent.intent, lang, this.memory.interactionCount || 0)
     }
 
-    // 8. Update Memory & Context
     this.memory.recordInteraction('user', userMessage, analyses.message)
     this.memory.recordIntents([{
       intent: intent.intent,
@@ -91,12 +125,19 @@ export default class ReasoningEngine {
     this.memory.lastAction = intent.intent
     this.memory.interactionCount = (this.memory.interactionCount || 0) + 1
 
+    this._emitDebug('reasoning_complete', {
+      intent: intent.intent,
+      mode: this.memory.activeMode,
+      domains: fusion.activeDomains,
+      duration: performance.now() - startTime
+    })
+
     return {
       stage: 'CONVERSATION',
-      pipeline: { 
-        log: { steps: ['REBUILD_V3'] }, 
+      pipeline: {
+        log: { steps: ['REBUILD_V3'] },
         responseText,
-        domains: fusion.domains 
+        domains: fusion.domains
       },
       kbDrivenResponse: responseText,
       decision: { action: intent.intent, reason: 'unified autonomous flow' },

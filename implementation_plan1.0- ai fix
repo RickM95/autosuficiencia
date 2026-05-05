@@ -1,0 +1,33 @@
+# Self-Audit & Refactor Optimization Plan
+
+After thoroughly reviewing the local-first AI architecture I implemented, I've identified several structural flaws, edge cases, and missing optimizations that would impact production stability and conversation continuity.
+
+## Identified Flaws & Edge Cases
+
+### 1. The Context-Drop Bug in `ReasoningEngine.js` (CRITICAL)
+- **Flaw:** In Phase 4, I implemented Intent-Gated Execution: `if (['financial', 'planning'...].includes(intent.intent)) { analyses.finances = ... }`.
+- **Edge Case:** If a user is answering a financial question with a short response like "Sí" or "No tengo", the `intentDetector` flags this as `agreement` or `negative`. Because this doesn't match the gated array, the financial analysis is skipped. The Orchestrator immediately loses the financial context and abruptly pivots the conversation.
+- **Solution:** The gating logic must account for the *previous conversation state* (from Memory). If the active mode is `FINANCIAL_REVIEW`, the heavy financial analysis must run regardless of the immediate sentence intent.
+
+### 2. Lack of Event Cleanup in `AICore.js` (Memory Leak)
+- **Flaw:** The `AICore` event emitter uses `this.listeners[event].push(callback)` but lacks an `off()` or `removeListener()` method.
+- **Edge Case:** While the Web Worker currently only binds once, if `AICore` is ever instantiated in the main thread (e.g., fallback mode on older browsers) and React components subscribe to it, unmounting components will cause severe memory leaks.
+- **Solution:** Implement a `removeListener` method and return a cleanup function from the `.on()` method. Add an initialization lock to prevent race conditions if `initialize()` is called twice rapidly.
+
+### 3. Missing Negation Handling in `domainFusionEngine.js`
+- **Flaw:** The scoring system relies on keyword frequencies (`text.includes(k)`). "Tengo trabajo" (I have a job) and "No tengo trabajo" (I don't have a job) both yield identical financial domain scores.
+- **Edge Case:** The engine correctly detects the financial domain, but lacks the basic negative subtext required for the orchestrator to differentiate success vs. crisis.
+- **Solution:** Implement a lightweight negation check (looking for 'no', 'sin', 'without' near keywords) to apply an `isNegative` flag or modify the urgency score natively.
+
+### 4. Brittle Timeout Handling in `knowledgeFetcher.js`
+- **Flaw:** `fetchWithTimeout` aborts the fetch on timeout. The native `fetch` throws a `DOMException` (AbortError). The generic catch block `catch (error) { console.warn(..., error.message) }` handles it, but doesn't distinguish between a Wikipedia 500 error vs. a network timeout.
+- **Solution:** Catch `AbortError` specifically, log it as a timeout, and implement a single retry with exponential backoff before failing gracefully.
+
+## Proposed Action Plan
+
+1. **Update `ReasoningEngine.js`**: Refactor intent-gating to include `memory.lastAction` and `memory.stage` to preserve context across short replies.
+2. **Update `AICore.js`**: Add initialization locks, `removeListener`, and robust event emitter patterns.
+3. **Update `domainFusionEngine.js`**: Add basic negative lookbehinds for keyword scoring.
+4. **Update `knowledgeFetcher.js`**: Implement exponential backoff and explicit `AbortError` catching.
+
+Please review this self-audit. If approved, I will immediately execute these optimizations.

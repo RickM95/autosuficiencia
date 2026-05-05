@@ -41,5 +41,13 @@ export function getVariantResponse(action, lang, turnCount) {
   }
 
   const list = variants[action]?.[lang] || variants.explore[lang]
-  return list[turnCount % list.length]
+  const idx = turnCount % (list.length + 1)
+  
+  if (idx >= list.length) {
+    return lang === 'es'
+      ? "Siento que estamos dando vueltas. ¿Qué te parece si intentamos enfocarnos en otro aspecto de tu plan?"
+      : "I feel like we're going in circles. How about we try focusing on another aspect of your plan?"
+  }
+  
+  return list[idx]
 }

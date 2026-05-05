@@ -102,6 +102,53 @@
   border-color: var(--color-primary);
 }
 
+.mobile-menu-btn {
+  display: none;
+  background: transparent;
+  border: none;
+  font-size: 1.5rem;
+  color: var(--color-text);
+  cursor: pointer;
+  padding: 0.5rem;
+  border-radius: var(--radius-sm);
+  transition: background-color 0.2s;
+}
+
+.mobile-menu-btn:hover {
+  background: var(--color-bg);
+}
+
+@media (max-width: 850px) {
+  .mobile-menu-btn {
+    display: block;
+  }
+  
+  .header-nav {
+    display: none;
+    width: 100%;
+    flex-direction: column;
+    padding: 1rem 0;
+    border-top: 1px solid var(--color-border);
+    gap: 0.25rem;
+  }
+  
+  .header-nav.open {
+    display: flex;
+    animation: slideDown 0.3s ease;
+  }
+  
+  .nav-btn {
+    width: 100%;
+    text-align: left;
+    justify-content: flex-start;
+  }
+}
+
+@keyframes slideDown {
+  from { opacity: 0; transform: translateY(-10px); }
+  to { opacity: 1; transform: translateY(0); }
+}
+
 /* ===== CURRENCY TOGGLE ===== */
 .currency-panel {
   background: var(--color-white);

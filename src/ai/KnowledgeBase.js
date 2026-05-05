@@ -6,16 +6,21 @@ export default class KnowledgeBase {
   constructor() {
     this.db = null
     this.ready = false
+    this._useMemoryFallback = false
+    this._memoryStore = new Map()
   }
 
   async init() {
     return new Promise((resolve) => {
-      if (!window.indexedDB) {
-        console.warn('IndexedDB not available — will use localStorage fallback')
-        this._useLocalStorage = true
-        this.ready = true
-        resolve()
-        return
+      const isIndexedDBAvailable = typeof self !== 'undefined' && self.indexedDB;
+      
+      if (!isIndexedDBAvailable) {
+        console.warn('IndexedDB not available — using Memory Map fallback');
+        this._useMemoryFallback = true;
+        this._memoryStore = new Map();
+        this.ready = true;
+        resolve();
+        return;
       }
 
       const request = indexedDB.open(DB_NAME, DB_VERSION)
@@ -55,7 +60,8 @@ export default class KnowledgeBase {
 
       request.onerror = (event) => {
         console.warn('IndexedDB error:', event.target.error)
-        this._useLocalStorage = true
+        this._useMemoryFallback = true
+        this._memoryStore = new Map()
         this.ready = true
         resolve()
       }
@@ -63,37 +69,28 @@ export default class KnowledgeBase {
   }
 
   _getStore(storeName, mode = 'readonly') {
-    if (this._useLocalStorage || !this.db) return null
+    if (this._useMemoryFallback || !this.db) return null
     try {
       const transaction = this.db.transaction(storeName, mode)
       return transaction.objectStore(storeName)
     } catch (e) {
       console.warn('KB storage error:', e.message)
-      this._useLocalStorage = true
+      this._useMemoryFallback = true
+      this._memoryStore = new Map()
       return null
     }
   }
 
-  _lsKey(store) {
-    return `kb_${store}`
+  _getAllMemory(store) {
+    if (!this._memoryStore) this._memoryStore = new Map()
+    return this._memoryStore.get(store) || []
   }
 
-  _getAllLS(store) {
-    try {
-      const data = localStorage.getItem(this._lsKey(store))
-      return data ? JSON.parse(data) : []
-    } catch { return [] }
+  _saveAllMemory(store, data) {
+    if (!this._memoryStore) this._memoryStore = new Map()
+    this._memoryStore.set(store, data)
   }
 
-  _saveAllLS(store, data) {
-    try {
-      localStorage.setItem(this._lsKey(store), JSON.stringify(data))
-    } catch (e) {
-      console.warn(`Failed to save ${store} to localStorage:`, e)
-    }
-  }
-
-  // ─── Documents ─────────────────────────────────────────────────
   async addDocument(doc) {
     const entry = {
       ...doc,
@@ -102,11 +99,11 @@ export default class KnowledgeBase {
       category: doc.category || 'uncategorized',
     }
 
-    if (this._useLocalStorage) {
-      const items = this._getAllLS('documents')
+    if (this._useMemoryFallback) {
+      const items = this._getAllMemory('documents')
       entry.id = Date.now()
       items.push(entry)
-      this._saveAllLS('documents', items)
+      this._saveAllMemory('documents', items)
       return entry
     }
 
@@ -120,8 +117,8 @@ export default class KnowledgeBase {
   }
 
   async getDocuments() {
-    if (this._useLocalStorage) {
-      return this._getAllLS('documents')
+    if (this._useMemoryFallback) {
+      return this._getAllMemory('documents')
     }
     return new Promise((resolve, reject) => {
       const store = this._getStore('documents')
@@ -133,9 +130,9 @@ export default class KnowledgeBase {
   }
 
   async deleteDocument(id) {
-    if (this._useLocalStorage) {
-      const items = this._getAllLS('documents')
-      this._saveAllLS('documents', items.filter(d => d.id !== id))
+    if (this._useMemoryFallback) {
+      const items = this._getAllMemory('documents')
+      this._saveAllMemory('documents', items.filter(d => d.id !== id))
       return
     }
     return new Promise((resolve, reject) => {
@@ -158,14 +155,13 @@ export default class KnowledgeBase {
     )
   }
 
-  // ─── Resources ──────────────────────────────────────────────────
   async addResource(resource) {
     const entry = { ...resource, dateAdded: new Date().toISOString() }
-    if (this._useLocalStorage) {
-      const items = this._getAllLS('resources')
+    if (this._useMemoryFallback) {
+      const items = this._getAllMemory('resources')
       entry.id = Date.now()
       items.push(entry)
-      this._saveAllLS('resources', items)
+      this._saveAllMemory('resources', items)
       return entry
     }
     return new Promise((resolve, reject) => {
@@ -178,8 +174,8 @@ export default class KnowledgeBase {
   }
 
   async getResources(type) {
-    if (this._useLocalStorage) {
-      const all = this._getAllLS('resources')
+    if (this._useMemoryFallback) {
+      const all = this._getAllMemory('resources')
       return type ? all.filter(r => r.type === type) : all
     }
     return new Promise((resolve, reject) => {
@@ -205,14 +201,13 @@ export default class KnowledgeBase {
     )
   }
 
-  // ─── Templates ──────────────────────────────────────────────────
   async addTemplate(template) {
     const entry = { ...template, dateAdded: new Date().toISOString() }
-    if (this._useLocalStorage) {
-      const items = this._getAllLS('templates')
+    if (this._useMemoryFallback) {
+      const items = this._getAllMemory('templates')
       entry.id = Date.now()
       items.push(entry)
-      this._saveAllLS('templates', items)
+      this._saveAllMemory('templates', items)
       return entry
     }
     return new Promise((resolve, reject) => {
@@ -230,7 +225,7 @@ export default class KnowledgeBase {
   }
 
   async getTemplates() {
-    if (this._useLocalStorage) return this._getAllLS('templates')
+    if (this._useMemoryFallback) return this._getAllMemory('templates')
     return new Promise((resolve, reject) => {
       const store = this._getStore('templates')
       if (!store) return resolve([])
@@ -240,11 +235,10 @@ export default class KnowledgeBase {
     })
   }
 
-  // ─── Learned Patterns ───────────────────────────────────────────
   async addLearnedPattern(pattern, response, source = '') {
     const entry = { pattern, response, source, dateAdded: new Date().toISOString(), confidence: 1 }
-    if (this._useLocalStorage) {
-      const items = this._getAllLS('learned')
+    if (this._useMemoryFallback) {
+      const items = this._getAllMemory('learned')
       entry.id = Date.now()
       const existing = items.findIndex(i => i.pattern === pattern)
       if (existing >= 0) {
@@ -253,7 +247,7 @@ export default class KnowledgeBase {
       } else {
         items.push(entry)
       }
-      this._saveAllLS('learned', items)
+      this._saveAllMemory('learned', items)
       return
     }
     return new Promise((resolve) => {
@@ -273,7 +267,7 @@ export default class KnowledgeBase {
   }
 
   async searchLearned(query) {
-    const all = this._useLocalStorage ? this._getAllLS('learned') : await this.getLearned()
+    const all = this._useMemoryFallback ? this._getAllMemory('learned') : await this.getLearned()
     const q = query.toLowerCase()
     return all
       .filter(l => l.pattern.toLowerCase().includes(q))
@@ -281,7 +275,7 @@ export default class KnowledgeBase {
   }
 
   async getLearned() {
-    if (this._useLocalStorage) return this._getAllLS('learned')
+    if (this._useMemoryFallback) return this._getAllMemory('learned')
     return new Promise((resolve, reject) => {
       const store = this._getStore('learned')
       if (!store) return resolve([])

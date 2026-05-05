@@ -4,97 +4,75 @@ export function decideFinalResponse(input, memory, modulesOutput, progressState)
   const {
     fusion,
     intent,
-    planner,
-    decision,
-    emotion,
     lang,
-    externalKnowledge
+    externalKnowledge,
+    activeMode
   } = modulesOutput;
 
   const t = (es, en) => lang === 'es' ? es : en;
 
+  // PHASE 8: Telemetry/Debug
+  // This would ideally be emitted via AICore, but we can track state changes here
+  const logDebug = (msg) => {
+    if (typeof self !== 'undefined' && self.postMessage) {
+      self.postMessage({ type: 'onDebug', payload: { phase: 'orchestrator', message: msg, mode: activeMode } });
+    }
+  };
+
   // 1. EMOTION OVERRIDE (HIGHEST PRIORITY)
   const emotionalDistress = emotionOverride.detectEmotionalPriority(input, lang);
   if (emotionalDistress.isCritical) {
+    memory.activeMode = 'EMOTIONAL_SUPPORT';
     return emotionOverride.generateSupportResponse(emotionalDistress, lang);
   }
 
-  // 2. KNOWLEDGE / ADVICE OVERRIDE
-  if (['knowledge_query', 'advice', 'general_query'].includes(intent.intent)) {
-    let answer = "";
-    if (planner && planner.suggestedAction) answer = planner.suggestedAction;
-    else if (decision && decision.suggestedAction) answer = decision.suggestedAction;
-    else if (typeof planner === 'string' && planner) answer = planner;
-    else if (typeof decision === 'string' && decision) answer = decision;
-    else {
-      answer = lang === 'es' 
-        ? "Entiendo. Esa es una buena pregunta. Déjame revisar mis recursos para darte la mejor recomendación." 
-        : "I understand. That's a good question. Let me review my resources to give you the best recommendation.";
-    }
-
+  // 2. KNOWLEDGE / ADVICE
+  if (intent.intent === 'knowledge_query' || intent.intent === 'advice') {
     if (externalKnowledge) {
-      const bridge = lang === 'es' 
-        ? "\n\nPor cierto, encontré esto que podría ser útil:\n" 
-        : "\n\nBy the way, I found this which might be helpful:\n";
-      const summary = externalKnowledge.length > 200 
-        ? externalKnowledge.substring(0, 200) + "..." 
-        : externalKnowledge;
-      answer += bridge + summary;
+      return (lang === 'es' ? "Encontré esto: " : "I found this: ") + externalKnowledge;
+    }
+    return t(
+      "No encontré información específica, pero puedo ayudarte a planificar tus pasos.",
+      "I couldn't find specific info, but I can help you plan your next steps."
+    );
+  }
+
+  // 3. MODE-AWARE GUIDANCE (PHASE 1)
+  if (activeMode === 'FINANCIAL_REVIEW' || (intent.intent === 'financial' && fusion.domains.financial.urgency > 0.6)) {
+    memory.activeMode = 'FINANCIAL_REVIEW';
+    
+    if (!progressState.hasIncome) {
+      memory.lastQuestionContext = { domain: 'financial', field: 'income' };
+      return t(
+        "Para tu plan financiero, ¿tienes algún ingreso actualmente?",
+        "For your financial plan, do you have any income currently?"
+      );
     }
     
-    return answer;
+    if (!progressState.hasDebt) {
+      memory.lastQuestionContext = { domain: 'financial', field: 'debt' };
+      return t(
+        "Entiendo. ¿Y tienes deudas que necesitemos priorizar?",
+        "I see. And do you have any debts we need to prioritize?"
+      );
+    }
   }
 
-  // Answer FIRST: Acknowledge what we just learned
-  let acknowledgment = ""
-  if (intent.intent === 'financial' && fusion.domains.financial.detected) {
-    acknowledgment = lang === 'es' 
-      ? "Entiendo lo que mencionas sobre tu situación financiera. "
-      : "I understand what you're saying about your financial situation. "
-  } else if (intent.intent === 'employment') {
-    acknowledgment = lang === 'es'
-      ? "Veo que el tema del empleo es lo que te ocupa ahora. "
-      : "I see that employment is what's on your mind right now. "
-  }
-
-  // Guide SECOND: Move forward based on progressState
-  let guidance = ""
-  const missing = progressState.capturedFields || []
-  
-  if (!progressState.hasDebt) {
-    guidance = t(
-      "Para ayudarte mejor, ¿tienes alguna deuda que te preocupe ahora mismo?",
-      "To help you better, do you have any debt worrying you right now?"
-    )
-  } else if (!progressState.hasIncome) {
-    guidance = t(
-      "Hablemos de ingresos—¿tienes alguna entrada de dinero actualmente?",
-      "Let's talk about income—do you have any money coming in currently?"
-    )
-  } else if (!progressState.hasEmployment) {
-    guidance = t(
-      "¿Estás trabajando o buscando algo en este momento?",
-      "Are you working or looking for something at the moment?"
-    )
-  } else {
-    guidance = t(
-      "Ya tenemos una base. Vamos a enfocarnos en el siguiente paso del plan.",
-      "We have a foundation. Let's focus on the next step of the plan."
-    )
-  }
-
-  // Special case: Debt + Unemployment (The User's specific scenario)
-  const hasDebtKeywords = input.includes('deuda') || input.includes('debt')
-  const hasWorkKeywords = input.includes('trabajo') || input.includes('empleo') || input.includes('job') || input.includes('work')
-
-  if (fusion.domains.financial.detected && hasDebtKeywords && hasWorkKeywords) {
+  // 4. GENERAL PROGRESS
+  if (!progressState.hasEmployment) {
+    memory.activeMode = 'EMPLOYMENT_SEARCH';
+    memory.lastQuestionContext = { domain: 'employment' };
     return t(
-      `Ok, eso ya me da una imagen clara:\n- tienes una deuda importante\n- no tienes ingresos ahora mismo\n\nNo vamos a seguir con preguntas generales—vamos a enfocarnos en el siguiente paso.\n\nPrimero necesitamos generar ingreso, aunque sea pequeño. Dime, ¿tienes acceso a teléfono o transporte?`,
-      `Ok, that gives me a clear picture:\n- you have a significant debt\n- you have no income right now\n\nWe're not going to continue with general questions—we're going to focus on the next step.\n\nFirst, we need to generate income, even if it's small. Tell me, do you have access to a phone or transportation?`
-    )
+      "Veo que no mencionamos el trabajo. ¿Estás buscando empleo ahora?",
+      "I see we haven't mentioned work. Are you looking for a job now?"
+    );
   }
 
-  let finalResponse = acknowledgment + guidance
-
-  return finalResponse
+  // Default Fallback
+  memory.activeMode = null;
+  memory.lastQuestionContext = null;
+  return t(
+    "Cuéntame más sobre tus metas de autosuficiencia.",
+    "Tell me more about your self-sufficiency goals."
+  );
 }

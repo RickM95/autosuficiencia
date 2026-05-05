@@ -15,10 +15,22 @@ export class LongTermMemory {
     this.DB_VERSION = 1
     this.db = null
     this.ready = false
+    this._useMemoryFallback = false
+    this._memoryStore = new Map()
   }
 
   async init() {
     return new Promise((resolve, reject) => {
+      const isIndexedDBAvailable = typeof self !== 'undefined' && self.indexedDB;
+      
+      if (!isIndexedDBAvailable) {
+        console.warn('⚠️ IndexedDB not available, using Memory Map fallback')
+        this._useMemoryFallback = true
+        this.ready = true
+        resolve()
+        return
+      }
+      
       try {
         const request = indexedDB.open(this.DB_NAME, this.DB_VERSION)
 
@@ -43,15 +55,15 @@ export class LongTermMemory {
         }
 
         request.onerror = () => {
-          console.warn('⚠️ IndexedDB not available, using localStorage fallback')
-          this._useLocalStorage = true
+          console.warn('⚠️ IndexedDB not available, using Memory Map fallback')
+          this._useMemoryFallback = true
           this.ready = true
           resolve()
         }
 
       } catch (e) {
-        console.warn('⚠️ LTM falling back to localStorage:', e.message)
-        this._useLocalStorage = true
+        console.warn('⚠️ LTM falling back to Memory Map:', e.message)
+        this._useMemoryFallback = true
         this.ready = true
         resolve()
       }
@@ -68,11 +80,11 @@ export class LongTermMemory {
       timestamp: Date.now()
     }
 
-    if (this._useLocalStorage) {
-      const events = JSON.parse(localStorage.getItem('ltm_events') || '[]')
+    if (this._useMemoryFallback) {
+      const events = this._memoryStore.get('ltm_events') || []
       event.id = Date.now()
       events.push(event)
-      localStorage.setItem('ltm_events', JSON.stringify(events.slice(-200)))
+      this._memoryStore.set('ltm_events', events.slice(-200))
       return event
     }
 
@@ -87,8 +99,8 @@ export class LongTermMemory {
   async getRecentEvents(limit = 20) {
     if (!this.ready) await this.init()
 
-    if (this._useLocalStorage) {
-      const events = JSON.parse(localStorage.getItem('ltm_events') || '[]')
+    if (this._useMemoryFallback) {
+      const events = this._memoryStore.get('ltm_events') || []
       return events.slice(-limit).reverse()
     }
 

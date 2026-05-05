@@ -1,7 +1,4 @@
-/**
- * domainFusionEngine.js
- * Interprets user input across multiple domains to provide deep insights.
- */
+import { scoreKeywords } from './negationUtils.js'
 
 export function fuseDomains(input, memory) {
   const text = (input || '').toLowerCase()
@@ -14,71 +11,56 @@ export function fuseDomains(input, memory) {
   }
 
   const activeDomains = Object.entries(domains)
-    .filter(([_, data]) => data.detected)
+    .filter(([_, data]) => data.score > 0.3)
     .map(([name, data]) => ({ name, ...data }))
 
+  const maxUrgency = Math.max(domains.emotional.urgency, domains.financial.urgency);
+
+  const sortedDomains = activeDomains.slice().sort((a, b) => b.score - a.score)
+
   return {
-    domains,
+    scores: {
+      financial: domains.financial.score,
+      emotional: domains.emotional.score,
+      behavioral: domains.behavioral.score,
+      social: domains.social.score,
+      lifeDirection: domains.lifeDirection.score,
+      urgency: Math.min(1.0, maxUrgency)
+    },
     activeDomains,
-    primaryDomain: activeDomains.sort((a, b) => b.confidence - a.confidence)[0]?.name || 'general',
-    hasCrisis: domains.emotional.isCrisis || domains.financial.isCrisis
+    primaryDomain: sortedDomains[0]?.name || 'general',
+    hasCrisis: maxUrgency >= 0.8
   }
 }
 
 function analyzeFinancial(text) {
-  const keywords = ['deuda', 'debt', 'dinero', 'money', 'trabajo', 'job', 'ingreso', 'income', 'pobre', 'poor']
-  const detected = keywords.some(k => text.includes(k))
-  return {
-    detected,
-    confidence: detected ? 0.8 : 0,
-    isCrisis: text.includes('emergencia') || text.includes('hambre') || text.includes('calle') || text.includes('eviction') || text.includes('desalojo'),
-    signal: detected ? 'financial_mention' : 'none'
-  }
+  const result = scoreKeywords(text, ['deuda', 'debt', 'dinero', 'money', 'trabajo', 'job', 'ingreso', 'income', 'pobre', 'poor'])
+  const urgencyBase = scoreKeywords(text, ['emergencia', 'hambre', 'calle', 'eviction', 'desalojo'])
+  return { score: result.score, urgency: urgencyBase.score * 1.5 + result.urgencyModifier }
 }
 
 function analyzeEmotional(text) {
-  const keywords = ['triste', 'sad', 'miedo', 'afraid', 'preocupado', 'worried', 'ansioso', 'anxious', 'feliz', 'happy']
-  const detected = keywords.some(k => text.includes(k))
-  return {
-    detected,
-    confidence: detected ? 0.7 : 0,
-    isCrisis: text.includes('suicidio') || text.includes('morir') || text.includes('breakdown'),
-    signal: detected ? 'emotional_mention' : 'none'
-  }
+  const result = scoreKeywords(text, ['triste', 'sad', 'miedo', 'afraid', 'preocupado', 'worried', 'ansioso', 'anxious', 'feliz', 'happy'])
+  const urgencyBase = scoreKeywords(text, ['suicidio', 'morir', 'breakdown', 'matar', 'kill'])
+  return { score: result.score, urgency: urgencyBase.score * 2.0 + result.urgencyModifier }
 }
 
 function analyzeBehavioral(text) {
-  const keywords = ['siempre', 'nunca', 'intento', 'hago', 'always', 'never', 'try', 'i do']
-  const detected = keywords.some(k => text.includes(k))
-  return {
-    detected,
-    confidence: detected ? 0.5 : 0,
-    signal: detected ? 'habit_mention' : 'none'
-  }
+  const result = scoreKeywords(text, ['siempre', 'nunca', 'intento', 'hago', 'always', 'never', 'try', 'i do'])
+  return { score: result.score, urgency: result.urgencyModifier }
 }
 
 function analyzeSocial(text) {
-  const keywords = ['familia', 'family', 'amigos', 'friends', 'solo', 'alone', 'ayuda de', 'help from']
-  const detected = keywords.some(k => text.includes(k))
-  return {
-    detected,
-    confidence: detected ? 0.6 : 0,
-    signal: detected ? 'social_context' : 'none'
-  }
+  const result = scoreKeywords(text, ['familia', 'family', 'amigos', 'friends', 'solo', 'alone', 'ayuda de', 'help from'])
+  return { score: result.score, urgency: result.urgencyModifier }
 }
 
 function analyzeLifeDirection(text) {
-  const keywords = ['futuro', 'future', 'quiero', 'i want', 'meta', 'goal', 'plan', 'adelante', 'forward']
-  const detected = keywords.some(k => text.includes(k))
-  return {
-    detected,
-    confidence: detected ? 0.6 : 0,
-    signal: detected ? 'direction_mention' : 'none'
-  }
+  const result = scoreKeywords(text, ['futuro', 'future', 'quiero', 'i want', 'meta', 'goal', 'plan', 'adelante', 'forward'])
+  return { score: result.score, urgency: result.urgencyModifier }
 }
 
 export function generateDeepResponse(input, fusion, memory, lang) {
-  // This is now purely data generation for the orchestrator
   return {
     insights: fusion.activeDomains.map(d => d.name),
     priority: fusion.hasCrisis ? 1.0 : (fusion.activeDomains.length > 0 ? 0.8 : 0.4),
